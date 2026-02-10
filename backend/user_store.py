@@ -6,7 +6,6 @@ import os
 import re
 import json
 import uuid
-import fcntl
 import logging
 from datetime import datetime
 from contextlib import contextmanager
@@ -56,7 +55,7 @@ def _diaries_path(user_id: str) -> str:
     return os.path.join(STORE_DIR, f"{user_id}_diaries.json")
 
 
-# DATA-001: 파일 잠금을 통한 동시성 제어
+# DATA-001: 파일 잠금을 통한 동시성 제어 (크로스 플랫폼)
 @contextmanager
 def _file_lock(path: str):
     """파일 단위 Advisory Lock (읽기-수정-쓰기 경합 방지)"""
@@ -64,10 +63,25 @@ def _file_lock(path: str):
     _ensure_dir()
     fd = open(lock_path, "w")
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
+        if os.name == "nt":
+            # Windows: msvcrt 파일 잠금
+            import msvcrt
+            msvcrt.locking(fd.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            # Unix/macOS: fcntl 파일 잠금
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_EX)
         yield
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if os.name == "nt":
+            import msvcrt
+            try:
+                msvcrt.locking(fd.fileno(), msvcrt.LK_UNLCK, 1)
+            except OSError:
+                pass
+        else:
+            import fcntl
+            fcntl.flock(fd, fcntl.LOCK_UN)
         fd.close()
 
 
