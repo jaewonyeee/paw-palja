@@ -1,0 +1,26 @@
+# Core Agent & LLM
+langgraph
+langchain
+langchain-core
+langchain-google-genai
+langchain-openai
+google-generativeai
+pydantic>=2.0
+pydantic-settings
+python-dotenv
+
+# Backend
+fastapi
+uvicorn
+httpx
+bcrypt
+
+# Vector DB & RAG
+langchain-chroma
+chromadb
+tiktoken
+
+# Tools
+tavily-python
+requests
+apify-client

@@ -1,0 +1,33 @@
+# Environment & Secrets
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/
+
+# Data (user data, vector DB)
+data/
+
+# Build artifacts
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lock files (file-based locking)
+*.lock
+
+# IDE
+.vscode/
+.idea/
+
+# Legacy / temp
+_legacy/
+plan.md
+requirement.md

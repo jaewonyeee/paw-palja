@@ -1,0 +1,154 @@
+import { useState } from 'react'
+import { motion } from 'motion/react'
+import { api } from '../api'
+
+const pageTransition = {
+  initial: { opacity: 0, x: 40 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] } },
+  exit: { opacity: 0, x: -40, transition: { duration: 0.3 } },
+}
+
+export default function Login({ onLogin, onGoSignup }) {
+  const [userId, setUserId] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!userId.trim() || !password.trim()) return
+    setLoading(true)
+    setError('')
+    try {
+      const data = await api.login({ user_id: userId.trim(), password })
+      onLogin(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <motion.div {...pageTransition} style={styles.container}>
+      <div style={styles.header}>
+        <span style={styles.logo}>🐾</span>
+        <h2 style={styles.title}>다시 만나서 반가워요!</h2>
+        <p style={styles.subtitle}>로그인하고 오늘의 일기를 확인하세요</p>
+      </div>
+
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>아이디</label>
+          <input
+            className="input-field"
+            type="text"
+            placeholder="회원가입 시 발급된 아이디를 입력하세요"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+          />
+        </div>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>비밀번호</label>
+          <input
+            className="input-field"
+            type="password"
+            placeholder="비밀번호를 입력하세요"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={styles.error}
+          >
+            {error}
+          </motion.p>
+        )}
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          type="submit"
+          className="btn btn-primary"
+          disabled={loading}
+          style={{ width: '100%', marginTop: 8 }}
+        >
+          {loading ? <div className="spinner" style={{ width: 20, height: 20 }} /> : '로그인'}
+        </motion.button>
+      </form>
+
+      <div style={styles.footer}>
+        <span style={styles.footerText}>계정이 없으신가요?</span>
+        <button onClick={onGoSignup} className="btn btn-ghost" style={{ color: '#6C5CE7', fontWeight: 700 }}>
+          회원가입
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+const styles = {
+  container: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '60px 28px 28px',
+    background: 'var(--bg-primary)',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: 36,
+  },
+  logo: { fontSize: '2.5rem' },
+  title: {
+    fontSize: '1.5rem',
+    fontWeight: 800,
+    color: 'var(--text-primary)',
+    marginTop: 12,
+  },
+  subtitle: {
+    fontSize: '0.85rem',
+    color: 'var(--text-secondary)',
+    marginTop: 6,
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  label: {
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    paddingLeft: 4,
+  },
+  error: {
+    fontSize: '0.82rem',
+    color: '#E74C3C',
+    textAlign: 'center',
+    padding: '8px 12px',
+    background: '#FDF2F2',
+    borderRadius: 12,
+  },
+  footer: {
+    marginTop: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingBottom: 20,
+  },
+  footerText: {
+    fontSize: '0.85rem',
+    color: 'var(--text-muted)',
+  },
+}

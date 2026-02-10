@@ -1,0 +1,50 @@
+"""
+LLM Provider 전환 모듈
+환경변수 LLM_PROVIDER에 따라 Google Gemini 또는 Azure OpenAI를 반환합니다.
+"""
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def get_llm(temperature: float = 0.7):
+    """LLM_PROVIDER 환경변수에 따라 적절한 LLM 인스턴스를 반환합니다."""
+    provider = os.getenv("LLM_PROVIDER", "google").lower()
+
+    if provider == "azure":
+        from langchain_openai import AzureChatOpenAI
+        return AzureChatOpenAI(
+            azure_endpoint=os.getenv("AOAI_ENDPOINT"),
+            api_key=os.getenv("AOAI_API_KEY"),
+            azure_deployment=os.getenv("AOAI_DEPLOYMENT_NAME", "gpt-4o"),
+            api_version=os.getenv("AOAI_API_VERSION", "2024-06-01"),
+            temperature=temperature,
+        )
+    else:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            google_api_key=os.getenv("GOOGLE_API_KEY"),
+            temperature=temperature,
+        )
+
+
+def get_embeddings():
+    """LLM_PROVIDER 환경변수에 따라 적절한 Embedding 모델을 반환합니다."""
+    provider = os.getenv("LLM_PROVIDER", "google").lower()
+
+    if provider == "azure":
+        from langchain_openai import AzureOpenAIEmbeddings
+        return AzureOpenAIEmbeddings(
+            azure_endpoint=os.getenv("AOAI_ENDPOINT"),
+            api_key=os.getenv("AOAI_API_KEY"),
+            azure_deployment="text-embedding-ada-002",
+            api_version=os.getenv("AOAI_API_VERSION", "2024-06-01"),
+        )
+    else:
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        return GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001",
+            google_api_key=os.getenv("GOOGLE_API_KEY"),
+        )
