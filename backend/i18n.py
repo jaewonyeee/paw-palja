@@ -155,7 +155,7 @@ MESSAGES = {
         "ko": "카카오맵에서 '동물병원'을 검색하세요",
         "en": "Search for 'veterinary hospital' on Kakao Maps",
         "ja": "カカオマップで「動物病院」を検索してください",
-        "zh": "在Kakao地图上搜索"宠物医院"",
+        "zh": "在Kakao地图上搜索'宠物医院'",
         "es": "Busca 'hospital veterinario' en Kakao Maps",
     },
     # --- main.py ---
