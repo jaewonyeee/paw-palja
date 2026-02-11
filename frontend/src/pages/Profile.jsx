@@ -1,5 +1,5 @@
-import { motion } from 'motion/react'
-import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
@@ -27,12 +27,27 @@ export default function Profile() {
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
   const pushSupported = isPushSupported()
+  const [easterTaps, setEasterTaps] = useState(0)
+  const [showEasterEgg, setShowEasterEgg] = useState(false)
+  const easterTimeout = useRef(null)
 
   useEffect(() => {
     if (pushSupported) {
       isSubscribed().then(setPushEnabled)
     }
   }, [pushSupported])
+
+  const handleAvatarTap = () => {
+    const next = easterTaps + 1
+    setEasterTaps(next)
+    if (easterTimeout.current) clearTimeout(easterTimeout.current)
+    if (next >= 7) {
+      setShowEasterEgg(true)
+      setEasterTaps(0)
+    } else {
+      easterTimeout.current = setTimeout(() => setEasterTaps(0), 2000)
+    }
+  }
 
   const handleTogglePush = async () => {
     setPushLoading(true)
@@ -77,7 +92,7 @@ export default function Profile() {
       handleUserUpdate(updated)
       setEditingTime(false)
     } catch (err) {
-      alert('저장 실패: ' + err.message)
+      alert(t('common.error') + ': ' + err.message)
     } finally {
       setSaving(false)
     }
@@ -102,7 +117,9 @@ export default function Profile() {
           <motion.div
             animate={{ y: [0, -5, 0] }}
             transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-            style={styles.avatarBig}
+            style={{ ...styles.avatarBig, cursor: 'pointer', userSelect: 'none' }}
+            onClick={handleAvatarTap}
+            whileTap={{ scale: 0.9 }}
           >
             {dog.image ? (
               <img src={dog.image} alt="dog" style={styles.avatarImg} />
@@ -281,6 +298,9 @@ export default function Profile() {
               }} />
             </button>
           </div>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
+            {t('social.profileVisibleDesc', '프로필을 공개하면 다른 사용자가 내 프로필 페이지를 볼 수 있어요. 개별 일기의 공유는 일기 상세 페이지에서 별도로 설정할 수 있어요.')}
+          </p>
 
           <div style={{ marginTop: 12 }}>
             <span style={styles.infoLabel}>{t('social.bio')}</span>
@@ -348,6 +368,50 @@ export default function Profile() {
           </motion.button>
         </motion.div>
       </div>
+
+      {/* Easter Egg Modal */}
+      <AnimatePresence>
+        {showEasterEgg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={styles.easterOverlay}
+            onClick={() => setShowEasterEgg(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: 20 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              style={styles.easterModal}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={styles.easterHeader}>
+                <span style={{ fontSize: '1.5rem' }}>🤫</span>
+                <h3 style={styles.easterTitle}>{t('easter.title')}</h3>
+              </div>
+              <div style={styles.easterBody}>
+                <p style={styles.easterIntro}>{t('easter.intro')}</p>
+                <p style={styles.easterDilemma}>{t('easter.dilemma')}</p>
+                <p style={styles.easterPhilosophy}>{t('easter.philosophy')}</p>
+                <p style={styles.easterIdentity}>{t('easter.identity')}</p>
+                <p style={styles.easterClosing}>{t('easter.closing')} {t('easter.pawprint')}</p>
+              </div>
+              <div style={styles.easterFooter}>
+                <span style={styles.easterVersion}>{t('easter.version')}</span>
+              </div>
+              <button
+                onClick={() => setShowEasterEgg(false)}
+                style={styles.easterCloseBtn}
+              >
+                {t('common.close')}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -598,5 +662,112 @@ const styles = {
     transition: 'transform 0.2s',
     marginTop: 3,
     marginLeft: 3,
+  },
+  // Easter Egg
+  easterOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.4)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    padding: 20,
+  },
+  easterModal: {
+    background: 'linear-gradient(145deg, #FFF8F0, #FFF3E6)',
+    borderRadius: 20,
+    padding: '28px 24px 20px',
+    maxWidth: 360,
+    width: '100%',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,200,150,0.3)',
+    position: 'relative',
+    maxHeight: '80vh',
+    overflowY: 'auto',
+  },
+  easterHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 18,
+    paddingBottom: 14,
+    borderBottom: '1.5px dashed rgba(200,160,120,0.3)',
+  },
+  easterTitle: {
+    fontSize: '1.05rem',
+    fontWeight: 800,
+    color: '#8B6914',
+    margin: 0,
+  },
+  easterBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+  },
+  easterIntro: {
+    fontSize: '0.88rem',
+    lineHeight: 1.7,
+    color: '#6B5B3E',
+    margin: 0,
+    fontStyle: 'italic',
+  },
+  easterDilemma: {
+    fontSize: '0.88rem',
+    lineHeight: 1.7,
+    color: '#8B6914',
+    fontWeight: 600,
+    margin: 0,
+    padding: '10px 14px',
+    background: 'rgba(200,160,80,0.1)',
+    borderRadius: 12,
+    borderLeft: '3px solid rgba(200,160,80,0.4)',
+  },
+  easterPhilosophy: {
+    fontSize: '0.82rem',
+    lineHeight: 1.75,
+    color: '#6B5B3E',
+    margin: 0,
+  },
+  easterIdentity: {
+    fontSize: '0.82rem',
+    lineHeight: 1.75,
+    color: '#6B5B3E',
+    margin: 0,
+  },
+  easterClosing: {
+    fontSize: '0.88rem',
+    lineHeight: 1.7,
+    color: '#8B6914',
+    fontWeight: 600,
+    margin: 0,
+    textAlign: 'center',
+    paddingTop: 6,
+  },
+  easterFooter: {
+    marginTop: 18,
+    paddingTop: 12,
+    borderTop: '1.5px dashed rgba(200,160,120,0.3)',
+    textAlign: 'center',
+  },
+  easterVersion: {
+    fontSize: '0.7rem',
+    color: 'rgba(139,105,20,0.5)',
+    fontWeight: 600,
+  },
+  easterCloseBtn: {
+    display: 'block',
+    width: '100%',
+    marginTop: 14,
+    padding: '10px',
+    border: '1.5px solid rgba(200,160,120,0.3)',
+    borderRadius: 12,
+    background: 'transparent',
+    color: '#8B6914',
+    fontSize: '0.82rem',
+    fontWeight: 700,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
   },
 }

@@ -188,6 +188,11 @@ class SignupRequest(BaseModel):
     diary_time: str = Field(default="09:00", pattern=r"^\d{2}:\d{2}$")
 
 
+class UpdateUserRequest(BaseModel):
+    dog: Optional[DogProfile] = None
+    diary_time: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+
+
 class PushSubscribeRequest(BaseModel):
     endpoint: str = Field(max_length=2000)
     p256dh: str = Field(max_length=500)

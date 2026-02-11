@@ -17,7 +17,6 @@ export default function Home() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [tab, setTab] = useState('home')
   const [diaries, setDiaries] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -42,33 +41,24 @@ export default function Home() {
           <div style={styles.avatarWrap}>
             <span style={styles.avatar}>🐾</span>
           </div>
-          <div>
-            <div style={styles.tabs}>
-              <button onClick={() => setTab('home')} style={{ ...styles.tabBtn, ...(tab === 'home' ? styles.tabActive : {}) }}>Home</button>
-              <button onClick={() => setTab('entries')} style={{ ...styles.tabBtn, ...(tab === 'entries' ? styles.tabActive : {}) }}>Entries</button>
-            </div>
-          </div>
+          <h1 style={styles.headerTitle}>{t('common.appName', '포포자')}</h1>
         </div>
         <button onClick={() => navigate('/profile')} style={styles.settingsBtn}>⚙️</button>
       </div>
 
       {/* Content */}
       <div className="page-content" style={styles.content}>
-        {tab === 'home' ? (
-          <HomeTab
-            user={user}
-            diaries={diaries}
-            loading={loading}
-            hasTodayDiary={hasTodayDiary}
-          />
-        ) : (
-          <EntriesTab diaries={diaries} />
-        )}
+        <HomeTab
+          user={user}
+          diaries={diaries}
+          loading={loading}
+          hasTodayDiary={hasTodayDiary}
+        />
       </div>
 
       {/* Bottom tab bar */}
       <div className="tab-bar">
-        <button className={`tab-item ${tab === 'home' ? 'active' : ''}`} onClick={() => setTab('home')}>
+        <button className="tab-item active" onClick={() => navigate('/home')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           {t('home.tabHome', 'Home')}
         </button>
@@ -76,9 +66,9 @@ export default function Home() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
           {t('home.tabNew', 'New')}
         </button>
-        <button className={`tab-item ${tab === 'entries' ? 'active' : ''}`} onClick={() => setTab('entries')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
-          {t('home.tabEntries', 'Entries')}
+        <button className="tab-item" onClick={() => navigate('/social')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          {t('social.feed', '소셜')}
         </button>
         <button className="tab-item" onClick={() => navigate('/profile')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -92,6 +82,7 @@ export default function Home() {
 function HomeTab({ user, diaries, loading, hasTodayDiary }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [showAll, setShowAll] = useState(false)
   const today = new Date()
   const greeting = today.getHours() < 12
     ? t('home.greetingMorning', '좋은 아침이에요')
@@ -99,6 +90,8 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
     ? t('home.greetingAfternoon', '좋은 오후에요')
     : t('home.greetingEvening', '좋은 저녁이에요')
   const todayDiary = diaries.find((d) => d.date === todayString())
+
+  const visibleDiaries = showAll ? diaries : diaries.slice(0, 5)
 
   return (
     <div style={styles.homeTab}>
@@ -167,7 +160,7 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
           transition={{ delay: 0.3 }}
         >
           <h3 style={styles.sectionTitle}>{t('home.recentDiaries')}</h3>
-          {diaries.slice(0, 5).map((entry, i) => (
+          {visibleDiaries.map((entry, i) => (
             <motion.div
               key={entry.entry_id}
               initial={{ opacity: 0, y: 15 }}
@@ -177,38 +170,25 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
               <DiaryCard entry={entry} onClick={() => navigate(`/diary/${entry.entry_id}`, { state: { entry } })} />
             </motion.div>
           ))}
+          {!showAll && diaries.length > 5 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              style={styles.viewAllWrap}
+            >
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setShowAll(true)}
+                className="btn btn-secondary"
+                style={styles.viewAllBtn}
+              >
+                {t('home.viewAllDiaries', '모든 일기 보기')} ({diaries.length})
+              </motion.button>
+            </motion.div>
+          )}
         </motion.div>
       )}
-    </div>
-  )
-}
-
-function EntriesTab({ diaries }) {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-
-  if (!diaries.length) {
-    return (
-      <div style={styles.emptyState}>
-        <span style={{ fontSize: '3rem', opacity: 0.3 }}>📖</span>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{t('diary.noDiaries')}</p>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ padding: '16px 20px' }}>
-      <h3 style={styles.sectionTitle}>{t('home.allDiaries', '모든 일기')} ({diaries.length})</h3>
-      {diaries.map((entry, i) => (
-        <motion.div
-          key={entry.entry_id}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
-        >
-          <DiaryCard entry={entry} onClick={() => navigate('diary-detail', entry)} />
-        </motion.div>
-      ))}
     </div>
   )
 }
@@ -245,29 +225,10 @@ const styles = {
     border: '1.5px solid var(--border-card)',
   },
   avatar: { fontSize: '1.1rem' },
-  tabs: {
-    display: 'flex',
-    gap: 2,
-    background: 'rgba(240,160,75,0.08)',
-    borderRadius: 10,
-    padding: 2,
-  },
-  tabBtn: {
-    padding: '6px 14px',
-    borderRadius: 8,
-    border: 'none',
-    background: 'transparent',
-    fontFamily: 'inherit',
-    fontSize: '0.78rem',
-    fontWeight: 600,
-    color: 'var(--text-muted)',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  tabActive: {
-    background: 'white',
+  headerTitle: {
+    fontSize: '1rem',
+    fontWeight: 700,
     color: 'var(--text-primary)',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   },
   settingsBtn: {
     width: 36,
@@ -362,12 +323,13 @@ const styles = {
     justifyContent: 'center',
     padding: 40,
   },
-  emptyState: {
+  viewAllWrap: {
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
     justifyContent: 'center',
-    height: '60%',
-    gap: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  viewAllBtn: {
+    width: '100%',
   },
 }

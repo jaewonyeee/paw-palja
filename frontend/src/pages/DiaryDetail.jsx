@@ -95,7 +95,7 @@ export default function DiaryDetail() {
       /* ignore */
     }
     setCapturing(false)
-  }, [activeSection, entry.date, capturing])
+  }, [activeSection, entry?.date, capturing])
 
   const handleShare = async () => {
     setSharing(true)
@@ -150,13 +150,6 @@ export default function DiaryDetail() {
     }
   }, [entry?.entry_id, entry?.share_token])
 
-  const diary = entry.diary || {}
-  const horoscope = entry.horoscope || {}
-  const health = entry.health || {}
-  const comments = entry.comments || []
-
-  const dateStr = dateLabel(entry.date)
-
   // 🌐 Helper function: Get language-specific content
   const getLangText = (obj, field) => {
     if (!obj) return ''
@@ -173,8 +166,16 @@ export default function DiaryDetail() {
     return ''
   }
 
+  const diary = entry?.diary || {}
+  const horoscope = entry?.horoscope || {}
+  const health = entry?.health || {}
+  const comments = entry?.comments || []
+
+  const dateStr = dateLabel(entry?.date)
+
   // Show existing comments, then start SSE for new ones
   useEffect(() => {
+    if (!entry) return
     setVisibleComments(comments.length > 0 ? [...comments] : [])
 
     if (comments.length === 0 && entry.entry_id) {
@@ -202,7 +203,7 @@ export default function DiaryDetail() {
         esRef.current = null
       }
     }
-  }, [entry.entry_id])
+  }, [entry?.entry_id])
 
   const handleEdit = async () => {
     if (!editText.trim()) return
@@ -333,7 +334,7 @@ export default function DiaryDetail() {
                         onClick={() => setIsEditing(false)}
                         style={styles.editCancelBtn}
                       >
-                        취소
+                        {t('diary.cancelEdit')}
                       </button>
                       <motion.button
                         whileTap={{ scale: 0.97 }}
@@ -342,7 +343,7 @@ export default function DiaryDetail() {
                         disabled={editSaving}
                         style={{ flex: 1 }}
                       >
-                        {editSaving ? <div className="spinner" style={{ width: 18, height: 18 }} /> : '수정 완료'}
+                        {editSaving ? <div className="spinner" style={{ width: 18, height: 18 }} /> : t('diary.saveEdit')}
                       </motion.button>
                     </div>
                   </div>
@@ -399,7 +400,7 @@ export default function DiaryDetail() {
                         }}
                         style={styles.dropdownItem}
                       >
-                        ✏️ 수정하기
+                        ✏️ {t('diary.editDiaryBtn')}
                       </button>
                       <button
                         onClick={() => {
@@ -408,7 +409,7 @@ export default function DiaryDetail() {
                         }}
                         style={{ ...styles.dropdownItem, color: '#E74C3C' }}
                       >
-                        🗑️ 삭제하기
+                        🗑️ {t('diary.deleteDiary')}
                       </button>
                     </motion.div>
                   )}
@@ -432,22 +433,22 @@ export default function DiaryDetail() {
                       style={styles.confirmBox}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <p style={styles.confirmText}>이 일기를 삭제할까요?</p>
-                      <p style={styles.confirmSub}>삭제하면 되돌릴 수 없어요.</p>
+                      <p style={styles.confirmText}>{t('diary.deleteConfirmTitle')}</p>
+                      <p style={styles.confirmSub}>{t('diary.deleteConfirmMsg')}</p>
                       <div style={styles.confirmBtns}>
                         <button
                           onClick={() => setDeleteConfirm(false)}
                           disabled={deleting}
                           style={styles.confirmCancel}
                         >
-                          취소
+                          {t('common.cancel')}
                         </button>
                         <button
                           onClick={handleDelete}
                           disabled={deleting}
                           style={styles.confirmDelete}
                         >
-                          {deleting ? '삭제 중...' : '삭제'}
+                          {deleting ? t('diary.deleting') : t('common.delete')}
                         </button>
                       </div>
                     </motion.div>
@@ -539,7 +540,7 @@ export default function DiaryDetail() {
                       transition={{ repeat: Infinity, duration: 1.5 }}
                       style={styles.typingIndicator}
                     >
-                      <span>누군가 댓글을 쓰고 있어요</span>
+                      <span>{t('diary.loadingComments')}</span>
                       <span style={styles.dots}>...</span>
                     </motion.div>
                   )}
@@ -554,7 +555,7 @@ export default function DiaryDetail() {
                 disabled={capturing}
                 style={styles.captureBtn}
               >
-                {capturing ? '저장 중...' : '📸 캡처 / 공유'}
+                {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
               </motion.button>
             </motion.div>
           )}
@@ -616,7 +617,7 @@ export default function DiaryDetail() {
                 disabled={capturing}
                 style={styles.captureBtn}
               >
-                {capturing ? '저장 중...' : '📸 캡처 / 공유'}
+                {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
               </motion.button>
             </motion.div>
           )}
@@ -706,7 +707,7 @@ export default function DiaryDetail() {
                     >
                       {hospitalLoading ? (
                         <div className="spinner" style={{ width: 18, height: 18 }} />
-                      ) : hospitals.length > 0 ? '닫기' : '🏥 근처 동물병원 찾기'}
+                      ) : hospitals.length > 0 ? t('common.close') : `🏥 ${t('diary.findHospital')}`}
                     </motion.button>
 
                     <AnimatePresence>
@@ -746,7 +747,7 @@ export default function DiaryDetail() {
                 disabled={capturing}
                 style={styles.captureBtn}
               >
-                {capturing ? '저장 중...' : '📸 캡처 / 공유'}
+                {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
               </motion.button>
             </motion.div>
           )}

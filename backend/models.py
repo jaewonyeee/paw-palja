@@ -53,6 +53,7 @@ class DiaryEntry(Base):
     __tablename__ = "diary_entries"
     __table_args__ = (
         Index("ix_diary_user_date", "user_id", "date"),
+        Index("ix_diary_public_created", "is_public", "created_at"),
     )
 
     entry_id: Mapped[str] = mapped_column(

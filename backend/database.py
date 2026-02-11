@@ -1,8 +1,10 @@
 """
-Async PostgreSQL database engine and session management.
+Async database engine and session management.
+Supports PostgreSQL (production) and SQLite (local dev fallback).
 """
 import os
 import logging
+from pathlib import Path
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -10,10 +12,22 @@ logger = logging.getLogger("pawpalja.database")
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/pawpalja",
+    "sqlite+aiosqlite:///./data/pawpalja.db",
 )
 
-engine = create_async_engine(DATABASE_URL, echo=False, pool_size=5, max_overflow=10)
+_engine_kwargs: dict = {"echo": False}
+
+if DATABASE_URL.startswith("postgresql"):
+    _engine_kwargs.update(pool_size=5, max_overflow=10)
+else:
+    # SQLite doesn't support pool_size / max_overflow
+    logger.info("Using SQLite backend (local dev mode): %s", DATABASE_URL)
+    # Ensure the directory for the SQLite file exists
+    _sqlite_path = DATABASE_URL.split("///")[-1] if "///" in DATABASE_URL else None
+    if _sqlite_path:
+        Path(_sqlite_path).parent.mkdir(parents=True, exist_ok=True)
+
+engine = create_async_engine(DATABASE_URL, **_engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

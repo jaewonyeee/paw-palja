@@ -17,16 +17,20 @@ logger = logging.getLogger("pawpalja.tasks")
 
 
 def _redis_settings() -> RedisSettings:
-    """Parse REDIS_URL into ARQ RedisSettings."""
+    """Parse REDIS_URL into ARQ RedisSettings.
+
+    Supports both redis:// and rediss:// (TLS, used by DigitalOcean Managed Redis).
+    """
     url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    # redis://[:password@]host:port/db
     from urllib.parse import urlparse
     parsed = urlparse(url)
+    ssl = parsed.scheme == "rediss"
     return RedisSettings(
         host=parsed.hostname or "localhost",
-        port=parsed.port or 6379,
+        port=parsed.port or (6380 if ssl else 6379),
         database=int(parsed.path.lstrip("/") or "0"),
         password=parsed.password,
+        ssl=ssl,
     )
 
 

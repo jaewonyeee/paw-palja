@@ -1,9 +1,17 @@
-import { Capacitor } from '@capacitor/core';
+// Capacitor may not be available in plain browser builds (dev/PWA).
+// Guard the import so that web-only builds never crash.
+let _isNative = false;
+try {
+  const { Capacitor } = await import('@capacitor/core');
+  _isNative = Capacitor.isNativePlatform();
+} catch {
+  // @capacitor/core not resolvable — running as a plain web app
+}
 
 // For native mobile builds, use the absolute server URL.
 // Set VITE_API_BASE_URL in your .env or at build time for native targets.
 // Web builds behind a reverse proxy can keep the default relative path.
-const BASE = Capacitor.isNativePlatform()
+const BASE = _isNative
   ? (import.meta.env.VITE_API_BASE_URL || 'https://pawpalja.com/api/v1')
   : (import.meta.env.VITE_API_BASE_URL || '/api/v1');
 
@@ -157,6 +165,10 @@ export const api = {
 
   // --- Analysis ---
   analyze: (data) => request('/analyze', { method: 'POST', body: JSON.stringify(data) }),
+
+  // --- Social Feed ---
+  socialFeed: (limit = 20, offset = 0) =>
+    request(`/social/feed?limit=${limit}&offset=${offset}`),
 
   // --- Social / Sharing ---
   shareDiary: (entryId) =>

@@ -1,0 +1,39 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/android/
+
+# Git
+.git/
+.github/
+
+# IDE
+.vscode/
+.idea/
+
+# Runtime data (not baked into image)
+data/users/
+data/chroma/
+data/pawpalja.db
+logs/
+
+# Env files (secrets must not be in image)
+.env
+
+# Docs
+*.md
+!README.md
+
+# OS
+nul
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

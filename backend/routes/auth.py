@@ -11,7 +11,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.schemas import DogProfile, LoginRequest, SignupRequest, RefreshRequest
+from backend.schemas import LoginRequest, SignupRequest, RefreshRequest, UpdateUserRequest
 from backend import user_store
 from backend.database import get_db
 from backend.auth import (
@@ -166,8 +166,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 @router.put("/user/me")
 async def update_me(
     request: Request,
-    dog: DogProfile | None = None,
-    diary_time: str | None = None,
+    body: UpdateUserRequest,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -175,8 +174,8 @@ async def update_me(
     lang = get_lang(request)
     result = await user_store.update_user(
         db, current_user["user_id"],
-        dog.model_dump() if dog else None,
-        diary_time,
+        body.dog.model_dump() if body.dog else None,
+        body.diary_time,
         lang=lang,
     )
     if "error" in result:

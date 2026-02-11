@@ -6,8 +6,8 @@ WORKDIR /frontend
 # Copy frontend package files
 COPY frontend/package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (devDependencies needed for vite build)
+RUN npm ci
 
 # Copy frontend source
 COPY frontend/ ./
@@ -36,7 +36,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy backend code
 COPY backend/ ./backend/
-COPY data/ ./data/
+
+# Copy reference data (breeds, personas, etc.)
+COPY data/raw/ ./data/raw/
 
 # Copy built frontend from previous stage
 COPY --from=frontend-build /frontend/dist ./frontend/dist
@@ -44,8 +46,8 @@ COPY --from=frontend-build /frontend/dist ./frontend/dist
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
 
-# Create logs directory with proper ownership
-RUN mkdir -p logs && chown -R appuser:appuser /app
+# Create runtime directories with proper ownership
+RUN mkdir -p logs data/users data/chroma && chown -R appuser:appuser /app
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

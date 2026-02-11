@@ -8,6 +8,7 @@ import Signup from './pages/Signup'
 import Home from './pages/Home'
 import NewDiary from './pages/NewDiary'
 import DiaryDetail from './pages/DiaryDetail'
+import Social from './pages/Social'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import SharedDiary from './pages/SharedDiary'
@@ -60,6 +61,7 @@ function AppRoutes() {
           <Route path="/home" element={<Home />} />
           <Route path="/diary/new" element={<NewDiary />} />
           <Route path="/diary/:entryId" element={<DiaryDetail />} />
+          <Route path="/social" element={<Social />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<Admin />} />
         </Route>

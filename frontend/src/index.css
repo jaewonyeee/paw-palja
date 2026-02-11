@@ -83,10 +83,35 @@ body {
 /* Remove focus outline on mouse click, keep for keyboard nav */
 button:focus, [role="button"]:focus {
   outline: none;
+  box-shadow: none;
 }
 button:focus-visible, [role="button"]:focus-visible {
   outline: 2px solid var(--bg-purple);
   outline-offset: 2px;
+}
+/* Prevent black border on touch/tap for all buttons */
+button {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+button:active {
+  outline: none;
+}
+
+/* Time picker buttons - prevent persistent black border on all states */
+.time-btn,
+.time-btn:focus,
+.time-btn:active,
+.time-btn:hover,
+.time-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.time-btn:focus:not(.time-btn-active) {
+  border-color: rgba(240, 160, 75, 0.25) !important;
 }
 
 /* Buttons */

@@ -1,15 +1,17 @@
 """
-Social features: share diary entries via public links and public profiles.
+Social features: share diary entries via public links, public profiles, and social feed.
 """
 import secrets
 import logging
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database import get_db
-from backend.auth import get_current_user
+from backend.auth import get_current_user, decode_token
 from backend.models import User, DiaryEntry, DogProfile
 from backend.user_store import _dog_to_dict
 from backend.i18n import get_message, get_lang
@@ -17,6 +19,116 @@ from backend.i18n import get_message, get_lang
 logger = logging.getLogger("pawpalja.social")
 
 router = APIRouter(tags=["social"])
+
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def _get_optional_user_id(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_optional_bearer),
+) -> Optional[str]:
+    """Extract user_id from Bearer token if present; return None otherwise."""
+    if credentials is None:
+        return None
+    try:
+        lang = get_lang(request)
+        payload = decode_token(credentials.credentials, lang)
+        if payload.get("type") != "access":
+            return None
+        return payload.get("sub")
+    except HTTPException:
+        return None
+
+
+# ---- Social Feed ----
+
+@router.get("/social/feed")
+async def social_feed(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    include_mine: bool = Query(default=False),
+    current_user_id: Optional[str] = Depends(_get_optional_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return public diary entries from users with public profiles.
+
+    Supports pagination via limit/offset. If a logged-in user passes
+    include_mine=false (default), their own entries are excluded.
+    """
+    # Base filter: public entries from users with public profiles
+    base_conditions = [
+        DiaryEntry.is_public == True,  # noqa: E712
+        User.is_profile_public == True,  # noqa: E712
+    ]
+
+    # Optionally exclude the current user's own entries
+    if current_user_id and not include_mine:
+        base_conditions.append(DiaryEntry.user_id != current_user_id)
+
+    # Count total matching entries
+    count_stmt = (
+        select(func.count())
+        .select_from(DiaryEntry)
+        .join(User, DiaryEntry.user_id == User.user_id)
+        .where(*base_conditions)
+    )
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar() or 0
+
+    # Fetch paginated entries with user + dog info
+    items_stmt = (
+        select(DiaryEntry, User, DogProfile)
+        .join(User, DiaryEntry.user_id == User.user_id)
+        .outerjoin(DogProfile, DogProfile.user_id == User.user_id)
+        .where(*base_conditions)
+        .order_by(DiaryEntry.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    items_result = await db.execute(items_stmt)
+    rows = items_result.all()
+
+    items = []
+    for entry, user, dog in rows:
+        diary_data = entry.diary or {}
+        horoscope_data = entry.horoscope or {}
+        comments_list = entry.comments or []
+
+        # Don't send full base64 dog images in feed (too heavy)
+        dog_image = None
+
+        items.append({
+            "entry_id": entry.entry_id,
+            "date": entry.date,
+            "share_token": entry.share_token,
+            "diary": {
+                "title_ko": diary_data.get("title_ko", ""),
+                "title_en": diary_data.get("title_en", ""),
+                "content_ko": diary_data.get("content_ko", ""),
+                "content_en": diary_data.get("content_en", ""),
+                "mood_icon": diary_data.get("mood_icon", ""),
+            },
+            "horoscope": {
+                "summary_ko": horoscope_data.get("summary_ko", ""),
+                "summary_en": horoscope_data.get("summary_en", ""),
+            },
+            "user": {
+                "user_id": user.user_id,
+                "nickname": user.nickname,
+                "dog_name": dog.name if dog else None,
+                "dog_breed": dog.breed if dog else None,
+                "dog_image": dog_image,
+            },
+            "comments_count": len(comments_list),
+            "created_at": entry.created_at.isoformat() if entry.created_at else None,
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "has_more": (offset + limit) < total,
+    }
 
 
 # ---- Share / Unshare a diary entry ----

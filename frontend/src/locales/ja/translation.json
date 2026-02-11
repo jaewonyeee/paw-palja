@@ -116,7 +116,9 @@
     "findHospital": "近くの病院を探す",
     "searching": "検索中...",
     "noHospitals": "近くに病院が見つかりません",
-    "newCommentAlert": "💬 新しいコメント！"
+    "newCommentAlert": "💬 新しいコメント！",
+    "noContent": "日記の内容がまだありません",
+    "commentCount": "{{count}}件のコメント"
   },
   "profile": {
     "title": "プロフィール",
@@ -127,7 +129,11 @@
     "adminDashboard": "管理者ダッシュボード",
     "languageSettings": "言語設定",
     "selectLanguage": "言語を選択",
-    "savingChanges": "変更を保存中..."
+    "savingChanges": "変更を保存中...",
+    "pushNotifications": "プッシュ通知",
+    "enablePush": "日記リマインダー",
+    "testPush": "テスト通知を送信",
+    "pushError": "通知エラー"
   },
   "home": {
     "welcome": "Paw-Paljaへようこそ！",
@@ -146,7 +152,8 @@
     "noDiaryYet": "今日の日記はまだありません",
     "recordToday": "{{name}}の今日を記録しませんか？",
     "createTodayDiary": "今日の日記を作成",
-    "allDiaries": "すべての日記"
+    "allDiaries": "すべての日記",
+    "viewAllDiaries": "すべての日記を見る"
   },
   "onboarding": {
     "title": "🐾 Paw-Palja",
@@ -253,11 +260,26 @@
     "ctaButton": "始める",
     "publicProfile": "公開プロフィール",
     "profileVisible": "プロフィールを公開する",
+    "profileVisibleDesc": "プロフィールを公開すると、他のユーザーがあなたのプロフィールページを閲覧できます。個別の日記の共有は、日記の詳細ページで別途設定できます。",
     "bio": "自己紹介",
     "bioPlaceholder": "あなたとペットについて簡単に紹介してください...",
     "profileLink": "公開リンク",
     "publicDiaries": "公開日記",
-    "recentDiaries": "最近の公開日記"
+    "recentDiaries": "最近の公開日記",
+    "feed": "ソーシャル",
+    "emptyFeed": "まだ公開された日記がありません",
+    "feedTitle": "他のわんちゃんたちの一日"
+  },
+  "easter": {
+    "title": "開発者の秘密ノート",
+    "found": "秘密のノートを見つけました！",
+    "intro": "実は開発者が最近悩んでいることがあるんです...",
+    "dilemma": "この空間に人間のコメントを許可するか、それともAIだけの純粋な反応を守るか...",
+    "philosophy": "考えてみると、このアプリはちょっと独特です。人が記録して、AIが読んで反応する — オラクル、ジャーナリスト、獣医がそれぞれの視点で日記を読んでくれるんです。",
+    "identity": "人のコメントが混ざると、この静かで温かいAIだけの空間が変わってしまうかもしれません。だから今はこのままがいいと思っています。",
+    "closing": "この悩みは続きます...もしかしたらあなたの意見が正解かも？",
+    "version": "v0.1 - made with ❤️",
+    "pawprint": "🐾"
   },
   "language": {
     "korean": "韓国語",

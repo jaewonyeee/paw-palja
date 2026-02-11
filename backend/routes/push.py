@@ -12,7 +12,7 @@ from pywebpush import webpush, WebPushException
 
 from backend.database import get_db
 from backend.auth import get_current_user
-from backend.models import PushSubscription, User
+from backend.models import PushSubscription
 from backend.schemas import PushSubscribeRequest
 
 logger = logging.getLogger("pawpalja.push")
@@ -35,13 +35,14 @@ async def get_vapid_public_key():
 @router.post("/push/subscribe")
 async def push_subscribe(
     req: PushSubscribeRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Save or update a push subscription for the current user."""
+    user_id = current_user["user_id"]
     # Check if this endpoint already exists for this user
     stmt = select(PushSubscription).where(
-        PushSubscription.user_id == current_user.user_id,
+        PushSubscription.user_id == user_id,
         PushSubscription.endpoint == req.endpoint,
     )
     result = await db.execute(stmt)
@@ -52,7 +53,7 @@ async def push_subscribe(
         existing.auth_key = req.auth_key
     else:
         sub = PushSubscription(
-            user_id=current_user.user_id,
+            user_id=user_id,
             endpoint=req.endpoint,
             p256dh=req.p256dh,
             auth_key=req.auth_key,
@@ -65,12 +66,12 @@ async def push_subscribe(
 
 @router.delete("/push/unsubscribe")
 async def push_unsubscribe(
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Remove all push subscriptions for the current user."""
     stmt = delete(PushSubscription).where(
-        PushSubscription.user_id == current_user.user_id
+        PushSubscription.user_id == current_user["user_id"]
     )
     await db.execute(stmt)
     await db.commit()
@@ -79,12 +80,13 @@ async def push_unsubscribe(
 
 @router.post("/push/test")
 async def push_test(
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Send a test push notification to the current user."""
+    user_id = current_user["user_id"]
     stmt = select(PushSubscription).where(
-        PushSubscription.user_id == current_user.user_id
+        PushSubscription.user_id == user_id
     )
     result = await db.execute(stmt)
     subscriptions = result.scalars().all()
@@ -92,9 +94,8 @@ async def push_test(
     if not subscriptions:
         raise HTTPException(status_code=404, detail="No push subscription found")
 
-    dog_name = ""
-    if current_user.dog_profile:
-        dog_name = current_user.dog_profile.name
+    dog = current_user.get("dog", {})
+    dog_name = dog.get("name", "") if dog else ""
 
     payload = json.dumps({
         "title": "Paw-Palja",

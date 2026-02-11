@@ -9,12 +9,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
-COMPOSE_FILE="docker-compose.prod.yml"
-CLOUD_FLAG=""
+COMPOSE_ARGS=("-f" "docker-compose.prod.yml")
 
 if [[ "${1:-}" == "--cloud" ]]; then
-    COMPOSE_FILE="docker-compose.prod.yml -f docker-compose.cloud.yml"
-    CLOUD_FLAG="--cloud"
+    COMPOSE_ARGS+=("-f" "docker-compose.cloud.yml")
     echo "[deploy] Cloud mode: using managed DB + Redis"
 fi
 
@@ -34,22 +32,22 @@ fi
 
 # ── Build images ────────────────────────────────────────────
 echo "[deploy] Building Docker images..."
-docker compose -f $COMPOSE_FILE build --parallel
+docker compose "${COMPOSE_ARGS[@]}" build --parallel
 
 # ── Rolling restart (zero-downtime) ─────────────────────────
 # Restart backend first while nginx keeps serving old version
 echo "[deploy] Restarting backend..."
-docker compose -f $COMPOSE_FILE up -d --no-deps --wait backend
+docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps --wait backend
 
 # If worker service exists, restart it too
-if docker compose -f $COMPOSE_FILE config --services 2>/dev/null | grep -q worker; then
+if docker compose "${COMPOSE_ARGS[@]}" config --services 2>/dev/null | grep -q worker; then
     echo "[deploy] Restarting worker..."
-    docker compose -f $COMPOSE_FILE up -d --no-deps worker
+    docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps worker
 fi
 
 # Finally restart nginx to pick up any config changes
 echo "[deploy] Restarting nginx..."
-docker compose -f $COMPOSE_FILE up -d --no-deps nginx
+docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps nginx
 
 # ── Health check ────────────────────────────────────────────
 echo "[deploy] Waiting for health check..."
@@ -58,7 +56,7 @@ if curl -sf http://localhost/health > /dev/null 2>&1; then
     echo "[deploy] Deployment successful! Health check passed."
 else
     echo "[deploy] WARNING: Health check failed. Check logs:"
-    echo "  docker compose -f $COMPOSE_FILE logs --tail=50 backend"
+    echo "  docker compose ${COMPOSE_ARGS[*]} logs --tail=50 backend"
     exit 1
 fi
 

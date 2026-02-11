@@ -116,7 +116,9 @@
     "findHospital": "Buscar hospital cercano",
     "searching": "Buscando...",
     "noHospitals": "No se encontraron hospitales",
-    "newCommentAlert": "💬 ¡Nuevo comentario!"
+    "newCommentAlert": "💬 ¡Nuevo comentario!",
+    "noContent": "Aún no hay contenido en el diario",
+    "commentCount": "{{count}} comentarios"
   },
   "profile": {
     "title": "Perfil",
@@ -127,7 +129,11 @@
     "adminDashboard": "Panel de administración",
     "languageSettings": "Configuración de idioma",
     "selectLanguage": "Seleccionar idioma",
-    "savingChanges": "Guardando cambios..."
+    "savingChanges": "Guardando cambios...",
+    "pushNotifications": "Notificaciones push",
+    "enablePush": "Recordatorios de diario",
+    "testPush": "Enviar notificación de prueba",
+    "pushError": "Error de notificación"
   },
   "home": {
     "welcome": "¡Bienvenido a Paw-Palja!",
@@ -146,7 +152,8 @@
     "noDiaryYet": "Aún no hay diario para hoy",
     "recordToday": "¿Registramos el día de {{name}}?",
     "createTodayDiary": "Crear diario de hoy",
-    "allDiaries": "Todos los diarios"
+    "allDiaries": "Todos los diarios",
+    "viewAllDiaries": "Ver todos los diarios"
   },
   "onboarding": {
     "title": "🐾 Paw-Palja",
@@ -253,11 +260,26 @@
     "ctaButton": "Comenzar",
     "publicProfile": "Perfil publico",
     "profileVisible": "Hacer perfil publico",
+    "profileVisibleDesc": "Al hacer tu perfil público, otros usuarios pueden ver tu página de perfil. El compartir diarios individuales se configura por separado en la página de detalle de cada diario.",
     "bio": "Bio",
     "bioPlaceholder": "Escribe una breve descripcion sobre ti y tu mascota...",
     "profileLink": "Enlace publico",
     "publicDiaries": "Diarios publicos",
-    "recentDiaries": "Diarios publicos recientes"
+    "recentDiaries": "Diarios publicos recientes",
+    "feed": "Social",
+    "emptyFeed": "Aun no hay diarios publicos",
+    "feedTitle": "El dia de otros perritos"
+  },
+  "easter": {
+    "title": "Nota secreta del desarrollador",
+    "found": "¡Encontraste una nota secreta!",
+    "intro": "El desarrollador ha estado pensando en algo últimamente...",
+    "dilemma": "¿Deberíamos permitir comentarios humanos aquí, o preservar este espacio puro de respuestas solo de IA?",
+    "philosophy": "Piénsalo — esta app es única. Los humanos registran, y la IA lee y responde. Oracle, Journalist, Vet — cada uno lee tu diario desde su propia perspectiva.",
+    "identity": "Si se mezclaran comentarios humanos, este espacio tranquilo y cálido solo de IA podría cambiar. Así que por ahora, creemos que es mejor así.",
+    "closing": "Este dilema continúa... ¿Quizás tu opinión sea la respuesta?",
+    "version": "v0.1 - made with ❤️",
+    "pawprint": "🐾"
   },
   "language": {
     "korean": "Coreano",

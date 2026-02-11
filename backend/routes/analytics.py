@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func, extract
+from sqlalchemy import select, func, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database import get_db
@@ -105,16 +105,26 @@ async def analytics_engagement(
     avg_diaries = round(total_diaries / max(total_users, 1), 2)
 
     # Most active hours (diary creation hour distribution)
+    # Use strftime for SQLite compatibility (extract() is PostgreSQL-only)
+    import os as _os
+    _db_url = _os.getenv("DATABASE_URL", "")
+    if _db_url.startswith("postgresql"):
+        from sqlalchemy import extract as sa_extract
+        _hour_expr = sa_extract("hour", DiaryEntry.created_at).label("hour")
+    else:
+        # SQLite: strftime returns a string, cast to integer for grouping
+        _hour_expr = func.cast(func.strftime("%H", DiaryEntry.created_at), Integer).label("hour")
+
     hour_stmt = (
         select(
-            extract("hour", DiaryEntry.created_at).label("hour"),
+            _hour_expr,
             func.count(DiaryEntry.entry_id).label("count"),
         )
-        .group_by("hour")
+        .group_by(_hour_expr)
         .order_by(func.count(DiaryEntry.entry_id).desc())
     )
     hour_result = await db.execute(hour_stmt)
-    active_hours = [{"hour": int(row.hour), "count": row.count} for row in hour_result.all()]
+    active_hours = [{"hour": int(row.hour) if row.hour is not None else 0, "count": row.count} for row in hour_result.all()]
 
     # Retention: % of users who created a diary in the last 7 days
     active_last_7 = (await db.execute(

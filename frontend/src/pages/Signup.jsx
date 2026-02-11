@@ -325,6 +325,7 @@ export default function Signup() {
                     {HOURS.map((h) => (
                       <motion.button
                         key={h}
+                        className="time-btn"
                         whileTap={{ scale: 0.93 }}
                         onClick={() => setHour(h)}
                         style={{ ...styles.timeItem, ...(h === hour ? styles.timeItemActive : {}) }}
@@ -341,6 +342,7 @@ export default function Signup() {
                     {MINUTES.map((m) => (
                       <motion.button
                         key={m}
+                        className="time-btn"
                         whileTap={{ scale: 0.93 }}
                         onClick={() => setMinute(m)}
                         style={{ ...styles.timeItem, ...(m === minute ? styles.timeItemActive : {}) }}

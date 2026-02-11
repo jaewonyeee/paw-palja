@@ -116,7 +116,9 @@
     "findHospital": "查找附近医院",
     "searching": "搜索中...",
     "noHospitals": "附近没有医院",
-    "newCommentAlert": "💬 有新评论！"
+    "newCommentAlert": "💬 有新评论！",
+    "noContent": "日记内容还没有哦",
+    "commentCount": "{{count}}条评论"
   },
   "profile": {
     "title": "个人资料",
@@ -127,7 +129,11 @@
     "adminDashboard": "管理员面板",
     "languageSettings": "语言设置",
     "selectLanguage": "选择语言",
-    "savingChanges": "正在保存..."
+    "savingChanges": "正在保存...",
+    "pushNotifications": "推送通知",
+    "enablePush": "日记提醒",
+    "testPush": "发送测试通知",
+    "pushError": "通知错误"
   },
   "home": {
     "welcome": "欢迎来到Paw-Palja！",
@@ -146,7 +152,8 @@
     "noDiaryYet": "今天还没有写日记",
     "recordToday": "记录一下{{name}}的今天吧？",
     "createTodayDiary": "写今天的日记",
-    "allDiaries": "所有日记"
+    "allDiaries": "所有日记",
+    "viewAllDiaries": "查看所有日记"
   },
   "onboarding": {
     "title": "🐾 Paw-Palja",
@@ -253,11 +260,26 @@
     "ctaButton": "开始",
     "publicProfile": "公开资料",
     "profileVisible": "公开个人资料",
+    "profileVisibleDesc": "公开个人资料后，其他用户可以查看你的个人主页。单独日记的分享可以在日记详情页面另行设置。",
     "bio": "简介",
     "bioPlaceholder": "简单介绍你和你的宠物...",
     "profileLink": "公开链接",
     "publicDiaries": "公开日记",
-    "recentDiaries": "最近公开的日记"
+    "recentDiaries": "最近公开的日记",
+    "feed": "社交",
+    "emptyFeed": "还没有公开的日记",
+    "feedTitle": "其他狗狗的一天"
+  },
+  "easter": {
+    "title": "开发者的秘密笔记",
+    "found": "你发现了一个秘密笔记！",
+    "intro": "其实开发者最近一直在思考一个问题...",
+    "dilemma": "是否应该允许人类在这里评论，还是保留这个纯AI回应的空间？",
+    "philosophy": "仔细想想，这个应用很独特。人类记录，AI阅读并回应 — Oracle、Journalist、Vet各自用不同的视角阅读你的日记。",
+    "identity": "如果人类的评论混入其中，这个安静温暖的AI专属空间可能会改变。所以目前，我们觉得这样更好。",
+    "closing": "这个思考还在继续...也许你的意见就是答案？",
+    "version": "v0.1 - made with ❤️",
+    "pawprint": "🐾"
   },
   "language": {
     "korean": "韩语",

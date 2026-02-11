@@ -197,7 +197,7 @@ export default function NewDiary() {
       {/* Header */}
       <div style={styles.header}>
         <button onClick={() => step > 0 ? setStep(step - 1) : navigate('/home')} className="btn btn-ghost">
-          ← {step > 0 ? '이전' : '뒤로'}
+          ← {step > 0 ? t('auth.backBtn') : t('common.back')}
         </button>
         <span style={styles.stepCount}>{step + 1} / {totalSteps}</span>
         <div style={{ width: 60 }} />
@@ -303,7 +303,7 @@ export default function NewDiary() {
                 <div style={styles.notesWrap}>
                   <textarea
                     className="input-field"
-                    placeholder="특별한 일이 있었다면 적어주세요 (선택사항)"
+                    placeholder={t('diary.notesQuestion')}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={4}
@@ -327,7 +327,7 @@ export default function NewDiary() {
                         onClick={() => photoRef.current?.click()}
                         style={styles.photoAddBtn}
                       >
-                        📷 사진 첨부 (선택)
+                        📷 {t('diary.addPhoto')}
                       </motion.button>
                     )}
                     <input
@@ -339,7 +339,7 @@ export default function NewDiary() {
                         const file = e.target.files?.[0]
                         if (!file) return
                         if (file.size > 3 * 1024 * 1024) {
-                          alert('이미지는 3MB 이하만 가능합니다.')
+                          alert(t('auth.imageSizeLimit'))
                           return
                         }
                         const reader = new FileReader()
@@ -379,7 +379,7 @@ export default function NewDiary() {
             opacity: (canProceed() || isLastStep) ? 1 : 0.5,
           }}
         >
-          {isLastStep ? '✨ AI 일기 만들기' : '다음'}
+          {isLastStep ? `✨ ${t('home.createTodayDiary')}` : t('auth.nextBtn')}
         </motion.button>
       </div>
     </motion.div>

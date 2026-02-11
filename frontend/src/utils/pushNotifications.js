@@ -1,7 +1,15 @@
-import { Capacitor } from '@capacitor/core'
 import { api } from '../api'
 
-const isNative = Capacitor.isNativePlatform()
+// Guard Capacitor import for plain browser / PWA builds
+let isNative = false
+let _Capacitor = null
+try {
+  const mod = await import('@capacitor/core')
+  _Capacitor = mod.Capacitor
+  isNative = _Capacitor.isNativePlatform()
+} catch {
+  // @capacitor/core not available — treat as web
+}
 
 // ---------------------------------------------------------------------------
 // Web Push helpers (kept for browser / PWA usage)
@@ -86,9 +94,9 @@ export async function subscribeToPush() {
       PushNotifications.addListener('registration', async (token) => {
         try {
           await api.pushSubscribe({
-            endpoint: `native://${Capacitor.getPlatform()}`,
+            endpoint: `native://${_Capacitor.getPlatform()}`,
             p256dh: token.value,
-            auth_key: Capacitor.getPlatform(),
+            auth_key: _Capacitor.getPlatform(),
           })
           resolve(token)
         } catch (err) {

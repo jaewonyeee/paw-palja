@@ -116,7 +116,9 @@
     "findHospital": "Find Nearby Hospital",
     "searching": "Searching...",
     "noHospitals": "No hospitals found",
-    "newCommentAlert": "💬 New comment!"
+    "newCommentAlert": "💬 New comment!",
+    "noContent": "No diary content yet",
+    "commentCount": "{{count}} comments"
   },
   "profile": {
     "title": "Profile",
@@ -150,7 +152,8 @@
     "noDiaryYet": "No diary for today yet",
     "recordToday": "Let's record {{name}}'s day today?",
     "createTodayDiary": "Create Today's Diary",
-    "allDiaries": "All Diaries"
+    "allDiaries": "All Diaries",
+    "viewAllDiaries": "View all diaries"
   },
   "onboarding": {
     "title": "🐾 Paw-Palja",
@@ -257,11 +260,26 @@
     "ctaButton": "Get Started",
     "publicProfile": "Public Profile",
     "profileVisible": "Make profile public",
+    "profileVisibleDesc": "When your profile is public, other users can view your profile page. Sharing individual diaries can be set separately from each diary's detail page.",
     "bio": "Bio",
     "bioPlaceholder": "Write a short bio about yourself and your dog...",
     "profileLink": "Public link",
     "publicDiaries": "Public Diaries",
-    "recentDiaries": "Recent Public Diaries"
+    "recentDiaries": "Recent Public Diaries",
+    "feed": "Social",
+    "emptyFeed": "No public diaries yet",
+    "feedTitle": "Other pups' days"
+  },
+  "easter": {
+    "title": "Developer's Secret Note",
+    "found": "You found a secret note!",
+    "intro": "The developer has been pondering something lately...",
+    "dilemma": "Should human comments be allowed here, or should we preserve this pure AI-only response space?",
+    "philosophy": "Think about it — this app is unique. Humans record, and AI reads and responds. Oracle, Journalist, Vet — each reads your diary through their own lens.",
+    "identity": "If human comments were mixed in, this quiet, warm AI-only space might change. So for now, we think it's better this way.",
+    "closing": "This dilemma continues... Maybe your opinion is the answer?",
+    "version": "v0.1 - made with ❤️",
+    "pawprint": "🐾"
   },
   "language": {
     "korean": "Korean",

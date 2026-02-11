@@ -222,7 +222,7 @@ Based on the above, generate today's fortune in BOTH Korean and English!"""
         sender="oracle",
         receiver="all",
         memo_type="context",
-        content=f"오늘 날씨: {weather_str}. 운세 키워드: {result.summary}. 트렌드: {trend_data[:100]}",
+        content=f"오늘 날씨: {weather_str}. 운세 키워드: {result.summary_ko}. 트렌드: {str(trend_data)[:100]}",
     ))
 
     return {"horoscope": result_dict, "agent_memos": memos}
@@ -510,7 +510,7 @@ def vet_agent(state: AgentState):
             sender="vet",
             receiver="oracle",
             memo_type="alert",
-            content=f"건강 위험 감지! 위험도: {result.risk_level.value}. {result.conclusion}",
+            content=f"건강 위험 감지! 위험도: {result.risk_level.value}. {result.conclusion_ko}",
             priority="high",
         ))
 

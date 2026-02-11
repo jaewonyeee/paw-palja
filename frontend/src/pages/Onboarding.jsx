@@ -67,10 +67,10 @@ export default function Onboarding() {
           style={styles.features}
         >
           {[
-            { icon: '🔮', label: 'AI 운세' },
-            { icon: '📖', label: '1인칭 일기' },
-            { icon: '🩺', label: '건강 분석' },
-            { icon: '💬', label: '댓글 반응' },
+            { icon: '🔮', label: t('diary.horoscope') },
+            { icon: '📖', label: t('diary.title') },
+            { icon: '🩺', label: t('diary.health') },
+            { icon: '💬', label: t('diary.comments') },
           ].map((f, i) => (
             <motion.div
               key={f.label}

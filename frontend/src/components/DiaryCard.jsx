@@ -1,12 +1,34 @@
 import { motion } from 'motion/react'
+import { useTranslation } from 'react-i18next'
 import { formatDate, MOOD_MAP } from '../utils/date'
 
+// Safely get text: checks i18n fields, filters out Python "None" string and null
+function safeText(obj, field, lang) {
+  if (!obj) return ''
+  const candidates = [
+    obj[`${field}_${lang}`],
+    obj[field],
+    obj[`${field}_ko`],
+    obj[`${field}_en`],
+  ]
+  for (const v of candidates) {
+    if (v && typeof v === 'string' && v !== 'None' && v.trim()) return v
+  }
+  return ''
+}
+
 export default function DiaryCard({ entry, onClick, isToday }) {
+  const { t, i18n } = useTranslation()
   const diary = entry.diary || {}
   const horoscope = entry.horoscope || {}
   const comments = entry.comments || []
   const date = formatDate(entry.date || new Date().toISOString())
   const moodIcon = MOOD_MAP[diary.mood_icon] || '✨'
+  const lang = i18n.language
+
+  const title = safeText(diary, 'title', lang) || t('diary.todayDiary', '오늘의 일기')
+  const content = safeText(diary, 'content', lang)
+  const summary = safeText(horoscope, 'summary', lang)
 
   return (
     <motion.div
@@ -19,9 +41,9 @@ export default function DiaryCard({ entry, onClick, isToday }) {
       <div style={styles.cardDateWrap}>
         <div style={styles.cardDate}>
           <span style={styles.cardDateNum}>{date.day}</span>
-          <span style={styles.cardDateMonth}>{date.month}월</span>
+          <span style={styles.cardDateMonth}>{t('home.monthSuffix', '{{month}}월', { month: date.month })}</span>
         </div>
-        <span style={styles.cardDayBadge}>{date.dayName}요일</span>
+        <span style={styles.cardDayBadge}>{date.dayName}</span>
         {isToday && <span style={styles.todayBadge}>TODAY</span>}
       </div>
 
@@ -29,17 +51,23 @@ export default function DiaryCard({ entry, onClick, isToday }) {
       <div style={styles.cardBody}>
         <div style={styles.cardTitleRow}>
           <span style={{ fontSize: '1.2rem' }}>{moodIcon}</span>
-          <h4 style={styles.cardTitle}>{diary.title || '오늘의 일기'}</h4>
+          <h4 style={styles.cardTitle}>{title}</h4>
         </div>
-        <p style={styles.cardContent}>
-          {(diary.content || '').slice(0, 100)}{(diary.content || '').length > 100 ? '...' : ''}
-        </p>
+        {content ? (
+          <p style={styles.cardContent}>
+            {content.slice(0, 100)}{content.length > 100 ? '...' : ''}
+          </p>
+        ) : (
+          <p style={{ ...styles.cardContent, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+            {t('diary.noContent', '일기 내용이 아직 없어요')}
+          </p>
+        )}
 
         {/* Fortune tag */}
-        {horoscope.summary && (
+        {summary && (
           <div style={styles.fortuneTag}>
             <span>🔮</span>
-            <span style={styles.fortuneText}>{horoscope.summary}</span>
+            <span style={styles.fortuneText}>{summary}</span>
           </div>
         )}
 
@@ -49,7 +77,7 @@ export default function DiaryCard({ entry, onClick, isToday }) {
             {comments.slice(0, 3).map((c, i) => (
               <span key={i} style={styles.commentAvatar}>{c.emoji}</span>
             ))}
-            <span style={styles.commentCount}>{comments.length}개의 댓글</span>
+            <span style={styles.commentCount}>{t('diary.commentCount', '{{count}}개의 댓글', { count: comments.length })}</span>
           </div>
         )}
       </div>
