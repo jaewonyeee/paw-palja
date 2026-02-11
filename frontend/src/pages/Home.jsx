@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { todayString } from '../utils/date'
 import DiaryCard from '../components/DiaryCard'
@@ -10,14 +13,17 @@ const pageTransition = {
   exit: { opacity: 0, transition: { duration: 0.2 } },
 }
 
-export default function Home({ user, navigate, onLogout }) {
+export default function Home() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [tab, setTab] = useState('home')
   const [diaries, setDiaries] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchDiaries = async () => {
     try {
-      const data = await api.listDiaries(user.user_id)
+      const data = await api.listDiaries()
       setDiaries(data)
     } catch { /* ignore */ }
     setLoading(false)
@@ -43,7 +49,7 @@ export default function Home({ user, navigate, onLogout }) {
             </div>
           </div>
         </div>
-        <button onClick={() => navigate('profile')} style={styles.settingsBtn}>⚙️</button>
+        <button onClick={() => navigate('/profile')} style={styles.settingsBtn}>⚙️</button>
       </div>
 
       {/* Content */}
@@ -54,10 +60,9 @@ export default function Home({ user, navigate, onLogout }) {
             diaries={diaries}
             loading={loading}
             hasTodayDiary={hasTodayDiary}
-            navigate={navigate}
           />
         ) : (
-          <EntriesTab diaries={diaries} navigate={navigate} />
+          <EntriesTab diaries={diaries} />
         )}
       </div>
 
@@ -65,28 +70,34 @@ export default function Home({ user, navigate, onLogout }) {
       <div className="tab-bar">
         <button className={`tab-item ${tab === 'home' ? 'active' : ''}`} onClick={() => setTab('home')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          Home
+          {t('home.tabHome', 'Home')}
         </button>
-        <button className="tab-item" onClick={() => navigate('new-diary')}>
+        <button className="tab-item" onClick={() => navigate('/diary/new')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-          New
+          {t('home.tabNew', 'New')}
         </button>
         <button className={`tab-item ${tab === 'entries' ? 'active' : ''}`} onClick={() => setTab('entries')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
-          Entries
+          {t('home.tabEntries', 'Entries')}
         </button>
-        <button className="tab-item" onClick={() => navigate('profile')}>
+        <button className="tab-item" onClick={() => navigate('/profile')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Profile
+          {t('profile.title')}
         </button>
       </div>
     </motion.div>
   )
 }
 
-function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
+function HomeTab({ user, diaries, loading, hasTodayDiary }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
   const today = new Date()
-  const greeting = today.getHours() < 12 ? '좋은 아침이에요' : today.getHours() < 18 ? '좋은 오후에요' : '좋은 저녁이에요'
+  const greeting = today.getHours() < 12
+    ? t('home.greetingMorning', '좋은 아침이에요')
+    : today.getHours() < 18
+    ? t('home.greetingAfternoon', '좋은 오후에요')
+    : t('home.greetingEvening', '좋은 저녁이에요')
   const todayDiary = diaries.find((d) => d.date === todayString())
 
   return (
@@ -101,11 +112,11 @@ function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
         <div style={styles.greetingTop}>
           <div>
             <p style={styles.greetingSmall}>{greeting} 🌤️</p>
-            <h2 style={styles.greetingName}>{user.dog?.name || '멍멍이'}의 하루</h2>
+            <h2 style={styles.greetingName}>{t('home.dailyTitle', '{{name}}의 하루', { name: user.dog?.name || t('home.defaultDogName', '멍멍이') })}</h2>
           </div>
           <div style={styles.dateBadge}>
             <span style={styles.dateBadgeDay}>{today.getDate()}</span>
-            <span style={styles.dateBadgeMonth}>{today.getMonth() + 1}월</span>
+            <span style={styles.dateBadgeMonth}>{t('home.monthSuffix', '{{month}}월', { month: today.getMonth() + 1 })}</span>
           </div>
         </div>
       </motion.div>
@@ -119,7 +130,7 @@ function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.5 }}
         >
-          <DiaryCard entry={todayDiary} onClick={() => navigate('diary-detail', todayDiary)} isToday />
+          <DiaryCard entry={todayDiary} onClick={() => navigate(`/diary/${todayDiary.entry_id}`, { state: { entry: todayDiary } })} isToday />
         </motion.div>
       ) : (
         <motion.div
@@ -135,15 +146,15 @@ function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
           >
             📝
           </motion.span>
-          <h3 style={styles.ctaTitle}>오늘의 일기가 아직 없어요</h3>
-          <p style={styles.ctaDesc}>{user.dog?.name || '멍멍이'}의 오늘 하루를 기록해볼까요?</p>
+          <h3 style={styles.ctaTitle}>{t('home.noDiaryYet', '오늘의 일기가 아직 없어요')}</h3>
+          <p style={styles.ctaDesc}>{t('home.recordToday', '{{name}}의 오늘 하루를 기록해볼까요?', { name: user.dog?.name || t('home.defaultDogName', '멍멍이') })}</p>
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             className="btn btn-primary"
-            onClick={() => navigate('new-diary')}
+            onClick={() => navigate('/diary/new')}
           >
-            오늘의 일기 만들기
+            {t('home.createTodayDiary', '오늘의 일기 만들기')}
           </motion.button>
         </motion.div>
       )}
@@ -155,7 +166,7 @@ function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 style={styles.sectionTitle}>최근 일기</h3>
+          <h3 style={styles.sectionTitle}>{t('home.recentDiaries')}</h3>
           {diaries.slice(0, 5).map((entry, i) => (
             <motion.div
               key={entry.entry_id}
@@ -163,7 +174,7 @@ function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 + i * 0.08 }}
             >
-              <DiaryCard entry={entry} onClick={() => navigate('diary-detail', entry)} />
+              <DiaryCard entry={entry} onClick={() => navigate(`/diary/${entry.entry_id}`, { state: { entry } })} />
             </motion.div>
           ))}
         </motion.div>
@@ -172,19 +183,22 @@ function HomeTab({ user, diaries, loading, hasTodayDiary, navigate }) {
   )
 }
 
-function EntriesTab({ diaries, navigate }) {
+function EntriesTab({ diaries }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+
   if (!diaries.length) {
     return (
       <div style={styles.emptyState}>
         <span style={{ fontSize: '3rem', opacity: 0.3 }}>📖</span>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>아직 일기가 없어요</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{t('diary.noDiaries')}</p>
       </div>
     )
   }
 
   return (
     <div style={{ padding: '16px 20px' }}>
-      <h3 style={styles.sectionTitle}>모든 일기 ({diaries.length})</h3>
+      <h3 style={styles.sectionTitle}>{t('home.allDiaries', '모든 일기')} ({diaries.length})</h3>
       {diaries.map((entry, i) => (
         <motion.div
           key={entry.entry_id}

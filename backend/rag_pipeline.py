@@ -71,6 +71,66 @@ def load_data():
                         }
                     ))
 
+    # 4. 페르소나 데이터 (4가지 강아지 성격 타입)
+    persona_path = os.path.join(DATA_DIR, "dog_personas.json")
+    if os.path.exists(persona_path):
+        with open(persona_path, "r", encoding="utf-8") as f:
+            personas = json.load(f)
+            for p in personas:
+                content = (
+                    f"페르소나: {p['persona_type']}\n"
+                    f"말투: {p['tone']}\n"
+                    f"키워드: {', '.join(p['keywords'])}\n"
+                    f"설명: {p['description']}\n"
+                    f"대화 예시: {p['example_dialogues'][0] if p['example_dialogues'] else 'N/A'}"
+                )
+                documents.append(Document(
+                    page_content=content,
+                    metadata={"source": "personas", "persona_type": p['persona_type']}
+                ))
+
+    # 5. 질병 QA 데이터 (반려견 건강 전문가 답변)
+    disease_qa_path = os.path.join(DATA_DIR, "dog_disease_qa.json")
+    if os.path.exists(disease_qa_path):
+        with open(disease_qa_path, "r", encoding="utf-8") as f:
+            disease_qa = json.load(f)
+            for qa in disease_qa:
+                content = (
+                    f"질병: {qa['disease']}\n"
+                    f"진료과: {qa['department']}\n"
+                    f"생애주기: {qa['life_cycle']}\n"
+                    f"질문: {qa['question'][:200]}\n"
+                    f"답변: {qa['answer'][:300]}"
+                )
+                documents.append(Document(
+                    page_content=content,
+                    metadata={
+                        "source": "disease_qa",
+                        "disease": qa['disease'],
+                        "department": qa['department']
+                    }
+                ))
+
+    # 6. KISTI 질병 데이터 (256개 질병 분류 및 증상)
+    kisti_path = os.path.join(DATA_DIR, "kisti_diseases.json")
+    if os.path.exists(kisti_path):
+        with open(kisti_path, "r", encoding="utf-8") as f:
+            kisti_diseases = json.load(f)
+            for disease in kisti_diseases:
+                content = (
+                    f"질병 코드: {disease['disease_code']}\n"
+                    f"분류: {disease['category_ko']} ({disease['category_en']})\n"
+                    f"증상: {disease['symptoms']}"
+                )
+                documents.append(Document(
+                    page_content=content,
+                    metadata={
+                        "source": "kisti_disease",
+                        "category": disease['category_ko'],
+                        "disease_code": disease['disease_code']
+                    }
+                ))
+
     return documents
 
 

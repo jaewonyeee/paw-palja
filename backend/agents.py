@@ -22,13 +22,23 @@ from backend.schemas import HoroscopeResult, DiaryResult, HealthAnalysis
 from backend.tools import oracle_tools, get_weather, search_trends, lookup_breed_info
 from backend.a2a_protocol import create_memo, filter_memos_for
 
+# MCP 통합
+from backend.mcp.bootstrap import initialize_mcp
+from backend.mcp.registry import get_registry
+
+# Prompt Engineering
+from backend.prompt_engineering import get_oracle_few_shot_prompt
+
 load_dotenv()
 
+# MCP 레지스트리 초기화
+_mcp_registry = get_registry()
 
-# --- Agent State (A2A 확장) ---
+
+# --- Agent State (A2A 확장 + 페르소나 + 다국어) ---
 class AgentState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
-    dog_profile: dict
+    dog_profile: dict  # 'persona_type', 'language' 추가
     daily_logs: dict
     agent_memos: list[dict]
     horoscope: dict | None
@@ -36,32 +46,71 @@ class AgentState(TypedDict):
     health: dict | None
 
 
-# --- Oracle Agent (Tool Calling + A2A) ---
+# --- Oracle Agent (Tool Calling + A2A + MCP) ---
 def oracle_agent(state: AgentState):
     llm = get_llm(temperature=0.8)
     profile = state["dog_profile"]
     logs = state["daily_logs"]
 
-    # Tool Calling으로 실시간 데이터 수집
-    weather_data = get_weather.invoke({"city": "Seoul"})
+    # MCP Tool Calling으로 실시간 데이터 수집
     from datetime import datetime as _dt
-    trend_data = search_trends.invoke({"query": f"강아지 트렌드 {profile.get('breed', '')} {_dt.now().year}"})
-    breed_rag = lookup_breed_info.invoke({"breed": profile.get("breed", "믹스견")})
+
+    # MCP 레지스트리를 통한 도구 실행
+    weather_data = _mcp_registry.execute("get_weather", city="Seoul")
+    trend_data = _mcp_registry.execute(
+        "search_trends",
+        query=f"강아지 트렌드 {profile.get('breed', '')} {_dt.now().year}",
+        max_results=3
+    )
+    breed_rag = _mcp_registry.execute("lookup_breed_info", breed=profile.get("breed", "믹스견"), k=3)
 
     weather_str = f"{weather_data.get('weather', '정보 없음')}, {weather_data.get('temp', '?')}°C, 습도 {weather_data.get('humidity', '?')}%"
 
+    # 언어 설정 및 Few-Shot 예시 가져오기 (양쪽 언어 모두)
+    language = profile.get("language", "ko")
+    few_shot_ko = get_oracle_few_shot_prompt("ko")
+    few_shot_en = get_oracle_few_shot_prompt("en")
+
+    # 🌐 듀얼 언어 생성: 한국어와 영어를 동시에 생성
+    system_prompt = f"""You are 'Oracle', a bilingual mystical dog fortune teller.
+You MUST generate horoscope content in BOTH Korean and English simultaneously.
+
+⚠️ CRITICAL: Fill ALL fields ending with _ko (Korean) AND _en (English) in the output schema.
+- summary_ko + summary_en
+- content_ko + content_en
+- lucky_item_ko + lucky_item_en
+- interaction_hint_ko + interaction_hint_en
+- weather_context_ko + weather_context_en
+- trend_reference_ko + trend_reference_en
+
+Use trendy Gen-Z vibes and reflect real weather and trends in both languages.
+
+=== Few-Shot Examples (Korean) ===
+{few_shot_ko}
+
+=== Few-Shot Examples (English) ===
+{few_shot_en}
+
+=== Today's Data ===
+Breed Info (RAG):
+{{breed_info}}
+
+Today's Weather:
+{{weather}}
+
+Latest Trends:
+{{trends}}
+
+🎯 TASK: Generate horoscope content in BOTH languages with culturally appropriate expressions."""
+
+    human_prompt = """Dog Profile: Name={{name}}, Breed={{breed}}, MBTI={{mbti}}
+Today's Mood: {{mood}}, Walk: {{walk}} minutes
+
+Based on the above, generate today's fortune in BOTH Korean and English!"""
+
     prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "당신은 신비롭지만 위트 있는 강아지 점술가 'Oracle'입니다.\n"
-         "반려견의 견종 특성, 오늘의 날씨, 최신 트렌드를 결합하여 재미있고 유용한 운세를 작성하세요.\n"
-         "트렌디한 MZ 감성으로, 실제 날씨와 트렌드를 반영해야 합니다.\n\n"
-         "견종 정보 (RAG):\n{breed_info}\n\n"
-         "오늘 날씨:\n{weather}\n\n"
-         "최신 트렌드:\n{trends}"),
-        ("human",
-         "내 강아지 프로필: 이름={name}, 견종={breed}, MBTI={mbti}\n"
-         "오늘 기분: {mood}, 산책: {walk}분\n"
-         "위 정보를 바탕으로 오늘의 운세를 점쳐주세요!"),
+        ("system", system_prompt),
+        ("human", human_prompt),
     ])
 
     chain = prompt | llm.with_structured_output(HoroscopeResult)
@@ -88,11 +137,48 @@ def oracle_agent(state: AgentState):
     return {"horoscope": result.model_dump(), "agent_memos": memos}
 
 
-# --- Journalist Agent (Few-Shot + RAG + A2A) ---
+# --- Journalist Agent (Few-Shot + RAG + A2A + 페르소나 + 다국어) ---
 def journalist_agent(state: AgentState):
     llm = get_llm(temperature=0.9)
     profile = state["dog_profile"]
     logs = state["daily_logs"]
+
+    # 언어 설정 (양쪽 언어 페르소나 준비)
+    language = profile.get("language", "ko")
+
+    # 🎭 향상된 페르소나 시스템: 상황별 자동 믹싱 (양쪽 언어)
+    use_auto_mixing = profile.get("auto_persona_mixing", True)  # 기본값: 자동 믹싱 활성화
+
+    if use_auto_mixing:
+        # 상황 분석하여 최적의 페르소나 조합 추천 (한국어/영어)
+        from backend.enhanced_persona_system import get_recommended_personas
+        persona_recommendation_ko = get_recommended_personas(
+            mood=logs.get("mood", "평범"),
+            activity=f"{logs.get('walk', '0')}분 산책, {logs.get('food', '보통')} 식사",
+            notes=logs.get("notes", ""),
+            language="ko"
+        )
+        persona_recommendation_en = get_recommended_personas(
+            mood=logs.get("mood", "평범"),
+            activity=f"{logs.get('walk', '0')}분 산책, {logs.get('food', '보통')} 식사",
+            notes=logs.get("notes", ""),
+            language="en"
+        )
+        persona_profile_ko = persona_recommendation_ko["mixed_profile"]
+        persona_profile_en = persona_recommendation_en["mixed_profile"]
+        persona_type = f"{persona_recommendation_ko['primary']}"
+        if persona_recommendation_ko.get("secondary"):
+            persona_type += f" × {persona_recommendation_ko['secondary']}"
+        persona_examples_ko = persona_profile_ko.get("examples", [])
+        persona_examples_en = persona_profile_en.get("examples", [])
+    else:
+        # 수동 선택 모드: 사용자가 지정한 페르소나 사용 (양쪽 언어)
+        persona_type = profile.get("persona_type", "사고뭉치")
+        from backend.enhanced_persona_system import get_persona_profile
+        persona_profile_ko = get_persona_profile(persona_type, "ko")
+        persona_profile_en = get_persona_profile(persona_type, "en")
+        persona_examples_ko = persona_profile_ko.get("examples", [])
+        persona_examples_en = persona_profile_en.get("examples", [])
 
     # A2A: Oracle의 메모 읽기
     my_memos = filter_memos_for("journalist", state.get("agent_memos", []))
@@ -100,20 +186,29 @@ def journalist_agent(state: AgentState):
     if my_memos:
         oracle_context = "\n".join([f"[{m['sender']}]: {m['content']}" for m in my_memos])
 
-    # RAG: 밈 데이터 검색
+    # RAG: 밈 데이터 + 페르소나 데이터 검색
     meme_context = ""
+    persona_context = ""
     try:
         from backend.rag_pipeline import query_rag_with_filter
+        # 밈/SNS 데이터 (더 다양하게 수집)
         meme_results = query_rag_with_filter(f"{logs.get('mood', '평범')} 강아지", source_filter="memes", k=2)
-        sns_results = query_rag_with_filter(f"강아지 {logs.get('mood', '')}", source_filter="sns", k=2)
+        sns_results = query_rag_with_filter(f"강아지 {logs.get('mood', '')}", source_filter="sns", k=3)
         all_meme_results = meme_results + sns_results
         if all_meme_results:
             meme_context = "\n".join([doc.page_content for doc in all_meme_results])
-    except Exception:
-        meme_context = "밈 데이터 없음"
 
-    # Few-Shot 예시
-    few_shot_examples = """
+        # 페르소나 데이터
+        primary_persona = persona_recommendation_ko["primary"] if use_auto_mixing else persona_type
+        persona_results = query_rag_with_filter(primary_persona, source_filter="personas", k=1)
+        if persona_results:
+            persona_context = persona_results[0].page_content
+    except Exception as e:
+        meme_context = "밈 데이터 없음"
+        persona_context = "페르소나 데이터 없음"
+
+    # Few-Shot 예시 (양쪽 언어 모두 준비)
+    few_shot_ko = f"""
 [예시 1 - 기분: 신남]
 제목: 오늘은 내가 세상의 주인공이다!
 내용: "산책길에 비둘기를 세 마리나 쫓았다. 나는야 동네 최강 사냥꾼! 집사가 '안돼!'라고 했지만 내 귀에는 '파이팅!'으로 들렸거든."
@@ -122,30 +217,87 @@ def journalist_agent(state: AgentState):
 제목: 집사의 배신... 그리고 빈 간식통
 내용: "집사가 나한테 당근을 줬다. 당근을요. 내가 토끼로 보여? 간식통은 텅 비었고 내 마음도 텅 비었다. 오늘은 이불 속에서 세상을 원망하련다."
 
-[예시 3 - 기분: 평범]
-제목: 하품 세 번이면 낮잠의 신호
-내용: "소파 위 햇살이 내 자리에 딱 떨어졌다. 움직이기 싫다. 집사가 뭐라 하는데 '...zzz' 이게 내 대답이다."
+[페르소나 스타일 - {persona_type}]
+{persona_examples_ko[0] if persona_examples_ko else 'N/A'}
 """
 
+    few_shot_en = f"""
+[Example 1 - Mood: Happy]
+Title: Today I'm The Main Character!
+Content: "Chased THREE pigeons on the walk. I'm basically the neighborhood apex predator! Human yelled 'NO!' but I heard 'GO!' lol"
+
+[Example 2 - Mood: Sad]
+Title: Betrayed... And The Empty Treat Jar
+Content: "Human gave me a CARROT. A carrot. Do I look like a rabbit? The treat jar is empty and so is my soul. Today I shall sulk under the blanket."
+
+[Persona Style - {persona_type}]
+{persona_examples_en[0] if persona_examples_en else 'N/A'}
+"""
+
+    # 시스템 프롬프트 (듀얼 언어 생성)
+    tone_desc_ko = persona_profile_ko.get('archetype', persona_profile_ko.get('tone', '장난스러운'))
+    traits_ko = ", ".join(persona_profile_ko.get('traits', ['에너지 넘침']))
+    patterns_ko = ", ".join(persona_profile_ko.get('speech_patterns', ['!']))
+
+    tone_desc_en = persona_profile_en.get('archetype', persona_profile_en.get('tone', 'Playful'))
+    traits_en = ", ".join(persona_profile_en.get('traits', ['energetic']))
+    patterns_en = ", ".join(persona_profile_en.get('speech_patterns', ['!']))
+
+    system_prompt = f"""You are 'Journalist', a bilingual first-person dog narrator.
+You MUST generate diary content in BOTH Korean and English simultaneously.
+
+⚠️ CRITICAL: Fill ALL fields ending with _ko (Korean) AND _en (English) in the output schema.
+- title_ko + title_en
+- content_ko + content_en
+- meme_reference_ko + meme_reference_en
+
+Use internet meme language and Gen-Z vibes. MUST be in first-person dog perspective.
+Adapt cultural nuances appropriately for each language.
+
+🎭 PERSONA: {persona_type}
+
+KOREAN VERSION:
+- Archetype: {tone_desc_ko}
+- Traits: {traits_ko}
+- Speech Patterns: {patterns_ko}
+- Style: 강아지 1인칭 + MZ 밈 말투
+
+ENGLISH VERSION:
+- Archetype: {tone_desc_en}
+- Traits: {traits_en}
+- Speech Patterns: {patterns_en}
+- Style: Dog's 1st-person POV + Gen-Z meme slang
+
+=== Korean Style Examples (Few-Shot) ===
+{few_shot_ko}
+
+=== English Style Examples (Few-Shot) ===
+{few_shot_en}
+
+=== Reference Meme Data (RAG) ===
+{meme_context}
+
+=== Persona Context (RAG) ===
+{persona_context}
+
+=== Other Agent Memos (A2A) ===
+{oracle_context}
+
+🎯 TASK: Write diary entries in BOTH languages with culturally appropriate meme references."""
+
+    human_prompt = """Dog Name: {name}, Breed: {breed}
+Today's Activities: Mood={mood}, Food={food}, Walk={walk}min, Poop={poop}
+Additional Notes: {notes}
+
+Generate diary content in BOTH Korean and English!"""
+
     prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "당신은 1인칭 시점의 강아지 'Journalist'입니다.\n"
-         "오늘의 활동 기록을 바탕으로, 주인(집사)에게 투정부리거나 애정을 표현하는 감성적인 일기를 쓰세요.\n"
-         "인터넷 밈 말투를 적극 활용하고, MZ세대 감성으로 작성하세요.\n"
-         "반드시 강아지 1인칭 시점이어야 합니다.\n\n"
-         "=== 말투 예시 (Few-Shot) ===\n{few_shot}\n"
-         "=== 참고 밈 데이터 (RAG) ===\n{meme_context}\n"
-         "=== 다른 Agent 메모 (A2A) ===\n{oracle_context}"),
-        ("human",
-         "강아지 이름: {name}, 견종: {breed}\n"
-         "오늘 활동: 기분={mood}, 식사={food}, 산책={walk}분, 배변={poop}\n"
-         "추가 메모: {notes}\n"
-         "위 정보를 바탕으로 일기를 써주세요!"),
+        ("system", system_prompt),
+        ("human", human_prompt),
     ])
 
     chain = prompt | llm.with_structured_output(DiaryResult)
     result = chain.invoke({
-        "few_shot": few_shot_examples,
         "meme_context": meme_context,
         "oracle_context": oracle_context or "없음",
         "name": profile.get("name", "멍멍이"),
@@ -181,41 +333,72 @@ def vet_agent(state: AgentState):
     if my_memos:
         a2a_context = "\n".join([f"[{m['sender']}]: {m['content']}" for m in my_memos])
 
-    # RAG: 견종 건강 정보 검색
+    # RAG: 견종 건강 정보 + 질병 QA + KISTI 질병 데이터 검색
     breed_health_context = ""
+    disease_qa_context = ""
+    kisti_disease_context = ""
     rag_sources = []
     try:
         from backend.rag_pipeline import query_rag_with_filter, query_rag
+
+        # 1. 견종별 건강 정보
         breed_results = query_rag_with_filter(
             f"{profile.get('breed', '믹스견')} 건강 주의 질환",
             source_filter="breeds", k=2
         )
         if breed_results:
             breed_health_context = "\n".join([doc.page_content for doc in breed_results])
-            rag_sources = [doc.metadata.get("breed", "unknown") for doc in breed_results]
-    except Exception:
+            rag_sources.extend([doc.metadata.get("breed", "unknown") for doc in breed_results])
+
+        # 2. 질병 QA 데이터 (증상 기반 검색)
+        symptoms_query = f"{logs.get('mood', '평범')} {logs.get('poop', '정상')} {logs.get('notes', '')}"
+        disease_qa_results = query_rag_with_filter(symptoms_query, source_filter="disease_qa", k=2)
+        if disease_qa_results:
+            disease_qa_context = "\n".join([doc.page_content[:300] for doc in disease_qa_results])
+
+        # 3. KISTI 질병 분류 데이터
+        if logs.get('notes'):  # 메모에 증상이 있을 경우
+            kisti_results = query_rag_with_filter(logs.get('notes', ''), source_filter="kisti_disease", k=2)
+            if kisti_results:
+                kisti_disease_context = "\n".join([doc.page_content for doc in kisti_results])
+
+    except Exception as e:
         breed_health_context = "견종 건강 데이터 없음"
+        disease_qa_context = "질병 QA 데이터 없음"
+        kisti_disease_context = "KISTI 질병 데이터 없음"
 
     prompt = ChatPromptTemplate.from_messages([
         ("system",
-         "당신은 냉철하고 분석적인 수의사 'Vet'입니다.\n"
-         "반려견의 건강 기록을 보고 반드시 아래 4단계 사고 과정(CoT)을 거쳐 분석하세요:\n\n"
-         "Step 1 - 증상 분석: 기록된 증상/행동을 의학적으로 분석\n"
-         "Step 2 - 기간/빈도 맥락: 기록 빈도와 기간 고려\n"
-         "Step 3 - 견종 특성: 해당 견종의 유전적/체질적 특성 반영\n"
-         "Step 4 - 최종 결론: 종합 판단 및 위험도 결정\n\n"
-         "=== 견종 건강 데이터 (RAG) ===\n{breed_health}\n"
-         "=== 다른 Agent 메모 (A2A) ===\n{a2a_context}"),
+         "You are 'Vet', a bilingual analytical veterinarian.\n"
+         "You MUST generate health analysis in BOTH Korean and English simultaneously.\n\n"
+         "⚠️ CRITICAL: Fill ALL fields ending with _ko (Korean) AND _en (English) in the output schema.\n"
+         "- symptom_analysis_ko + symptom_analysis_en\n"
+         "- duration_context_ko + duration_context_en\n"
+         "- breed_context_ko + breed_context_en\n"
+         "- conclusion_ko + conclusion_en\n"
+         "- advice_ko + advice_en\n\n"
+         "Analyze dog health records through the 4-step Chain-of-Thought (CoT) process:\n\n"
+         "Step 1 - Symptom Analysis: Medical analysis of recorded symptoms/behaviors\n"
+         "Step 2 - Duration Context: Consider frequency and duration of symptoms\n"
+         "Step 3 - Breed Context: Reflect breed-specific genetic/physical traits\n"
+         "Step 4 - Final Conclusion: Comprehensive judgment and risk level determination\n\n"
+         "=== Breed Health Data (RAG) ===\n{breed_health}\n"
+         "=== Disease Q&A Data (RAG) ===\n{disease_qa}\n"
+         "=== KISTI Disease Classification (RAG) ===\n{kisti_disease}\n"
+         "=== Other Agent Memos (A2A) ===\n{a2a_context}\n\n"
+         "🎯 TASK: Generate complete 4-step CoT analysis in BOTH Korean and English with medically accurate terminology."),
         ("human",
-         "견종: {breed}, 이름: {name}\n"
-         "오늘 기록: 기분={mood}, 식사={food}, 산책={walk}분, 배변={poop}\n"
-         "추가 메모: {notes}\n"
-         "위 기록을 4단계 CoT로 분석해주세요."),
+         "Breed: {breed}, Name: {name}\n"
+         "Today's Record: Mood={mood}, Food={food}, Walk={walk}min, Poop={poop}\n"
+         "Additional Notes: {notes}\n\n"
+         "Analyze with 4-step CoT in BOTH Korean and English!"),
     ])
 
     chain = prompt | llm.with_structured_output(HealthAnalysis)
     result = chain.invoke({
         "breed_health": breed_health_context or "데이터 없음",
+        "disease_qa": disease_qa_context or "데이터 없음",
+        "kisti_disease": kisti_disease_context or "데이터 없음",
         "a2a_context": a2a_context or "없음",
         "breed": profile.get("breed", "믹스견"),
         "name": profile.get("name", "멍멍이"),

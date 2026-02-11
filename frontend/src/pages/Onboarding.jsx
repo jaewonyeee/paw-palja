@@ -1,4 +1,7 @@
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageToggle from '../components/LanguageToggle'
 
 const pageTransition = {
   initial: { opacity: 0, y: 30 },
@@ -6,9 +9,17 @@ const pageTransition = {
   exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
 }
 
-export default function Onboarding({ onStart }) {
+export default function Onboarding() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+
   return (
     <motion.div {...pageTransition} style={styles.container}>
+      {/* Language Toggle - Top Right */}
+      <div style={styles.languageToggleWrap}>
+        <LanguageToggle />
+      </div>
+
       {/* Gradient background */}
       <div style={styles.bgGradient} />
 
@@ -28,7 +39,7 @@ export default function Onboarding({ onStart }) {
           transition={{ delay: 0.35, duration: 0.5 }}
           style={styles.title}
         >
-          Paw-Palja
+          {t('onboarding.title')}
         </motion.h1>
 
         <motion.p
@@ -37,7 +48,7 @@ export default function Onboarding({ onStart }) {
           transition={{ delay: 0.5, duration: 0.5 }}
           style={styles.subtitle}
         >
-          포팔자
+          {t('onboarding.subtitle')}
         </motion.p>
 
         <motion.p
@@ -46,8 +57,7 @@ export default function Onboarding({ onStart }) {
           transition={{ delay: 0.65, duration: 0.5 }}
           style={styles.desc}
         >
-          AI가 매일 써주는 우리 강아지의 일기<br />
-          운세도 보고, 건강도 챙기고, 귀여운 댓글도 받아보세요
+          {t('onboarding.description')}
         </motion.p>
 
         <motion.div
@@ -102,10 +112,10 @@ export default function Onboarding({ onStart }) {
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={onStart}
+            onClick={() => navigate('/login')}
             style={styles.startBtn}
           >
-            시작하기
+            {t('onboarding.startButton')}
           </motion.button>
         </motion.div>
       </div>
@@ -119,6 +129,12 @@ const styles = {
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
+  },
+  languageToggleWrap: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
   },
   bgGradient: {
     position: 'absolute',

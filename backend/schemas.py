@@ -1,6 +1,7 @@
 """
 Paw-Palja Structured Output 스키마 정의
 모든 Agent의 출력을 Pydantic 모델로 강제하여 파싱 에러를 방지합니다.
+다국어 지원: 모든 텍스트 필드는 _ko, _en 버전으로 동시 생성됩니다.
 """
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
@@ -18,34 +19,68 @@ class RiskLevel(str, Enum):
     CRITICAL = "Critical"
 
 
-# --- Agent Output Models ---
+# --- Agent Output Models (다국어 지원) ---
 class HoroscopeResult(BaseModel):
-    """Oracle Agent 구조화 출력"""
-    summary: str = Field(description="오늘의 운세 한 줄 요약")
-    content: str = Field(description="상세 운세 내용 (100자 이상, 트렌드 반영)")
-    lucky_item: str = Field(description="오늘의 럭키 아이템")
-    interaction_hint: str = Field(description="집사와의 인터랙션 힌트")
-    weather_context: str = Field(description="날씨 기반 조언")
-    trend_reference: str = Field(description="트렌드 반영 요소")
+    """Oracle Agent 구조화 출력 - 한국어/영어 동시 생성"""
+    summary_ko: str = Field(description="오늘의 운세 한 줄 요약 (한국어)")
+    summary_en: str = Field(description="Today's fortune summary (English)")
+    content_ko: str = Field(description="상세 운세 내용 (한국어, 100자 이상, 트렌드 반영)")
+    content_en: str = Field(description="Detailed fortune content (English, 100+ chars, trend-aware)")
+    lucky_item_ko: str = Field(description="오늘의 럭키 아이템 (한국어)")
+    lucky_item_en: str = Field(description="Today's lucky item (English)")
+    interaction_hint_ko: str = Field(description="집사와의 인터랙션 힌트 (한국어)")
+    interaction_hint_en: str = Field(description="Interaction hint with human (English)")
+    weather_context_ko: str = Field(description="날씨 기반 조언 (한국어)")
+    weather_context_en: str = Field(description="Weather-based advice (English)")
+    trend_reference_ko: str = Field(description="트렌드 반영 요소 (한국어)")
+    trend_reference_en: str = Field(description="Trend reference element (English)")
+
+    # Legacy fields for backward compatibility (deprecated)
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    lucky_item: Optional[str] = None
+    interaction_hint: Optional[str] = None
+    weather_context: Optional[str] = None
+    trend_reference: Optional[str] = None
 
 
 class DiaryResult(BaseModel):
-    """Journalist Agent 구조화 출력"""
-    title: str = Field(description="일기 제목 (강아지 시점)")
-    content: str = Field(description="일기 본문 (1인칭 강아지 시점, 밈 활용)")
+    """Journalist Agent 구조화 출력 - 한국어/영어 동시 생성"""
+    title_ko: str = Field(description="일기 제목 (강아지 시점, 한국어)")
+    title_en: str = Field(description="Diary title (dog's perspective, English)")
+    content_ko: str = Field(description="일기 본문 (1인칭 강아지 시점, 밈 활용, 한국어)")
+    content_en: str = Field(description="Diary content (1st person dog POV, meme-aware, English)")
     mood_icon: str = Field(description="오늘의 무드 아이콘 (예: sparkles, heart, cloud-rain)")
-    meme_reference: str = Field(description="사용된 밈 레퍼런스")
+    meme_reference_ko: str = Field(description="사용된 밈 레퍼런스 (한국어)")
+    meme_reference_en: str = Field(description="Meme reference used (English)")
+
+    # Legacy fields for backward compatibility (deprecated)
+    title: Optional[str] = None
+    content: Optional[str] = None
+    meme_reference: Optional[str] = None
 
 
 class HealthAnalysis(BaseModel):
-    """Vet Agent 구조화 출력 - CoT 사고 과정 포함"""
+    """Vet Agent 구조화 출력 - CoT 사고 과정 포함, 한국어/영어 동시 생성"""
     risk_level: RiskLevel = Field(description="위험도 수준")
-    symptom_analysis: str = Field(description="Step 1: 증상 분석")
-    duration_context: str = Field(description="Step 2: 기간/빈도 맥락")
-    breed_context: str = Field(description="Step 3: 견종 특성 기반 분석")
-    conclusion: str = Field(description="Step 4: 최종 결론")
-    advice: str = Field(description="보호자를 위한 구체적 행동 권장사항")
+    symptom_analysis_ko: str = Field(description="Step 1: 증상 분석 (한국어)")
+    symptom_analysis_en: str = Field(description="Step 1: Symptom analysis (English)")
+    duration_context_ko: str = Field(description="Step 2: 기간/빈도 맥락 (한국어)")
+    duration_context_en: str = Field(description="Step 2: Duration/frequency context (English)")
+    breed_context_ko: str = Field(description="Step 3: 견종 특성 기반 분석 (한국어)")
+    breed_context_en: str = Field(description="Step 3: Breed-specific analysis (English)")
+    conclusion_ko: str = Field(description="Step 4: 최종 결론 (한국어)")
+    conclusion_en: str = Field(description="Step 4: Final conclusion (English)")
+    advice_ko: str = Field(description="보호자를 위한 구체적 행동 권장사항 (한국어)")
+    advice_en: str = Field(description="Specific action recommendations for guardian (English)")
     rag_sources: list[str] = Field(default_factory=list, description="참조된 RAG 데이터 출처")
+
+    # Legacy fields for backward compatibility (deprecated)
+    symptom_analysis: Optional[str] = None
+    duration_context: Optional[str] = None
+    breed_context: Optional[str] = None
+    conclusion: Optional[str] = None
+    advice: Optional[str] = None
 
 
 # --- API Request/Response Models ---
@@ -101,7 +136,11 @@ class CommentRequest(BaseModel):
 class CommentResult(BaseModel):
     author: str = Field(description="댓글 작성자 이름 (에이전트 페르소나)")
     emoji: str = Field(description="작성자 이모지")
-    text: str = Field(description="댓글 내용 (1~2문장, 귀엽고 감성적)")
+    text_ko: str = Field(description="댓글 내용 (1~2문장, 귀엽고 감성적, 한국어)")
+    text_en: str = Field(description="Comment content (1-2 sentences, cute & emotional, English)")
+
+    # Legacy field for backward compatibility (deprecated)
+    text: Optional[str] = None
 
 
 class DiaryEditRequest(BaseModel):
@@ -135,6 +174,10 @@ class DiaryEntry(BaseModel):
 class LoginRequest(BaseModel):
     user_id: str
     password: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
 
 
 class SignupRequest(BaseModel):

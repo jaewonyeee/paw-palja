@@ -14,10 +14,12 @@ def get_llm(temperature: float = 0.7):
 
     if provider == "azure":
         from langchain_openai import AzureChatOpenAI
+        # 환경변수 우선순위: AOAI_DEPLOYMENT_NAME > AOAI_DEPLOY_GPT4O > 기본값
+        deployment = os.getenv("AOAI_DEPLOYMENT_NAME") or os.getenv("AOAI_DEPLOY_GPT4O", "gpt-4o")
         return AzureChatOpenAI(
             azure_endpoint=os.getenv("AOAI_ENDPOINT"),
             api_key=os.getenv("AOAI_API_KEY"),
-            azure_deployment=os.getenv("AOAI_DEPLOYMENT_NAME", "gpt-4o"),
+            azure_deployment=deployment,
             api_version=os.getenv("AOAI_API_VERSION", "2024-06-01"),
             temperature=temperature,
         )
@@ -36,10 +38,12 @@ def get_embeddings():
 
     if provider == "azure":
         from langchain_openai import AzureOpenAIEmbeddings
+        # 환경변수 우선순위: AOAI_EMBEDDING_DEPLOYMENT > AOAI_DEPLOY_EMBED_ADA > 기본값
+        embed_deployment = os.getenv("AOAI_EMBEDDING_DEPLOYMENT") or os.getenv("AOAI_DEPLOY_EMBED_ADA", "text-embedding-ada-002")
         return AzureOpenAIEmbeddings(
             azure_endpoint=os.getenv("AOAI_ENDPOINT"),
             api_key=os.getenv("AOAI_API_KEY"),
-            azure_deployment="text-embedding-ada-002",
+            azure_deployment=embed_deployment,
             api_version=os.getenv("AOAI_API_VERSION", "2024-06-01"),
         )
     else:

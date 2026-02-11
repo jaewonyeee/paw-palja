@@ -1,5 +1,8 @@
 import { useState, useRef } from 'react'
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 
 const pageTransition = {
@@ -36,7 +39,10 @@ const MBTIS = ['ENFP', 'INFJ', 'ISTP', 'ESTJ', 'ESFP', 'INTJ', 'ENFJ', 'ISFP']
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
 const MINUTES = ['00', '15', '30', '45']
 
-export default function Signup({ onSignup, onGoLogin }) {
+export default function Signup() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { handleLogin } = useAuth()
   const [step, setStep] = useState(0)
   const [userId, setUserId] = useState('')
   const [idAvailable, setIdAvailable] = useState(null) // null=unchecked, true/false
@@ -79,7 +85,7 @@ export default function Signup({ onSignup, onGoLogin }) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 2 * 1024 * 1024) {
-      setError('이미지는 2MB 이하만 가능합니다.')
+      setError(t('auth.imageSizeLimit'))
       return
     }
     const reader = new FileReader()
@@ -109,7 +115,8 @@ export default function Signup({ onSignup, onGoLogin }) {
         },
         diary_time: `${hour}:${minute}`,
       })
-      onSignup(data)
+      handleLogin(data)
+      navigate('/home')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -120,7 +127,7 @@ export default function Signup({ onSignup, onGoLogin }) {
   return (
     <motion.div {...pageTransition} style={styles.container}>
       <div style={styles.topBar}>
-        <button onClick={onGoLogin} className="btn btn-ghost">← 뒤로</button>
+        <button onClick={() => navigate('/login')} className="btn btn-ghost">← {t('auth.backBtn')}</button>
         <span style={styles.stepIndicator}>
           {[0, 1, 2].map((s) => (
             <span key={s} style={{ ...styles.dot, ...(s <= step ? styles.dotActive : {}) }} />
@@ -136,15 +143,15 @@ export default function Signup({ onSignup, onGoLogin }) {
           style={styles.stepContent}
         >
           <span style={{ fontSize: '2.5rem' }}>👋</span>
-          <h2 style={styles.title}>반가워요!</h2>
-          <p style={styles.desc}>먼저 계정을 만들어볼까요?</p>
+          <h2 style={styles.title}>{t('auth.signupGreeting')}</h2>
+          <p style={styles.desc}>{t('auth.signupStep0Title')}</p>
           <div style={styles.form}>
             <div style={styles.inputGroup}>
-              <label style={styles.label}>아이디</label>
+              <label style={styles.label}>{t('auth.userId')}</label>
               <div style={styles.idRow}>
                 <input
                   className="input-field"
-                  placeholder="영문/숫자 3자 이상"
+                  placeholder={t('auth.userIdLabel')}
                   value={userId}
                   onChange={(e) => {
                     setUserId(e.target.value)
@@ -159,26 +166,26 @@ export default function Signup({ onSignup, onGoLogin }) {
                   disabled={idChecking || !userId.trim() || userId.trim().length < 3}
                   style={styles.checkBtn}
                 >
-                  {idChecking ? '...' : '중복확인'}
+                  {idChecking ? t('auth.checking') : t('auth.checkIdBtn')}
                 </motion.button>
               </div>
               {idAvailable === true && (
-                <span style={styles.idOk}>사용 가능한 아이디입니다</span>
+                <span style={styles.idOk}>{t('auth.idAvailable')}</span>
               )}
               {idAvailable === false && (
-                <span style={styles.idFail}>이미 사용 중인 아이디입니다</span>
+                <span style={styles.idFail}>{t('auth.idTaken')}</span>
               )}
               {userId.trim() && !/^[a-zA-Z0-9]+$/.test(userId.trim()) && (
-                <span style={styles.idFail}>영문과 숫자만 사용 가능합니다</span>
+                <span style={styles.idFail}>{t('auth.onlyEnglishNumbers', '영문과 숫자만 사용 가능합니다')}</span>
               )}
             </div>
             <div style={styles.inputGroup}>
-              <label style={styles.label}>닉네임</label>
-              <input className="input-field" placeholder="닉네임" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+              <label style={styles.label}>{t('auth.nickname')}</label>
+              <input className="input-field" placeholder={t('auth.nickname')} value={nickname} onChange={(e) => setNickname(e.target.value)} />
             </div>
             <div style={styles.inputGroup}>
-              <label style={styles.label}>비밀번호</label>
-              <input className="input-field" type="password" placeholder="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <label style={styles.label}>{t('auth.password')}</label>
+              <input className="input-field" type="password" placeholder={t('auth.password')} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </div>
           {error && <p style={styles.error}>{error}</p>}
@@ -188,7 +195,7 @@ export default function Signup({ onSignup, onGoLogin }) {
             onClick={() => canProceedStep0 ? setStep(1) : null}
             style={{ width: '100%', marginTop: 16, opacity: canProceedStep0 ? 1 : 0.5 }}
           >
-            다음
+            {t('auth.nextBtn')}
           </motion.button>
         </motion.div>
       )}
@@ -201,8 +208,8 @@ export default function Signup({ onSignup, onGoLogin }) {
           style={styles.stepContent}
         >
           <span style={{ fontSize: '2.5rem' }}>🐶</span>
-          <h2 style={styles.title}>반려견 프로필</h2>
-          <p style={styles.desc}>우리 댕댕이를 소개해주세요!</p>
+          <h2 style={styles.title}>{t('auth.dogProfileTitle')}</h2>
+          <p style={styles.desc}>{t('auth.introduceDog')}</p>
           <div style={styles.form}>
             {/* Dog Image */}
             <div style={styles.imageSection}>
@@ -216,7 +223,7 @@ export default function Signup({ onSignup, onGoLogin }) {
                 ) : (
                   <div style={styles.imagePlaceholder}>
                     <span style={{ fontSize: '2rem' }}>📷</span>
-                    <span style={styles.imagePlaceholderText}>사진 추가</span>
+                    <span style={styles.imagePlaceholderText}>{t('diary.addPhoto')}</span>
                   </div>
                 )}
               </motion.div>
@@ -233,21 +240,21 @@ export default function Signup({ onSignup, onGoLogin }) {
                   className="btn btn-ghost"
                   style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}
                 >
-                  사진 삭제
+                  {t('common.delete')}
                 </button>
               )}
             </div>
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>이름</label>
-              <input className="input-field" placeholder="강아지 이름" value={dogName} onChange={(e) => setDogName(e.target.value)} />
+              <label style={styles.label}>{t('dog.name')}</label>
+              <input className="input-field" placeholder={t('dog.name')} value={dogName} onChange={(e) => setDogName(e.target.value)} />
             </div>
             <div style={styles.row}>
               <div style={{ ...styles.inputGroup, flex: 1, position: 'relative' }}>
-                <label style={styles.label}>견종</label>
+                <label style={styles.label}>{t('dog.breed')}</label>
                 <input
                   className="input-field"
-                  placeholder="견종 검색..."
+                  placeholder={t('dog.searchBreed')}
                   value={breedOpen ? breedSearch : breed}
                   onChange={(e) => {
                     setBreedSearch(e.target.value)
@@ -279,7 +286,7 @@ export default function Signup({ onSignup, onGoLogin }) {
                 )}
               </div>
               <div style={{ ...styles.inputGroup, flex: 1 }}>
-                <label style={styles.label}>MBTI</label>
+                <label style={styles.label}>{t('dog.mbti')}</label>
                 <select className="input-field" value={mbti} onChange={(e) => setMbti(e.target.value)}>
                   {MBTIS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
@@ -288,9 +295,9 @@ export default function Signup({ onSignup, onGoLogin }) {
           </div>
           {error && <p style={styles.error}>{error}</p>}
           <div style={styles.btnRow}>
-            <button onClick={() => setStep(0)} className="btn btn-secondary">이전</button>
+            <button onClick={() => setStep(0)} className="btn btn-secondary">{t('auth.backBtn')}</button>
             <motion.button whileTap={{ scale: 0.97 }} className="btn btn-primary" onClick={() => setStep(2)} style={{ flex: 1 }}>
-              다음
+              {t('auth.nextBtn')}
             </motion.button>
           </div>
         </motion.div>
@@ -306,14 +313,14 @@ export default function Signup({ onSignup, onGoLogin }) {
           <div style={styles.step2Scroll}>
             <div style={styles.step2Header}>
               <span style={{ fontSize: '2.5rem' }}>⏰</span>
-              <h2 style={styles.title}>매일 일기 알림</h2>
-              <p style={styles.desc}>매일 이 시간에 {dogName || '강아지'}의 일기가 도착해요!</p>
+              <h2 style={styles.title}>{t('auth.notificationTitle')}</h2>
+              <p style={styles.desc}>{t('auth.notificationDesc')}</p>
             </div>
 
             <div style={styles.timePickerWrap}>
               <div style={styles.timePicker}>
                 <div style={styles.timeCol}>
-                  <span style={styles.timeLabel}>시</span>
+                  <span style={styles.timeLabel}>{t('auth.hour', '시')}</span>
                   <div style={styles.timeScroll}>
                     {HOURS.map((h) => (
                       <motion.button
@@ -329,7 +336,7 @@ export default function Signup({ onSignup, onGoLogin }) {
                 </div>
                 <span style={styles.timeColon}>:</span>
                 <div style={styles.timeCol}>
-                  <span style={styles.timeLabel}>분</span>
+                  <span style={styles.timeLabel}>{t('auth.minute', '분')}</span>
                   <div style={styles.timeScroll}>
                     {MINUTES.map((m) => (
                       <motion.button
@@ -344,14 +351,14 @@ export default function Signup({ onSignup, onGoLogin }) {
                   </div>
                 </div>
               </div>
-              <p style={styles.timePreview}>매일 <strong>{hour}:{minute}</strong>에 일기가 도착합니다</p>
+              <p style={styles.timePreview}>{t('auth.timePreview', '매일 {{time}}에 일기가 도착합니다', { time: `${hour}:${minute}` })}</p>
             </div>
 
             {error && <p style={styles.error}>{error}</p>}
           </div>
 
           <div style={styles.step2BtnRow}>
-            <button onClick={() => setStep(1)} className="btn btn-secondary">이전</button>
+            <button onClick={() => setStep(1)} className="btn btn-secondary">{t('auth.backBtn')}</button>
             <motion.button
               whileTap={{ scale: 0.97 }}
               className="btn btn-primary"
@@ -359,7 +366,7 @@ export default function Signup({ onSignup, onGoLogin }) {
               disabled={loading}
               style={{ flex: 1 }}
             >
-              {loading ? <div className="spinner" style={{ width: 20, height: 20 }} /> : '시작하기!'}
+              {loading ? <div className="spinner" style={{ width: 20, height: 20 }} /> : t('auth.startNow', '시작하기!')}
             </motion.button>
           </div>
         </motion.div>

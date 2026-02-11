@@ -1,5 +1,8 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 
 const pageTransition = {
@@ -8,47 +11,51 @@ const pageTransition = {
   exit: { opacity: 0, y: 30, transition: { duration: 0.3 } },
 }
 
-const MOODS = [
-  { value: '최고', icon: '🤩', label: '최고!' },
-  { value: '좋음', icon: '😊', label: '좋아' },
-  { value: '평범', icon: '😐', label: '그냥' },
-  { value: '우울', icon: '😢', label: '우울' },
-  { value: '아픔', icon: '🤒', label: '아파' },
-]
+export default function NewDiary() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
-const FOODS = [
-  { value: '완식', icon: '🍖', label: '완식' },
-  { value: '보통', icon: '🥩', label: '보통' },
-  { value: '조금', icon: '🦴', label: '조금' },
-  { value: '안먹음', icon: '❌', label: '안먹음' },
-]
+  const MOODS = [
+    { value: '최고', icon: '🤩', label: t('mood.best') },
+    { value: '좋음', icon: '😊', label: t('mood.good') },
+    { value: '평범', icon: '😐', label: t('mood.justOk') },
+    { value: '우울', icon: '😢', label: t('mood.depressed') },
+    { value: '아픔', icon: '🤒', label: t('mood.sick') },
+  ]
 
-const POOPS = [
-  { value: '정상', icon: '✅', label: '정상' },
-  { value: '묽음', icon: '💧', label: '묽음' },
-  { value: '딱딱함', icon: '🪨', label: '딱딱' },
-  { value: '안함', icon: '⏳', label: '안함' },
-]
+  const FOODS = [
+    { value: '완식', icon: '🍖', label: t('food.allEaten') },
+    { value: '보통', icon: '🥩', label: t('food.average') },
+    { value: '조금', icon: '🦴', label: t('food.alittle') },
+    { value: '안먹음', icon: '❌', label: t('food.didntEat') },
+  ]
 
-const WALK_PRESETS = [
-  { value: 0, label: '안 함' },
-  { value: 15, label: '15분' },
-  { value: 30, label: '30분' },
-  { value: 60, label: '1시간' },
-  { value: 90, label: '1.5시간' },
-  { value: 120, label: '2시간+' },
-]
+  const POOPS = [
+    { value: '정상', icon: '✅', label: t('poop.normal') },
+    { value: '묽음', icon: '💧', label: t('poop.watery') },
+    { value: '딱딱함', icon: '🪨', label: t('poop.firm') },
+    { value: '안함', icon: '⏳', label: t('poop.didnt') },
+  ]
 
-// Steps configuration
-const STEPS = [
-  { key: 'mood', question: '오늘 기분이 어떠셨나요?', icon: '😊' },
-  { key: 'food', question: '밥은 잘 먹었나요?', icon: '🍖' },
-  { key: 'walk', question: '산책은 했나요?', icon: '🐾' },
-  { key: 'poop', question: '배변 상태는 어떤가요?', icon: '💩' },
-  { key: 'notes', question: '오늘 특별한 일이 있었나요?', icon: '📝' },
-]
+  const WALK_PRESETS = [
+    { value: 0, label: t('walk.none') },
+    { value: 15, label: t('walk.min15') },
+    { value: 30, label: t('walk.min30') },
+    { value: 60, label: t('walk.hour1') },
+    { value: 90, label: t('walk.hour15') },
+    { value: 120, label: t('walk.hour2plus') },
+  ]
 
-export default function NewDiary({ user, navigate }) {
+  // Steps configuration
+  const STEPS = [
+    { key: 'mood', question: t('diary.moodQuestion'), icon: '😊' },
+    { key: 'food', question: t('diary.foodQuestion'), icon: '🍖' },
+    { key: 'walk', question: t('diary.walkQuestion'), icon: '🐾' },
+    { key: 'poop', question: t('diary.poopQuestion'), icon: '💩' },
+    { key: 'notes', question: t('diary.notesQuestion'), icon: '📝' },
+  ]
+
   const [step, setStep] = useState(0)
   const [mood, setMood] = useState('')
   const [food, setFood] = useState('')
@@ -60,7 +67,7 @@ export default function NewDiary({ user, navigate }) {
   const [progress, setProgress] = useState('')
   const photoRef = useRef(null)
 
-  const dogName = user.dog?.name || '멍멍이'
+  const dogName = user.dog?.name || t('home.defaultDogName', '멍멍이')
 
   const currentStep = STEPS[step]
   const isLastStep = step === STEPS.length - 1
@@ -84,25 +91,25 @@ export default function NewDiary({ user, navigate }) {
 
   const handleGenerate = async () => {
     setLoading(true)
-    setProgress(`${dogName}의 하루를 분석하고 있어요...`)
+    setProgress(t('diary.analyzing', { name: dogName }))
 
     const progressSteps = [
-      { text: `🔮 ${dogName}의 오늘 운세를 점치는 중...`, delay: 2000 },
-      { text: `📖 ${dogName}의 일기를 쓰는 중...`, delay: 5000 },
-      { text: `🩺 ${dogName}의 건강을 분석하는 중...`, delay: 8000 },
+      { text: t('diary.fortuneTelling', { name: dogName }), delay: 2000 },
+      { text: t('diary.writingDiary', { name: dogName }), delay: 5000 },
+      { text: t('diary.analyzingHealth', { name: dogName }), delay: 8000 },
     ]
     progressSteps.forEach(({ text, delay }) => {
       setTimeout(() => setProgress(text), delay)
     })
 
     try {
-      const result = await api.generateDiary(user.user_id, {
+      const result = await api.generateDiary({
         mood, food, walk: String(walk || 0), poop, notes,
         ...(photo ? { photo } : {}),
       })
-      navigate('diary-detail', result)
+      navigate(`/diary/${result.entry_id}`, { state: { entry: result } })
     } catch (err) {
-      alert('생성 오류: ' + err.message)
+      alert(t('diary.generationError') + err.message)
     } finally {
       setLoading(false)
     }
@@ -141,7 +148,7 @@ export default function NewDiary({ user, navigate }) {
     <motion.div {...pageTransition} style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <button onClick={() => step > 0 ? setStep(step - 1) : navigate('home')} className="btn btn-ghost">
+        <button onClick={() => step > 0 ? setStep(step - 1) : navigate('/home')} className="btn btn-ghost">
           ← {step > 0 ? '이전' : '뒤로'}
         </button>
         <span style={styles.stepCount}>{step + 1} / {totalSteps}</span>

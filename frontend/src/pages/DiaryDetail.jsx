@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import html2canvas from 'html2canvas'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { dateLabel } from '../utils/date'
 
@@ -17,8 +20,15 @@ const RISK_COLORS = {
   Critical: { bg: '#F3E5F5', color: '#6A1B9A', dot: '#9C27B0' },
 }
 
-export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
+export default function DiaryDetail() {
+  const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { entryId } = useParams()
+  const { user } = useAuth()
+  const initialEntry = location.state?.entry || null
   const [entry, setEntry] = useState(initialEntry)
+  const [loadingEntry, setLoadingEntry] = useState(!initialEntry)
   const [activeSection, setActiveSection] = useState('diary')
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
@@ -35,14 +45,20 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
   const captureRef = useRef(null)
   const [capturing, setCapturing] = useState(false)
 
-  // 진입 시 서버에서 최신 데이터를 가져와 stale 데이터 문제 방지
+  // Fetch entry from API (for deep links or to refresh stale data)
   useEffect(() => {
-    if (user?.user_id && initialEntry?.entry_id) {
-      api.getDiary(user.user_id, initialEntry.entry_id)
-        .then((fresh) => setEntry(fresh))
-        .catch(() => { /* initialEntry 유지 */ })
+    if (entryId) {
+      api.getDiary(entryId)
+        .then((fresh) => {
+          setEntry(fresh)
+          setLoadingEntry(false)
+        })
+        .catch(() => {
+          if (!initialEntry) navigate('/home', { replace: true })
+          setLoadingEntry(false)
+        })
     }
-  }, [user?.user_id, initialEntry?.entry_id])
+  }, [entryId])
 
   const handleCapture = useCallback(async () => {
     if (!captureRef.current || capturing) return
@@ -84,19 +100,40 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
 
   const dateStr = dateLabel(entry.date)
 
+  // 🌐 Helper function: Get language-specific content
+  const getLangText = (obj, field) => {
+    if (!obj) return ''
+    const currentLang = i18n.language
+    // Try language-specific field first (_ko or _en)
+    const langField = `${field}_${currentLang}`
+    if (obj[langField]) return obj[langField]
+    // Fallback to legacy field (for backward compatibility)
+    if (obj[field]) return obj[field]
+    // Final fallback to Korean version if exists
+    if (obj[`${field}_ko`]) return obj[`${field}_ko`]
+    // Last fallback to English version if exists
+    if (obj[`${field}_en`]) return obj[`${field}_en`]
+    return ''
+  }
+
   // Show existing comments, then start SSE for new ones
   useEffect(() => {
     setVisibleComments(comments.length > 0 ? [...comments] : [])
 
-    if (comments.length === 0 && user?.user_id && entry.entry_id) {
+    if (comments.length === 0 && entry.entry_id) {
       setStreaming(true)
       esRef.current = api.streamComments(
-        user.user_id,
         entry.entry_id,
         (comment) => {
-          setVisibleComments((prev) => [...prev, comment])
-          setNewCommentAlert(true)
-          setTimeout(() => setNewCommentAlert(false), 2000)
+          // Validate comment is not empty (check both text_ko and text_en)
+          const hasText = (comment.text_ko && comment.text_ko.trim()) ||
+                          (comment.text_en && comment.text_en.trim()) ||
+                          (comment.text && comment.text.trim())
+          if (comment && hasText) {
+            setVisibleComments((prev) => [...prev, comment])
+            setNewCommentAlert(true)
+            setTimeout(() => setNewCommentAlert(false), 2000)
+          }
         },
         () => setStreaming(false),
       )
@@ -114,7 +151,7 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
     if (!editText.trim()) return
     setEditSaving(true)
     try {
-      const result = await api.editDiary(user.user_id, entry.entry_id, {
+      const result = await api.editDiary(entry.entry_id, {
         original_diary: diary.content,
         edited_diary: editText,
         dog_name: user.dog?.name || '멍멍이',
@@ -131,18 +168,23 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
         esRef.current = null
       }
       esRef.current = api.streamComments(
-        user.user_id,
         entry.entry_id,
         (comment) => {
-          setVisibleComments((prev) => [...prev, comment])
-          setNewCommentAlert(true)
-          setTimeout(() => setNewCommentAlert(false), 2000)
+          // Validate comment is not empty (check both text_ko and text_en)
+          const hasText = (comment.text_ko && comment.text_ko.trim()) ||
+                          (comment.text_en && comment.text_en.trim()) ||
+                          (comment.text && comment.text.trim())
+          if (comment && hasText) {
+            setVisibleComments((prev) => [...prev, comment])
+            setNewCommentAlert(true)
+            setTimeout(() => setNewCommentAlert(false), 2000)
+          }
         },
         () => setStreaming(false),
         'edit',
       )
     } catch (err) {
-      alert('수정 오류: ' + err.message)
+      alert(t('diary.editError') + err.message)
     }
     setEditSaving(false)
   }
@@ -150,20 +192,28 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      await api.deleteDiary(user.user_id, entry.entry_id)
-      navigate('home')
+      await api.deleteDiary(entry.entry_id)
+      navigate('/home')
     } catch (err) {
-      alert('삭제 오류: ' + err.message)
+      alert(t('diary.deleteError') + err.message)
       setDeleting(false)
       setDeleteConfirm(false)
     }
+  }
+
+  if (loadingEntry || !entry) {
+    return (
+      <motion.div {...pageTransition} style={{ ...styles.container, alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: 32, height: 32 }} />
+      </motion.div>
+    )
   }
 
   return (
     <motion.div {...pageTransition} style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <button onClick={() => navigate('home')} className="btn btn-ghost">← 뒤로</button>
+        <button onClick={() => navigate('/home')} className="btn btn-ghost">← {t('common.back')}</button>
         <span style={styles.headerDate}>{dateStr}</span>
         <div style={{ width: 60 }} />
       </div>
@@ -172,9 +222,9 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
         {/* Section tabs */}
         <div style={styles.sectionTabs}>
           {[
-            { id: 'diary', label: '📖 일기', icon: '📖' },
-            { id: 'fortune', label: '🔮 운세', icon: '🔮' },
-            { id: 'health', label: '🩺 건강', icon: '🩺' },
+            { id: 'diary', label: `📖 ${t('diary.title')}`, icon: '📖' },
+            { id: 'fortune', label: `🔮 ${t('diary.horoscope')}`, icon: '🔮' },
+            { id: 'health', label: `🩺 ${t('diary.health')}`, icon: '🩺' },
           ].map((s) => (
             <motion.button
               key={s.id}
@@ -202,7 +252,7 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
               <div style={styles.diaryCard}>
                 <div style={styles.diaryHeader}>
                   <span style={styles.diaryMoodIcon}>{diary.mood_icon === 'sparkles' ? '✨' : diary.mood_icon === 'heart' ? '❤️' : '✨'}</span>
-                  <h3 style={styles.diaryTitle}>{diary.title || '오늘의 일기'}</h3>
+                  <h3 style={styles.diaryTitle}>{getLangText(diary, 'title') || t('diary.todayDiary')}</h3>
                 </div>
 
                 {/* Photo */}
@@ -240,15 +290,14 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
                     </div>
                   </div>
                 ) : (
-                  <p style={styles.diaryContent}>{diary.content || ''}</p>
+                  <p style={styles.diaryContent}>{getLangText(diary, 'content')}</p>
                 )}
 
-                {diary.meme_reference && (
+                {getLangText(diary, 'meme_reference') && (
                   <div style={styles.memeRef}>
-                    <span>💬</span> <span>{diary.meme_reference}</span>
+                    <span>💬</span> <span>{getLangText(diary, 'meme_reference')}</span>
                   </div>
                 )}
-                {entry.is_edited && <span style={styles.editedBadge}>수정됨</span>}
 
                 {/* Post action bar (inside card, like SNS) */}
                 {!isEditing && (
@@ -344,7 +393,7 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
               {/* Comments Section */}
               <div style={styles.commentsSection}>
                 <h4 style={styles.commentsTitle}>
-                  💬 댓글 <span style={styles.commentCountBadge}>{visibleComments.length}</span>
+                  💬 {t('diary.comments')} <span style={styles.commentCountBadge}>{visibleComments.length}</span>
                   {newCommentAlert && (
                     <motion.span
                       initial={{ scale: 0, opacity: 0 }}
@@ -352,7 +401,7 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
                       exit={{ scale: 0, opacity: 0 }}
                       style={styles.newBadge}
                     >
-                      NEW
+                      {t('diary.newCommentAlert')}
                     </motion.span>
                   )}
                 </h4>
@@ -369,8 +418,7 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
                         <div style={styles.commentAvatar}>{c.emoji}</div>
                         <div style={styles.commentBody}>
                           <span style={styles.commentAuthor}>{c.author}</span>
-                          <p style={styles.commentText}>{c.text}</p>
-                          {c.is_edit_reaction && <span style={styles.editReactionBadge}>수정 반응</span>}
+                          <p style={styles.commentText}>{getLangText(c, 'text')}</p>
                         </div>
                       </motion.div>
                     ))}
@@ -414,38 +462,38 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
               <div style={styles.fortuneCard}>
                 <div style={styles.fortuneHeader}>
                   <span style={{ fontSize: '2rem' }}>🔮</span>
-                  <h3 style={styles.fortuneTitle}>오늘의 운세</h3>
+                  <h3 style={styles.fortuneTitle}>{t('diary.horoscope')}</h3>
                 </div>
-                <p style={styles.fortuneSummary}>{horoscope.summary || ''}</p>
-                <p style={styles.fortuneContent}>{horoscope.content || ''}</p>
+                <p style={styles.fortuneSummary}>{getLangText(horoscope, 'summary')}</p>
+                <p style={styles.fortuneContent}>{getLangText(horoscope, 'content')}</p>
 
                 <div style={styles.fortuneTags}>
-                  {horoscope.lucky_item && (
+                  {getLangText(horoscope, 'lucky_item') && (
                     <div style={styles.fTag}>
                       <span>🍀</span>
-                      <span style={styles.fTagLabel}>Lucky</span>
-                      <span style={styles.fTagValue}>{horoscope.lucky_item}</span>
+                      <span style={styles.fTagLabel}>{t('diary.luckyItem')}</span>
+                      <span style={styles.fTagValue}>{getLangText(horoscope, 'lucky_item')}</span>
                     </div>
                   )}
-                  {horoscope.weather_context && (
+                  {getLangText(horoscope, 'weather_context') && (
                     <div style={styles.fTag}>
                       <span>🌤️</span>
-                      <span style={styles.fTagLabel}>날씨</span>
-                      <span style={styles.fTagValue}>{horoscope.weather_context}</span>
+                      <span style={styles.fTagLabel}>{t('diary.weatherContext')}</span>
+                      <span style={styles.fTagValue}>{getLangText(horoscope, 'weather_context')}</span>
                     </div>
                   )}
-                  {horoscope.trend_reference && (
+                  {getLangText(horoscope, 'trend_reference') && (
                     <div style={styles.fTag}>
                       <span>📈</span>
-                      <span style={styles.fTagLabel}>트렌드</span>
-                      <span style={styles.fTagValue}>{horoscope.trend_reference}</span>
+                      <span style={styles.fTagLabel}>{t('diary.trendReference')}</span>
+                      <span style={styles.fTagValue}>{getLangText(horoscope, 'trend_reference')}</span>
                     </div>
                   )}
-                  {horoscope.interaction_hint && (
+                  {getLangText(horoscope, 'interaction_hint') && (
                     <div style={styles.fTag}>
                       <span>💡</span>
-                      <span style={styles.fTagLabel}>힌트</span>
-                      <span style={styles.fTagValue}>{horoscope.interaction_hint}</span>
+                      <span style={styles.fTagLabel}>{t('diary.interactionHint')}</span>
+                      <span style={styles.fTagValue}>{getLangText(horoscope, 'interaction_hint')}</span>
                     </div>
                   )}
                 </div>
@@ -476,7 +524,7 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
               <div style={styles.healthCard}>
                 <div style={styles.healthHeader}>
                   <span style={{ fontSize: '2rem' }}>🩺</span>
-                  <h3 style={styles.healthTitle}>건강 분석</h3>
+                  <h3 style={styles.healthTitle}>{t('diary.health')}</h3>
                   {health.risk_level && (
                     <span style={{
                       ...styles.riskBadge,
@@ -488,33 +536,36 @@ export default function DiaryDetail({ user, entry: initialEntry, navigate }) {
                         background: (RISK_COLORS[health.risk_level] || RISK_COLORS.Low).dot,
                         display: 'inline-block',
                       }} />
-                      {health.risk_level}
+                      {t(`health.${health.risk_level.toLowerCase()}`, health.risk_level)}
                     </span>
                   )}
                 </div>
 
                 {[
-                  { label: '증상 분석', content: health.symptom_analysis, color: '#6B8F5E' },
-                  { label: '기간/빈도', content: health.duration_context, color: '#F0A04B' },
-                  { label: '견종 특성', content: health.breed_context, color: '#E8A690' },
-                  { label: '종합 의견', content: health.conclusion, color: '#A8D5BA' },
-                ].map((step, i) => step.content && (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    style={{ ...styles.cotStep, borderLeftColor: step.color }}
-                  >
-                    <span style={styles.cotLabel}>{step.label}</span>
-                    <p style={styles.cotContent}>{step.content}</p>
-                  </motion.div>
-                ))}
+                  { label: t('health.symptomAnalysis'), field: 'symptom_analysis', color: '#6B8F5E' },
+                  { label: t('health.durationContext'), field: 'duration_context', color: '#F0A04B' },
+                  { label: t('health.breedContext'), field: 'breed_context', color: '#E8A690' },
+                  { label: t('health.conclusion'), field: 'conclusion', color: '#A8D5BA' },
+                ].map((step, i) => {
+                  const content = getLangText(health, step.field)
+                  return content && (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      style={{ ...styles.cotStep, borderLeftColor: step.color }}
+                    >
+                      <span style={styles.cotLabel}>{step.label}</span>
+                      <p style={styles.cotContent}>{content}</p>
+                    </motion.div>
+                  )
+                })}
 
-                {health.advice && (
+                {getLangText(health, 'advice') && (
                   <div style={styles.adviceBox}>
                     <span>💊</span>
-                    <p style={styles.adviceText}>{health.advice}</p>
+                    <p style={styles.adviceText}>{getLangText(health, 'advice')}</p>
                   </div>
                 )}
 

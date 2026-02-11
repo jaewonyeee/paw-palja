@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
+import { useNavigate, Navigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 
 const pageTransition = {
@@ -8,13 +10,16 @@ const pageTransition = {
   exit: { opacity: 0, y: 30, transition: { duration: 0.3 } },
 }
 
-export default function Admin({ navigate }) {
+export default function Admin() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [system, setSystem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
+    if (user?.user_id !== 'admin') return
     Promise.all([api.adminStats(), api.adminSystem()])
       .then(([s, sys]) => {
         setStats(s)
@@ -23,6 +28,10 @@ export default function Admin({ navigate }) {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  if (user?.user_id !== 'admin') {
+    return <Navigate to="/home" replace />
+  }
 
   if (loading) {
     return (
@@ -35,7 +44,7 @@ export default function Admin({ navigate }) {
   return (
     <motion.div {...pageTransition} style={styles.container}>
       <div style={styles.header}>
-        <button onClick={() => navigate('profile')} className="btn btn-ghost">← 뒤로</button>
+        <button onClick={() => navigate('/profile')} className="btn btn-ghost">← 뒤로</button>
         <h3 style={styles.headerTitle}>Admin Dashboard</h3>
         <div style={{ width: 60 }} />
       </div>

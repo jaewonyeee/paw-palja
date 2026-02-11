@@ -1,5 +1,7 @@
-import { useState, useEffect, Component } from 'react'
-import { AnimatePresence } from 'motion/react'
+import { Component } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 import Onboarding from './pages/Onboarding'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -9,6 +11,7 @@ import DiaryDetail from './pages/DiaryDetail'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import './App.css'
+import './i18n'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -35,75 +38,40 @@ class ErrorBoundary extends Component {
   }
 }
 
+function RootRedirect() {
+  const { user } = useAuth()
+  return <Navigate to={user ? '/home' : '/onboarding'} replace />
+}
+
+function AppRoutes() {
+  return (
+    <div className="app-frame">
+      <Routes>
+        <Route path="/" element={<RootRedirect />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/diary/new" element={<NewDiary />} />
+          <Route path="/diary/:entryId" element={<DiaryDetail />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  )
+}
+
 function App() {
-  const [page, setPage] = useState('onboarding')
-  const [user, setUser] = useState(null)
-  const [selectedDiary, setSelectedDiary] = useState(null)
-
-  useEffect(() => {
-    const saved = localStorage.getItem('pawpalja_user')
-    if (saved) {
-      try {
-        const u = JSON.parse(saved)
-        if (u && u.user_id && u.nickname && u.dog) {
-          setUser(u)
-          setPage('home')
-        } else {
-          localStorage.removeItem('pawpalja_user')
-        }
-      } catch {
-        localStorage.removeItem('pawpalja_user')
-      }
-    }
-  }, [])
-
-  const handleLogin = (userData) => {
-    setUser(userData)
-    localStorage.setItem('pawpalja_user', JSON.stringify(userData))
-    setPage('home')
-  }
-
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem('pawpalja_user')
-    setPage('onboarding')
-  }
-
-  const navigate = (p, data) => {
-    if (data) setSelectedDiary(data)
-    setPage(p)
-  }
-
   return (
     <ErrorBoundary>
-      <div className="app-frame">
-        <AnimatePresence mode="wait">
-          {page === 'onboarding' && (
-            <Onboarding key="onboarding" onStart={() => setPage('login')} />
-          )}
-          {page === 'login' && (
-            <Login key="login" onLogin={handleLogin} onGoSignup={() => setPage('signup')} />
-          )}
-          {page === 'signup' && (
-            <Signup key="signup" onSignup={handleLogin} onGoLogin={() => setPage('login')} />
-          )}
-          {page === 'home' && user && (
-            <Home key="home" user={user} navigate={navigate} onLogout={handleLogout} />
-          )}
-          {page === 'new-diary' && user && (
-            <NewDiary key="new-diary" user={user} navigate={navigate} />
-          )}
-          {page === 'diary-detail' && user && selectedDiary && (
-            <DiaryDetail key="diary-detail" user={user} entry={selectedDiary} navigate={navigate} />
-          )}
-          {page === 'profile' && user && (
-            <Profile key="profile" user={user} onLogout={handleLogout} navigate={navigate} />
-          )}
-          {page === 'admin' && user?.user_id === 'admin' && (
-            <Admin key="admin" navigate={navigate} />
-          )}
-        </AnimatePresence>
-      </div>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </ErrorBoundary>
   )
 }

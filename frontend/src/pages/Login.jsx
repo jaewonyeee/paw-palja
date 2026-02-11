@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 
 const pageTransition = {
@@ -8,7 +11,10 @@ const pageTransition = {
   exit: { opacity: 0, x: -40, transition: { duration: 0.3 } },
 }
 
-export default function Login({ onLogin, onGoSignup }) {
+export default function Login() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { handleLogin } = useAuth()
   const [userId, setUserId] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,7 +27,8 @@ export default function Login({ onLogin, onGoSignup }) {
     setError('')
     try {
       const data = await api.login({ user_id: userId.trim(), password })
-      onLogin(data)
+      handleLogin(data)
+      navigate('/home')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -33,27 +40,27 @@ export default function Login({ onLogin, onGoSignup }) {
     <motion.div {...pageTransition} style={styles.container}>
       <div style={styles.header}>
         <span style={styles.logo}>🐾</span>
-        <h2 style={styles.title}>다시 만나서 반가워요!</h2>
-        <p style={styles.subtitle}>로그인하고 오늘의 일기를 확인하세요</p>
+        <h2 style={styles.title}>{t('auth.welcomeBack')}</h2>
+        <p style={styles.subtitle}>{t('auth.loginSubtitle', '로그인하고 오늘의 일기를 확인하세요')}</p>
       </div>
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.inputGroup}>
-          <label style={styles.label}>아이디</label>
+          <label style={styles.label}>{t('auth.userId')}</label>
           <input
             className="input-field"
             type="text"
-            placeholder="회원가입 시 발급된 아이디를 입력하세요"
+            placeholder={t('auth.userIdPlaceholder', '회원가입 시 발급된 아이디를 입력하세요')}
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
           />
         </div>
         <div style={styles.inputGroup}>
-          <label style={styles.label}>비밀번호</label>
+          <label style={styles.label}>{t('auth.password')}</label>
           <input
             className="input-field"
             type="password"
-            placeholder="비밀번호를 입력하세요"
+            placeholder={t('auth.passwordPlaceholder', '비밀번호를 입력하세요')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -77,14 +84,14 @@ export default function Login({ onLogin, onGoSignup }) {
           disabled={loading}
           style={{ width: '100%', marginTop: 8 }}
         >
-          {loading ? <div className="spinner" style={{ width: 20, height: 20 }} /> : '로그인'}
+          {loading ? <div className="spinner" style={{ width: 20, height: 20 }} /> : t('auth.login')}
         </motion.button>
       </form>
 
       <div style={styles.footer}>
-        <span style={styles.footerText}>계정이 없으신가요?</span>
-        <button onClick={onGoSignup} className="btn btn-ghost" style={{ color: '#6C5CE7', fontWeight: 700 }}>
-          회원가입
+        <span style={styles.footerText}>{t('auth.dontHaveAccount')}</span>
+        <button onClick={() => navigate('/signup')} className="btn btn-ghost" style={{ color: '#6C5CE7', fontWeight: 700 }}>
+          {t('auth.signup')}
         </button>
       </div>
     </motion.div>

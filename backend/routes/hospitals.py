@@ -2,13 +2,14 @@
 위치 기반 동물병원 검색 API 라우터
 """
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from backend.i18n import get_message, get_lang
 
 router = APIRouter()
 
 
 @router.get("/hospitals/nearby")
-async def nearby_hospitals(lat: float, lng: float, radius: int = 3000):
+async def nearby_hospitals(request: Request, lat: float, lng: float, radius: int = 3000):
     """위치 기반 근처 동물병원 검색 (Kakao Maps API or fallback)"""
     import httpx
 
@@ -38,8 +39,9 @@ async def nearby_hospitals(lat: float, lng: float, radius: int = 3000):
             pass
 
     if not hospitals:
+        lang = get_lang(request)
         hospitals = [
-            {"name": "주변 동물병원을 검색해보세요", "address": "카카오맵에서 '동물병원'을 검색하세요", "phone": "", "distance": "", "url": "", "lat": lat, "lng": lng},
+            {"name": get_message("hospital_search_fallback_name", lang), "address": get_message("hospital_search_fallback_address", lang), "phone": "", "distance": "", "url": "", "lat": lat, "lng": lng},
         ]
 
     return {"hospitals": hospitals, "count": len(hospitals)}

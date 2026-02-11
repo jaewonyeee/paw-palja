@@ -3,16 +3,20 @@
 """
 import uuid
 import logging
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from backend.schemas import (
     DogProfile, DailyLog, AnalysisRequest, AnalysisResponse,
     HoroscopeResult, DiaryResult, HealthAnalysis,
 )
 from backend.agents import build_agent_graph
+from backend.i18n import get_message, get_lang
 
 logger = logging.getLogger("pawpalja.agents")
 
 router = APIRouter()
+
+# Import limiter (set up in main.py, accessed via app.state)
+from backend.rate_limit import limiter
 
 _agent_graph = None
 
@@ -34,10 +38,11 @@ def _prepare_state(profile: DogProfile, logs: DailyLog):
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
-async def analyze_full(request: AnalysisRequest):
+@limiter.limit("3/minute")
+async def analyze_full(request: Request, body: AnalysisRequest):
     """전체 분석: Oracle + Journalist + Vet 순차 실행"""
     try:
-        initial_state = _prepare_state(request.profile, request.logs)
+        initial_state = _prepare_state(body.profile, body.logs)
         thread_id = str(uuid.uuid4())
         config = {"configurable": {"thread_id": thread_id}}
 
@@ -51,50 +56,54 @@ async def analyze_full(request: AnalysisRequest):
         )
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
 
 
 @router.post("/horoscope")
-async def get_horoscope(request: AnalysisRequest):
+@limiter.limit("5/minute")
+async def get_horoscope(request: Request, body: AnalysisRequest):
     """Oracle Agent만 단독 실행"""
     try:
         from backend.agents import oracle_agent
-        state = _prepare_state(request.profile, request.logs)
+        state = _prepare_state(body.profile, body.logs)
         result = oracle_agent(state)
         return result["horoscope"]
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
 
 
 @router.post("/diary")
-async def get_diary(request: AnalysisRequest):
+@limiter.limit("5/minute")
+async def get_diary(request: Request, body: AnalysisRequest):
     """Journalist Agent만 단독 실행"""
     try:
         from backend.agents import journalist_agent
-        state = _prepare_state(request.profile, request.logs)
+        state = _prepare_state(body.profile, body.logs)
         result = journalist_agent(state)
         return result["diary"]
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
 
 
 @router.post("/health")
-async def get_health(request: AnalysisRequest):
+@limiter.limit("5/minute")
+async def get_health(request: Request, body: AnalysisRequest):
     """Vet Agent만 단독 실행"""
     try:
         from backend.agents import vet_agent
-        state = _prepare_state(request.profile, request.logs)
+        state = _prepare_state(body.profile, body.logs)
         result = vet_agent(state)
         return result["health"]
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
 
 
 @router.post("/rag/ingest")
-async def rag_ingest():
+@limiter.limit("1/5minutes")
+async def rag_ingest(request: Request):
     """RAG 데이터 재수집 및 ChromaDB 재적재"""
     try:
         from backend.rag_pipeline import build_vector_db
@@ -104,11 +113,11 @@ async def rag_ingest():
         return {"status": "warning", "message": "인덱싱할 데이터가 없습니다"}
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
 
 
 @router.get("/rag/search")
-async def rag_search(q: str, k: int = Query(default=3, ge=1, le=20)):
+async def rag_search(request: Request, q: str, k: int = Query(default=3, ge=1, le=20)):
     """RAG 벡터 검색 테스트"""
     try:
         from backend.rag_pipeline import query_rag
@@ -122,11 +131,12 @@ async def rag_search(q: str, k: int = Query(default=3, ge=1, le=20)):
         }
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
 
 
 @router.post("/sns/fetch")
-async def sns_fetch():
+@limiter.limit("2/minute")
+async def sns_fetch(request: Request):
     """Apify를 통한 SNS 데이터 수집"""
     try:
         from backend.fetch_sns_data import fetch_multiple_tags, save_sns_data
@@ -137,4 +147,4 @@ async def sns_fetch():
         return {"status": "warning", "message": "수집된 데이터가 없습니다", "count": 0}
     except Exception as e:
         logger.exception("에이전트 실행 실패")
-        raise HTTPException(status_code=500, detail="처리 중 오류가 발생했습니다.")
+        raise HTTPException(status_code=500, detail=get_message("processing_error", get_lang(request)))
