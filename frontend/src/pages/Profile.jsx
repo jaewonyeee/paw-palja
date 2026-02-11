@@ -1,9 +1,10 @@
 import { motion } from 'motion/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { isPushSupported, subscribeToPush, unsubscribeFromPush, isSubscribed } from '../utils/pushNotifications'
 
 const pageTransition = {
   initial: { opacity: 0, x: 30 },
@@ -20,6 +21,54 @@ export default function Profile() {
   const [hour, setHour] = useState(user.diary_time?.split(':')[0] || '09')
   const [minute, setMinute] = useState(user.diary_time?.split(':')[1] || '00')
   const [saving, setSaving] = useState(false)
+  const [isProfilePublic, setIsProfilePublic] = useState(user.is_profile_public || false)
+  const [bio, setBio] = useState(user.bio || '')
+  const [savingVisibility, setSavingVisibility] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
+  const pushSupported = isPushSupported()
+
+  useEffect(() => {
+    if (pushSupported) {
+      isSubscribed().then(setPushEnabled)
+    }
+  }, [pushSupported])
+
+  const handleTogglePush = async () => {
+    setPushLoading(true)
+    try {
+      if (pushEnabled) {
+        await unsubscribeFromPush()
+        setPushEnabled(false)
+      } else {
+        await subscribeToPush()
+        setPushEnabled(true)
+      }
+    } catch (err) {
+      alert(t('profile.pushError') + ': ' + err.message)
+    } finally {
+      setPushLoading(false)
+    }
+  }
+
+  const handleTestPush = async () => {
+    try {
+      await api.pushTest()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  const handleSaveVisibility = async () => {
+    setSavingVisibility(true)
+    try {
+      await api.updateVisibility(isProfilePublic, bio)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSavingVisibility(false)
+    }
+  }
 
   const handleSaveTime = async () => {
     setSaving(true)
@@ -145,25 +194,122 @@ export default function Profile() {
             <h4 style={styles.cardTitle}>{t('profile.languageSettings')}</h4>
           </div>
           <div style={styles.languageSelector}>
+            {[
+              { code: 'ko', flag: '\u{1F1F0}\u{1F1F7}', label: 'language.korean' },
+              { code: 'en', flag: '\u{1F1FA}\u{1F1F8}', label: 'language.english' },
+              { code: 'ja', flag: '\u{1F1EF}\u{1F1F5}', label: 'language.japanese' },
+              { code: 'zh', flag: '\u{1F1E8}\u{1F1F3}', label: 'language.chinese' },
+              { code: 'es', flag: '\u{1F1EA}\u{1F1F8}', label: 'language.spanish' },
+            ].map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => i18n.changeLanguage(lang.code)}
+                style={{
+                  ...styles.languageBtn,
+                  ...(i18n.language === lang.code ? styles.languageBtnActive : {})
+                }}
+              >
+                {lang.flag} {t(lang.label)}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Push Notification Settings */}
+        {pushSupported && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.27 }}
+            style={styles.card}
+          >
+            <div style={styles.cardHeader}>
+              <h4 style={styles.cardTitle}>{t('profile.pushNotifications')}</h4>
+            </div>
+            <div style={styles.toggleRow}>
+              <span style={styles.toggleLabel}>{t('profile.enablePush')}</span>
+              <button
+                onClick={handleTogglePush}
+                disabled={pushLoading}
+                style={{
+                  ...styles.toggle,
+                  background: pushEnabled ? 'var(--bg-purple)' : 'var(--border-light)',
+                  opacity: pushLoading ? 0.5 : 1,
+                }}
+              >
+                <span style={{
+                  ...styles.toggleKnob,
+                  transform: pushEnabled ? 'translateX(20px)' : 'translateX(0)',
+                }} />
+              </button>
+            </div>
+            {pushEnabled && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleTestPush}
+                style={styles.testPushBtn}
+              >
+                {t('profile.testPush')}
+              </motion.button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Public Profile Settings */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={styles.card}
+        >
+          <div style={styles.cardHeader}>
+            <h4 style={styles.cardTitle}>{t('social.publicProfile')}</h4>
+          </div>
+
+          <div style={styles.toggleRow}>
+            <span style={styles.toggleLabel}>{t('social.profileVisible')}</span>
             <button
-              onClick={() => i18n.changeLanguage('ko')}
+              onClick={() => setIsProfilePublic(!isProfilePublic)}
               style={{
-                ...styles.languageBtn,
-                ...(i18n.language === 'ko' ? styles.languageBtnActive : {})
+                ...styles.toggle,
+                background: isProfilePublic ? 'var(--bg-purple)' : 'var(--border-light)',
               }}
             >
-              🇰🇷 {t('language.korean')}
-            </button>
-            <button
-              onClick={() => i18n.changeLanguage('en')}
-              style={{
-                ...styles.languageBtn,
-                ...(i18n.language === 'en' ? styles.languageBtnActive : {})
-              }}
-            >
-              🇺🇸 {t('language.english')}
+              <span style={{
+                ...styles.toggleKnob,
+                transform: isProfilePublic ? 'translateX(20px)' : 'translateX(0)',
+              }} />
             </button>
           </div>
+
+          <div style={{ marginTop: 12 }}>
+            <span style={styles.infoLabel}>{t('social.bio')}</span>
+            <textarea
+              className="input-field"
+              value={bio}
+              onChange={(e) => setBio(e.target.value.slice(0, 200))}
+              placeholder={t('social.bioPlaceholder')}
+              rows={2}
+              style={{ marginTop: 4, fontSize: '0.85rem' }}
+            />
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{bio.length}/200</span>
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSaveVisibility}
+            disabled={savingVisibility}
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: 10 }}
+          >
+            {savingVisibility ? t('profile.savingChanges') : t('common.save')}
+          </motion.button>
+
+          {isProfilePublic && (
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
+              {t('social.profileLink')}: /profile/{user.user_id}
+            </p>
+          )}
         </motion.div>
 
         {/* Menu items - admin only */}
@@ -386,24 +532,71 @@ const styles = {
   // Language Settings
   languageSelector: {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: 8,
   },
   languageBtn: {
-    flex: 1,
-    padding: '12px',
+    flex: '1 1 calc(50% - 4px)',
+    minWidth: 0,
+    padding: '10px 8px',
     border: '1.5px solid var(--border-light)',
     borderRadius: 'var(--radius-md)',
     background: 'white',
     color: 'var(--text-muted)',
-    fontSize: '0.88rem',
+    fontSize: '0.82rem',
     fontWeight: 600,
     fontFamily: 'inherit',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    textAlign: 'center',
   },
   languageBtnActive: {
     background: 'var(--bg-purple)',
     color: 'white',
     borderColor: 'var(--bg-purple)',
+  },
+  testPushBtn: {
+    marginTop: 12,
+    padding: '8px 16px',
+    borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--bg-purple)',
+    background: 'transparent',
+    color: 'var(--bg-purple)',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    width: '100%',
+  },
+  toggleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleLabel: {
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  toggle: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    border: 'none',
+    cursor: 'pointer',
+    position: 'relative',
+    transition: 'background 0.2s',
+    padding: 0,
+  },
+  toggleKnob: {
+    display: 'block',
+    width: 22,
+    height: 22,
+    borderRadius: '50%',
+    background: 'white',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s',
+    marginTop: 3,
+    marginLeft: 3,
   },
 }

@@ -186,3 +186,9 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=4, max_length=100)
     dog: DogProfile
     diary_time: str = Field(default="09:00", pattern=r"^\d{2}:\d{2}$")
+
+
+class PushSubscribeRequest(BaseModel):
+    endpoint: str = Field(max_length=2000)
+    p256dh: str = Field(max_length=500)
+    auth_key: str = Field(max_length=500)

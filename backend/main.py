@@ -54,6 +54,9 @@ from backend.routes import (
     admin_router,
     agents_router,
     hospitals_router,
+    social_router,
+    push_router,
+    analytics_router,
 )
 from backend import user_store
 from backend.database import init_db, AsyncSessionLocal
@@ -163,9 +166,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # i18n: Accept-Language middleware (must be added before CORS so it runs first)
 class AcceptLanguageMiddleware(BaseHTTPMiddleware):
+    _SUPPORTED = ("ko", "en", "ja", "zh", "es")
+
     async def dispatch(self, request: Request, call_next):
-        accept = request.headers.get("Accept-Language", "")
-        request.state.lang = "en" if "en" in accept else "ko"
+        accept = request.headers.get("Accept-Language", "").lower()
+        lang = "ko"  # default
+        for supported in self._SUPPORTED:
+            if supported in accept:
+                lang = supported
+                break
+        request.state.lang = lang
         return await call_next(request)
 
 
@@ -196,6 +206,9 @@ app.include_router(comments_router, prefix=_V1)
 app.include_router(admin_router, prefix=_V1)
 app.include_router(agents_router, prefix=_V1)
 app.include_router(hospitals_router, prefix=_V1)
+app.include_router(social_router, prefix=_V1)
+app.include_router(push_router, prefix=_V1)
+app.include_router(analytics_router, prefix=_V1)
 
 
 @app.get("/")

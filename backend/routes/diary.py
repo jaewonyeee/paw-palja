@@ -70,6 +70,10 @@ async def generate_diary(
             entry["photo"] = logs.photo
 
         saved = await user_store.save_diary_entry(db, user_id, entry)
+
+        # Track diary_created event
+        await user_store.track_event(db, user_id, "diary_created")
+
         return saved
     except Exception as e:
         logger.exception("다이어리 생성 실패")

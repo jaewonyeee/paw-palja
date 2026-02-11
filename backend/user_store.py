@@ -11,7 +11,7 @@ import bcrypt
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models import User, DogProfile, DiaryEntry
+from backend.models import User, DogProfile, DiaryEntry, UserEvent
 from backend.i18n import get_message
 
 logger = logging.getLogger("pawpalja.store")
@@ -53,6 +53,8 @@ def _user_to_dict(user: User) -> dict:
         "nickname": user.nickname,
         "dog": _dog_to_dict(user.dog_profile),
         "diary_time": user.diary_time or "09:00",
+        "bio": user.bio,
+        "is_profile_public": user.is_profile_public,
     }
 
 
@@ -69,6 +71,9 @@ def _entry_to_dict(entry: DiaryEntry) -> dict:
         "logs": entry.logs,
         "photo": entry.photo,
         "is_edited": entry.is_edited,
+        "is_public": entry.is_public,
+        "share_token": entry.share_token,
+        "view_count": entry.view_count,
         "created_at": entry.created_at.isoformat() if entry.created_at else None,
     }
 
@@ -337,3 +342,10 @@ async def get_all_users_with_diary_counts(db: AsyncSession) -> dict:
         })
 
     return {"total_users": len(users), "total_diaries": total_diaries, "users": users}
+
+
+async def track_event(db: AsyncSession, user_id: str, event_type: str, metadata: dict | None = None) -> None:
+    """Record a user event for analytics."""
+    event = UserEvent(user_id=user_id, event_type=event_type, metadata_json=metadata)
+    db.add(event)
+    await db.commit()

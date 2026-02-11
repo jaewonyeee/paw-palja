@@ -44,6 +44,10 @@ export default function DiaryDetail() {
   const esRef = useRef(null)
   const captureRef = useRef(null)
   const [capturing, setCapturing] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const [shareModal, setShareModal] = useState(false)
+  const [shareToken, setShareToken] = useState(entry?.share_token || null)
+  const [isPublic, setIsPublic] = useState(entry?.is_public || false)
 
   // Fetch entry from API (for deep links or to refresh stale data)
   useEffect(() => {
@@ -92,6 +96,59 @@ export default function DiaryDetail() {
     }
     setCapturing(false)
   }, [activeSection, entry.date, capturing])
+
+  const handleShare = async () => {
+    setSharing(true)
+    try {
+      if (isPublic) {
+        await api.unshareDiary(entry.entry_id)
+        setIsPublic(false)
+        setShareToken(null)
+        setShareModal(false)
+      } else {
+        const res = await api.shareDiary(entry.entry_id)
+        setShareToken(res.share_token)
+        setIsPublic(true)
+        setShareModal(true)
+      }
+    } catch (err) {
+      alert(err.message)
+    }
+    setSharing(false)
+  }
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/share/${shareToken}`
+    navigator.clipboard.writeText(url).then(() => {
+      alert(t('social.linkCopied'))
+    }).catch(() => {
+      // Fallback
+      const input = document.createElement('input')
+      input.value = url
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      alert(t('social.linkCopied'))
+    })
+  }
+
+  const handleNativeShare = async () => {
+    const url = `${window.location.origin}/share/${shareToken}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: t('common.appName'), url })
+      } catch { /* user cancelled */ }
+    }
+  }
+
+  // Sync share state when entry updates
+  useEffect(() => {
+    if (entry) {
+      setShareToken(entry.share_token || null)
+      setIsPublic(entry.is_public || false)
+    }
+  }, [entry?.entry_id, entry?.share_token])
 
   const diary = entry.diary || {}
   const horoscope = entry.horoscope || {}
@@ -307,6 +364,14 @@ export default function DiaryDetail() {
                     </div>
                     <div style={styles.postActionRight}>
                       <button
+                        onClick={handleShare}
+                        disabled={sharing}
+                        style={styles.shareBtn}
+                        title={isPublic ? t('social.unshare') : t('diary.share')}
+                      >
+                        {sharing ? '...' : isPublic ? '🔗' : '↗'}
+                      </button>
+                      <button
                         onClick={() => setShowMenu(!showMenu)}
                         style={styles.moreBtn}
                       >
@@ -385,6 +450,51 @@ export default function DiaryDetail() {
                           {deleting ? '삭제 중...' : '삭제'}
                         </button>
                       </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Share modal */}
+              <AnimatePresence>
+                {shareModal && isPublic && shareToken && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={styles.overlay}
+                    onClick={() => setShareModal(false)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 20 }}
+                      style={styles.confirmBox}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p style={styles.confirmText}>{t('social.shareReady')}</p>
+                      <div style={styles.shareLinkBox}>
+                        <span style={styles.shareLinkText}>
+                          {`${window.location.origin}/share/${shareToken}`}
+                        </span>
+                      </div>
+                      <div style={styles.confirmBtns}>
+                        <button onClick={handleCopyLink} style={styles.confirmCancel}>
+                          {t('social.copyLink')}
+                        </button>
+                        {navigator.share && (
+                          <button onClick={handleNativeShare} style={styles.confirmDelete}>
+                            {t('social.shareVia')}
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleShare}
+                        disabled={sharing}
+                        style={{ ...styles.confirmCancel, marginTop: 8, color: '#E74C3C', borderColor: '#E74C3C', width: '100%' }}
+                      >
+                        {t('social.unshare')}
+                      </button>
                     </motion.div>
                   </motion.div>
                 )}
@@ -795,6 +905,29 @@ const styles = {
   postActionRight: {
     display: 'flex',
     alignItems: 'center',
+  },
+  shareBtn: {
+    border: 'none',
+    background: 'transparent',
+    fontSize: '1rem',
+    fontWeight: 700,
+    color: 'var(--bg-purple)',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: 8,
+    fontFamily: 'inherit',
+  },
+  shareLinkBox: {
+    padding: '10px 14px',
+    background: 'var(--bg-card)',
+    borderRadius: 10,
+    marginBottom: 16,
+    wordBreak: 'break-all',
+  },
+  shareLinkText: {
+    fontSize: '0.75rem',
+    color: 'var(--text-secondary)',
+    fontFamily: 'monospace',
   },
   moreBtn: {
     border: 'none',

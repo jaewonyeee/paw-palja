@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#FF6B6B"/>
+  <g transform="translate(96,96)">
+    <!-- Paw pad (main) -->
+    <ellipse cx="0" cy="12" rx="22" ry="18" fill="white"/>
+    <!-- Paw toes -->
+    <circle cx="-20" cy="-10" r="10" fill="white"/>
+    <circle cx="20" cy="-10" r="10" fill="white"/>
+    <circle cx="-10" cy="-24" r="9" fill="white"/>
+    <circle cx="10" cy="-24" r="9" fill="white"/>
+  </g>
+</svg>

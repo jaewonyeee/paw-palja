@@ -10,6 +10,8 @@ import NewDiary from './pages/NewDiary'
 import DiaryDetail from './pages/DiaryDetail'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
+import SharedDiary from './pages/SharedDiary'
+import PublicProfile from './pages/PublicProfile'
 import './App.css'
 import './i18n'
 
@@ -51,6 +53,8 @@ function AppRoutes() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/share/:shareToken" element={<SharedDiary />} />
+        <Route path="/profile/:userId" element={<PublicProfile />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/home" element={<Home />} />

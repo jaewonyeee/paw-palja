@@ -32,3 +32,6 @@ tavily-python
 requests
 apify-client
 APScheduler
+
+# Push Notifications
+pywebpush

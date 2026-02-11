@@ -142,6 +142,46 @@ export const api = {
   adminStats: () => request('/admin/stats'),
   adminSystem: () => request('/admin/system'),
 
+  // --- Analytics (admin only) ---
+  analyticsOverview: () => request('/admin/analytics/overview'),
+  analyticsEngagement: () => request('/admin/analytics/engagement'),
+  analyticsAgents: () => request('/admin/analytics/agents'),
+
   // --- Analysis ---
   analyze: (data) => request('/analyze', { method: 'POST', body: JSON.stringify(data) }),
+
+  // --- Social / Sharing ---
+  shareDiary: (entryId) =>
+    request(`/diary/${entryId}/share`, { method: 'POST' }),
+  unshareDiary: (entryId) =>
+    request(`/diary/${entryId}/share`, { method: 'DELETE' }),
+  getSharedDiary: (shareToken) => {
+    // Public endpoint — no auth token needed
+    return fetch(`${BASE}/share/${shareToken}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      });
+  },
+  getPublicProfile: (userId) => {
+    return fetch(`${BASE}/profile/${userId}/public`)
+      .then(res => {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      });
+  },
+  updateVisibility: (isPublic, bio) =>
+    request('/profile/me/visibility', {
+      method: 'PUT',
+      body: JSON.stringify({ is_profile_public: isPublic, bio }),
+    }),
+
+  // --- Push Notifications ---
+  getVapidPublicKey: () => request('/push/vapid-public-key'),
+  pushSubscribe: (data) =>
+    request('/push/subscribe', { method: 'POST', body: JSON.stringify(data) }),
+  pushUnsubscribe: () =>
+    request('/push/unsubscribe', { method: 'DELETE' }),
+  pushTest: () =>
+    request('/push/test', { method: 'POST' }),
 };

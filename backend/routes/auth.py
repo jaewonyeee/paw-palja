@@ -42,6 +42,9 @@ async def auth_signup(request: Request, req: SignupRequest, db: AsyncSession = D
     family = create_token_family()
     await user_store.set_refresh_token(db, req.user_id, hash_refresh_token(refresh_token), family)
 
+    # Track signup event
+    await user_store.track_event(db, req.user_id, "signup")
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -71,6 +74,9 @@ async def auth_login(request: Request, req: LoginRequest, db: AsyncSession = Dep
     # New login = new token family (breaks any previous session's rotation chain)
     family = create_token_family()
     await user_store.set_refresh_token(db, req.user_id, hash_refresh_token(refresh_token), family)
+
+    # Track login event
+    await user_store.track_event(db, req.user_id, "login")
 
     return {
         "access_token": access_token,
