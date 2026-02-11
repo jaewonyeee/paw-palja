@@ -40,54 +40,72 @@ def collect_sns_data():
 def send_diary_reminders():
     """Check users whose diary_time matches the current HH:MM and send push notifications."""
     import asyncio
+    import os
 
     async def _send():
         try:
             from sqlalchemy import select
-            from backend.database import AsyncSessionLocal
+            from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+            from sqlalchemy.orm import joinedload
             from backend.models import User, PushSubscription
             from backend.routes.push import send_push_to_user_subscriptions
+
+            # Create a dedicated engine for this thread's event loop
+            # (the main engine is bound to uvicorn's loop and can't be shared)
+            db_url = os.getenv(
+                "DATABASE_URL", "sqlite+aiosqlite:///./data/pawpalja.db"
+            )
+            engine_kwargs = {"echo": False}
+            if db_url.startswith("postgresql"):
+                engine_kwargs.update(pool_size=1, max_overflow=0)
+            engine = create_async_engine(db_url, **engine_kwargs)
+            SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
             now = datetime.now(timezone.utc)
             current_time = now.strftime("%H:%M")
 
-            async with AsyncSessionLocal() as db:
-                # Find users whose diary_time matches current minute
-                stmt = select(User).where(User.diary_time == current_time)
-                result = await db.execute(stmt)
-                users = result.scalars().all()
-
-                if not users:
-                    return
-
-                logger.info(f"Diary reminder: {len(users)} users matched time {current_time}")
-
-                for user in users:
-                    # Get push subscriptions for this user
-                    sub_stmt = select(PushSubscription).where(
-                        PushSubscription.user_id == user.user_id
+            try:
+                async with SessionLocal() as db:
+                    stmt = (
+                        select(User)
+                        .options(joinedload(User.dog_profile))
+                        .where(User.diary_time == current_time)
                     )
-                    sub_result = await db.execute(sub_stmt)
-                    subscriptions = sub_result.scalars().all()
+                    result = await db.execute(stmt)
+                    users = result.unique().scalars().all()
 
-                    if not subscriptions:
-                        continue
+                    if not users:
+                        return
 
-                    dog_name = ""
-                    if user.dog_profile:
-                        dog_name = user.dog_profile.name
+                    logger.info(f"Diary reminder: {len(users)} users matched time {current_time}")
 
-                    payload = json.dumps({
-                        "title": "Paw-Palja",
-                        "body": f"{dog_name or 'Your pup'}의 오늘 일기를 작성할 시간이에요!",
-                        "url": "/home",
-                    })
+                    for user in users:
+                        sub_stmt = select(PushSubscription).where(
+                            PushSubscription.user_id == user.user_id
+                        )
+                        sub_result = await db.execute(sub_stmt)
+                        subscriptions = sub_result.scalars().all()
 
-                    results = send_push_to_user_subscriptions(subscriptions, payload)
-                    ok_count = sum(1 for r in results if r[0] == "ok")
-                    logger.info(
-                        f"Push sent to {user.user_id}: {ok_count}/{len(subscriptions)} delivered"
-                    )
+                        if not subscriptions:
+                            continue
+
+                        dog_name = ""
+                        if user.dog_profile:
+                            dog_name = user.dog_profile.name
+
+                        payload = json.dumps({
+                            "title": "Paw-Palja",
+                            "body": f"{dog_name or 'Your pup'}의 오늘 일기를 작성할 시간이에요!",
+                            "url": "/home",
+                        })
+
+                        results = send_push_to_user_subscriptions(subscriptions, payload)
+                        ok_count = sum(1 for r in results if r[0] == "ok")
+                        logger.info(
+                            f"Push sent to {user.user_id}: {ok_count}/{len(subscriptions)} delivered"
+                        )
+            finally:
+                await engine.dispose()
 
         except Exception as e:
             logger.error(f"Diary reminder error: {e}", exc_info=True)
