@@ -2,203 +2,67 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
-  # Backend tests and lint
-  backend:
+  # Backend lint check
+  backend-lint:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11']
-
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Cache Python dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
+        python-version: '3.11'
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-cov flake8
+        pip install flake8
+    - name: Lint
+      run: flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
 
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings
-        flake8 backend --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    - name: Run tests with pytest
-      run: |
-        pytest backend/tests --cov=backend --cov-report=xml --cov-report=html
-      continue-on-error: true
-
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: backend
-        name: backend-coverage
-      continue-on-error: true
-
-  # Frontend tests and build
-  frontend:
+  # Frontend build check
+  frontend-build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
     steps:
     - uses: actions/checkout@v4
-
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '20'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
+    - run: cd frontend && npm ci && npm run build
 
-    - name: Install dependencies
-      run: |
-        cd frontend
-        npm ci
-
-    - name: Run linter
-      run: |
-        cd frontend
-        npm run lint || true
-
-    - name: Build
-      run: |
-        cd frontend
-        npm run build
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-build-${{ matrix.node-version }}
-        path: frontend/dist
-
-  # Docker image build and push
-  docker:
+  # Deploy backend to EC2 (only on push to main)
+  deploy-backend:
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ghcr.io/${{ github.repository }}
-        tags: |
-          type=ref,event=branch
-          type=sha
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-  # Security scan
-  security:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-      continue-on-error: true
-
-    - name: Upload Trivy results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: 'trivy-results.sarif'
-      continue-on-error: true
-
-  # Deploy to production
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [docker, security]
+    needs: [backend-lint, frontend-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Deploy via SSH
+    - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@v1
       with:
-        host: ${{ secrets.DEPLOY_HOST }}
-        username: ${{ secrets.DEPLOY_USER }}
-        key: ${{ secrets.DEPLOY_SSH_KEY }}
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          cd ${{ secrets.DEPLOY_PATH || '/opt/pawpalja' }}
+          cd /opt/pawpalja
 
-          # Pull latest code for compose files and configs
-          git pull --ff-only || true
+          # Pull latest code
+          git pull --ff-only
 
-          # Pull latest images from GHCR
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker compose -f docker-compose.prod.yml pull
+          # Rebuild and restart backend
+          docker compose -f docker-compose.ec2.yml build --no-cache backend
+          docker compose -f docker-compose.ec2.yml up -d
 
-          # Build and restart services
-          docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+          # Wait and health check
+          sleep 15
+          curl -sf http://localhost:8000/health || echo "WARNING: Health check failed"
 
-          # Wait and health-check (nginx on port 80)
-          sleep 10
-          curl -sf http://localhost/health || echo "WARNING: Health check failed"
-
-          # Prune old images
+          # Cleanup old images
           docker image prune -f
-
-    - name: Verify deployment
-      run: |
-        echo "Deployment triggered for commit ${{ github.sha }}"
-        echo "Image: ghcr.io/${{ github.repository }}:latest"

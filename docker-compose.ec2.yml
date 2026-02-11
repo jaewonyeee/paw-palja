@@ -1,0 +1,46 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: pawpalja-db
+    environment:
+      POSTGRES_DB: pawpalja
+      POSTGRES_USER: pawpalja
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pawpalja"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - pawpalja-net
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.ec2
+    container_name: pawpalja-backend
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://pawpalja:${DB_PASSWORD}@db:5432/pawpalja
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - pawpalja-net
+
+volumes:
+  pgdata:
+
+networks:
+  pawpalja-net:
+    driver: bridge

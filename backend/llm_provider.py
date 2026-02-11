@@ -25,8 +25,9 @@ def get_llm(temperature: float = 0.7):
         )
     else:
         from langchain_google_genai import ChatGoogleGenerativeAI
+        model_name = os.getenv("GOOGLE_MODEL_NAME", "gemini-1.5-flash")
         return ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model=model_name,
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             temperature=temperature,
         )
@@ -48,7 +49,8 @@ def get_embeddings():
         )
     else:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        embed_model = os.getenv("GOOGLE_EMBEDDING_MODEL", "models/gemini-embedding-001")
         return GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
+            model=embed_model,
             google_api_key=os.getenv("GOOGLE_API_KEY"),
         )
