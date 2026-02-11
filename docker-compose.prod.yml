@@ -25,6 +25,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: pawpalja-redis
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -41,8 +44,8 @@ services:
       dockerfile: Dockerfile
     image: pawpalja/backend:latest
     container_name: pawpalja-backend
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     volumes:
       - ./logs:/app/logs
     env_file:
@@ -67,6 +70,30 @@ services:
       retries: 3
       start_period: 40s
 
+  # ARQ Worker (async LLM agent task queue)
+  worker:
+    image: pawpalja/backend:latest
+    container_name: pawpalja-worker
+    command: ["python", "-m", "arq", "backend.worker.WorkerSettings"]
+    volumes:
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql+asyncpg://pawpalja:${DB_PASSWORD}@db:5432/pawpalja
+      - REDIS_URL=redis://redis:6379/0
+      - USE_TASK_QUEUE=true
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - pawpalja-network
+
   # Nginx (프론트엔드 서빙 + 리버스 프록시)
   nginx:
     image: nginx:alpine
@@ -86,6 +113,7 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
 
 networks:
   pawpalja-network:

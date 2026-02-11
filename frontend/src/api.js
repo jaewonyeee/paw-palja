@@ -1,4 +1,11 @@
-const BASE = '/api/v1';
+import { Capacitor } from '@capacitor/core';
+
+// For native mobile builds, use the absolute server URL.
+// Set VITE_API_BASE_URL in your .env or at build time for native targets.
+// Web builds behind a reverse proxy can keep the default relative path.
+const BASE = Capacitor.isNativePlatform()
+  ? (import.meta.env.VITE_API_BASE_URL || 'https://pawpalja.com/api/v1')
+  : (import.meta.env.VITE_API_BASE_URL || '/api/v1');
 
 // --- Token helpers ---
 function getAccessToken() {
@@ -101,6 +108,7 @@ export const api = {
   // --- Diary (token auto-attached) ---
   generateDiary: (logs) =>
     request('/diary/generate', { method: 'POST', body: JSON.stringify(logs) }),
+  checkDiaryJob: (jobId) => request(`/diary/job/${jobId}`),
   listDiaries: () => request('/diary/list'),
   getDiary: (entryId) => request(`/diary/entry/${entryId}`),
   editDiary: (entryId, data) =>

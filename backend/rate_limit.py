@@ -2,7 +2,11 @@
 Rate limiter configuration for Paw-Palja API.
 
 Shared module to avoid circular imports between main.py and route modules.
+Uses Redis storage when REDIS_URL is set (distributed rate limiting),
+otherwise falls back to in-memory storage.
 """
+import os
+
 from fastapi import Request
 from slowapi import Limiter
 
@@ -35,4 +39,10 @@ def _get_user_id_from_request(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-limiter = Limiter(key_func=_get_user_id_from_request)
+_redis_url = os.getenv("REDIS_URL")
+_storage_uri = _redis_url if _redis_url else None
+
+limiter = Limiter(
+    key_func=_get_user_id_from_request,
+    storage_uri=_storage_uri,
+)

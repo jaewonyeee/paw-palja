@@ -8,6 +8,8 @@ Paw-Palja LangGraph Multi-Agent System
 """
 import os
 import json
+import hashlib
+import logging
 from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -31,8 +33,76 @@ from backend.prompt_engineering import get_oracle_few_shot_prompt
 
 load_dotenv()
 
+logger = logging.getLogger("pawpalja.agents")
+
 # MCP 레지스트리 초기화
 _mcp_registry = get_registry()
+
+
+# --- Horoscope Cache Helpers ---
+def _horoscope_cache_key(breed: str, mbti: str) -> str:
+    """Generate a daily cache key for the horoscope agent.
+
+    Same breed + MBTI on the same day produces the same key,
+    so the LLM call can be skipped if a cached result exists.
+    """
+    from datetime import date
+    raw = f"horoscope:{breed}:{mbti}:{date.today().isoformat()}"
+    return f"llm:oracle:{hashlib.sha256(raw.encode()).hexdigest()[:16]}"
+
+
+async def _get_cached_horoscope(key: str) -> dict | None:
+    """Try to fetch a cached horoscope result from Redis."""
+    try:
+        from backend.cache import cache_get
+        return await cache_get(key)
+    except Exception:
+        return None
+
+
+async def _set_cached_horoscope(key: str, data: dict) -> None:
+    """Cache a horoscope result for 1 hour."""
+    try:
+        from backend.cache import cache_set
+        await cache_set(key, data, ttl=3600)
+    except Exception:
+        pass
+
+
+def _try_horoscope_cache(breed: str, mbti: str) -> dict | None:
+    """Synchronous wrapper — safe to call from inside a LangGraph node.
+
+    Returns cached dict or None.  Falls back gracefully if Redis
+    is unavailable or the cache module hasn't been initialised.
+    """
+    import asyncio
+    key = _horoscope_cache_key(breed, mbti)
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                result = pool.submit(asyncio.run, _get_cached_horoscope(key)).result()
+            return result
+        return asyncio.run(_get_cached_horoscope(key))
+    except Exception:
+        return None
+
+
+def _store_horoscope_cache(breed: str, mbti: str, data: dict) -> None:
+    """Synchronous wrapper — stores horoscope result in cache."""
+    import asyncio
+    key = _horoscope_cache_key(breed, mbti)
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                pool.submit(asyncio.run, _set_cached_horoscope(key, data)).result()
+        else:
+            asyncio.run(_set_cached_horoscope(key, data))
+    except Exception:
+        pass
 
 
 # --- Agent State (A2A 확장 + 페르소나 + 다국어) ---
@@ -46,11 +116,26 @@ class AgentState(TypedDict):
     health: dict | None
 
 
-# --- Oracle Agent (Tool Calling + A2A + MCP) ---
+# --- Oracle Agent (Tool Calling + A2A + MCP + Cache) ---
 def oracle_agent(state: AgentState):
     llm = get_llm(temperature=0.8)
     profile = state["dog_profile"]
     logs = state["daily_logs"]
+
+    # Check horoscope cache (same breed + MBTI + date = cacheable)
+    breed = profile.get("breed", "믹스견")
+    mbti = profile.get("mbti", "ENFP")
+    cached = _try_horoscope_cache(breed, mbti)
+    if cached:
+        logger.info("Oracle cache HIT for breed=%s mbti=%s", breed, mbti)
+        memos = state.get("agent_memos", [])
+        memos.append(create_memo(
+            sender="oracle",
+            receiver="all",
+            memo_type="context",
+            content=f"운세 키워드: {cached.get('summary_ko', '')} (cached)",
+        ))
+        return {"horoscope": cached, "agent_memos": memos}
 
     # MCP Tool Calling으로 실시간 데이터 수집
     from datetime import datetime as _dt
@@ -125,6 +210,12 @@ Based on the above, generate today's fortune in BOTH Korean and English!"""
         "walk": logs.get("walk", "0"),
     })
 
+    result_dict = result.model_dump()
+
+    # Cache the horoscope result (1 hour TTL)
+    _store_horoscope_cache(breed, mbti, result_dict)
+    logger.info("Oracle cache MISS — stored for breed=%s mbti=%s", breed, mbti)
+
     # A2A: 다른 Agent에게 컨텍스트 전달
     memos = state.get("agent_memos", [])
     memos.append(create_memo(
@@ -134,7 +225,7 @@ Based on the above, generate today's fortune in BOTH Korean and English!"""
         content=f"오늘 날씨: {weather_str}. 운세 키워드: {result.summary}. 트렌드: {trend_data[:100]}",
     ))
 
-    return {"horoscope": result.model_dump(), "agent_memos": memos}
+    return {"horoscope": result_dict, "agent_memos": memos}
 
 
 # --- Journalist Agent (Few-Shot + RAG + A2A + 페르소나 + 다국어) ---

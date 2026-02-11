@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models import User, DogProfile, DiaryEntry, UserEvent
 from backend.i18n import get_message
+from backend.cache import cache_get, cache_set, cache_delete, cache_delete_pattern
 
 logger = logging.getLogger("pawpalja.store")
 
@@ -127,10 +128,15 @@ async def login(db: AsyncSession, user_id: str, password: str, lang: str = "ko")
 async def get_user(db: AsyncSession, user_id: str) -> dict | None:
     if _validate_user_id(user_id):
         return None
+    cached = await cache_get(f"user:{user_id}")
+    if cached is not None:
+        return cached
     user = await db.get(User, user_id)
     if not user:
         return None
-    return _user_to_dict(user)
+    result = _user_to_dict(user)
+    await cache_set(f"user:{user_id}", result, ttl=300)
+    return result
 
 
 async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_time: str = None, lang: str = "ko") -> dict:
@@ -160,6 +166,7 @@ async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_ti
 
     await db.commit()
     await db.refresh(user)
+    await cache_delete(f"user:{user_id}")
     return _user_to_dict(user)
 
 
@@ -184,6 +191,8 @@ async def save_diary_entry(db: AsyncSession, user_id: str, entry: dict) -> dict:
         existing.is_edited = entry.get("is_edited", False)
         await db.commit()
         await db.refresh(existing)
+        await cache_delete_pattern(f"diaries:{user_id}:*")
+        await cache_delete("admin:stats")
         return _entry_to_dict(existing)
     else:
         new_entry = DiaryEntry(
@@ -202,6 +211,8 @@ async def save_diary_entry(db: AsyncSession, user_id: str, entry: dict) -> dict:
         db.add(new_entry)
         await db.commit()
         await db.refresh(new_entry)
+        await cache_delete_pattern(f"diaries:{user_id}:*")
+        await cache_delete("admin:stats")
         return _entry_to_dict(new_entry)
 
 
@@ -209,6 +220,10 @@ async def get_diaries(db: AsyncSession, user_id: str, limit: int = 30) -> list[d
     if _validate_user_id(user_id):
         return []
     limit = min(limit, 100)
+    cache_key = f"diaries:{user_id}:{limit}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
     stmt = (
         select(DiaryEntry)
         .where(DiaryEntry.user_id == user_id)
@@ -217,7 +232,9 @@ async def get_diaries(db: AsyncSession, user_id: str, limit: int = 30) -> list[d
     )
     result = await db.execute(stmt)
     entries = result.scalars().all()
-    return [_entry_to_dict(e) for e in entries]
+    data = [_entry_to_dict(e) for e in entries]
+    await cache_set(cache_key, data, ttl=120)
+    return data
 
 
 async def get_diary_by_id(db: AsyncSession, user_id: str, entry_id: str) -> dict | None:
@@ -246,6 +263,7 @@ async def update_diary_entry(db: AsyncSession, user_id: str, entry_id: str, upda
     entry.is_edited = True
     await db.commit()
     await db.refresh(entry)
+    await cache_delete_pattern(f"diaries:{user_id}:*")
     return _entry_to_dict(entry)
 
 
@@ -259,6 +277,8 @@ async def delete_diary_entry(db: AsyncSession, user_id: str, entry_id: str) -> b
         return False
     await db.delete(entry)
     await db.commit()
+    await cache_delete_pattern(f"diaries:{user_id}:*")
+    await cache_delete("admin:stats")
     return True
 
 
@@ -313,6 +333,10 @@ async def get_user_raw(db: AsyncSession, user_id: str) -> User | None:
 
 async def get_all_users_with_diary_counts(db: AsyncSession) -> dict:
     """Admin: 전체 사용자 및 다이어리 통계를 조회합니다."""
+    cached = await cache_get("admin:stats")
+    if cached is not None:
+        return cached
+
     stmt = (
         select(
             User.user_id,
@@ -341,7 +365,9 @@ async def get_all_users_with_diary_counts(db: AsyncSession) -> dict:
             "created_at": row.created_at.isoformat() if row.created_at else "",
         })
 
-    return {"total_users": len(users), "total_diaries": total_diaries, "users": users}
+    data = {"total_users": len(users), "total_diaries": total_diaries, "users": users}
+    await cache_set("admin:stats", data, ttl=60)
+    return data
 
 
 async def track_event(db: AsyncSession, user_id: str, event_type: str, metadata: dict | None = None) -> None:

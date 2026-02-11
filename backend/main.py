@@ -61,6 +61,8 @@ from backend.routes import (
 from backend import user_store
 from backend.database import init_db, AsyncSessionLocal
 from backend.scheduler import start_scheduler
+from backend.cache import init_redis, close_redis
+from backend.tasks import get_arq_pool, close_arq_pool
 
 # 스케줄러 관리
 _scheduler = None
@@ -68,11 +70,20 @@ _scheduler = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """FastAPI 시작/종료 시 DB 초기화 및 스케줄러 관리"""
+    """FastAPI 시작/종료 시 DB, Redis 초기화 및 스케줄러 관리"""
     global _scheduler
     # 시작 시
     logger.info("FastAPI 서버 시작 중...")
     await init_db()
+    await init_redis()
+
+    # Initialize ARQ pool if task queue is enabled
+    if os.getenv("USE_TASK_QUEUE", "false").lower() in ("true", "1", "yes"):
+        try:
+            await get_arq_pool()
+            logger.info("ARQ task queue pool initialized")
+        except Exception as exc:
+            logger.warning("ARQ pool init failed (%s) — task queue disabled", exc)
 
     # 관리자 계정 자동 생성
     _admin_pw = os.getenv("ADMIN_PASSWORD", "admin!")
@@ -88,6 +99,8 @@ async def lifespan(app: FastAPI):
     logger.info("FastAPI 서버 종료 중...")
     if _scheduler:
         _scheduler.shutdown()
+    await close_arq_pool()
+    await close_redis()
 
 
 app = FastAPI(

@@ -1,6 +1,11 @@
 """
 다이어리 CRUD API 라우터
+
+Supports two execution modes controlled by USE_TASK_QUEUE env flag:
+  - Synchronous (default): blocks until the agent graph completes
+  - Async task queue: enqueues the job, returns a job_id for polling
 """
+import os
 import uuid
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Request
@@ -18,8 +23,13 @@ router = APIRouter()
 
 from backend.rate_limit import limiter
 
-# Agent Graph (shared instance)
+# Agent Graph (shared instance — used in synchronous mode only)
 _agent_graph = None
+
+
+def _use_task_queue() -> bool:
+    """Check whether the async task queue is enabled."""
+    return os.getenv("USE_TASK_QUEUE", "false").lower() in ("true", "1", "yes")
 
 
 def _get_agent_graph():
@@ -46,8 +56,35 @@ async def generate_diary(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """오늘의 다이어리를 생성하고 저장합니다."""
+    """Generate today's diary.
+
+    When USE_TASK_QUEUE is enabled, enqueues the job and returns
+    ``{job_id, status: "queued"}`` immediately.  The client should
+    poll ``GET /diary/job/{job_id}`` for the result.
+
+    When USE_TASK_QUEUE is disabled (default), blocks until the full
+    agent graph completes and returns the saved diary entry.
+    """
     user_id = current_user["user_id"]
+
+    if _use_task_queue():
+        try:
+            from backend.tasks import enqueue_diary_generation
+
+            job_id = await enqueue_diary_generation(
+                user_id=user_id,
+                dog_profile=current_user["dog"],
+                daily_logs=logs.model_dump(),
+            )
+            return {"job_id": job_id, "status": "queued"}
+        except Exception:
+            logger.exception("Failed to enqueue diary generation")
+            raise HTTPException(
+                status_code=500,
+                detail=get_message("diary_create_error", get_lang(request)),
+            )
+
+    # --- Synchronous fallback (original behaviour) ---
     try:
         profile = DogProfile(**current_user["dog"])
         initial_state = _prepare_state(profile, logs)
@@ -78,6 +115,41 @@ async def generate_diary(
     except Exception as e:
         logger.exception("다이어리 생성 실패")
         raise HTTPException(status_code=500, detail=get_message("diary_create_error", get_lang(request)))
+
+
+@router.get("/diary/job/{job_id}")
+async def poll_diary_job(
+    request: Request,
+    job_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Poll the status of an async diary generation job.
+
+    Returns:
+        - ``{status: "queued"}`` — still waiting
+        - ``{status: "in_progress"}`` — worker picked it up
+        - ``{status: "complete", entry: {...}}`` — done, diary entry included
+        - ``{status: "failed", detail: "..."}`` — error description
+    """
+    from backend.tasks import get_task_result
+
+    try:
+        info = await get_task_result(job_id)
+    except Exception:
+        logger.exception("Failed to query job %s", job_id)
+        raise HTTPException(status_code=500, detail=get_message("diary_create_error", get_lang(request)))
+
+    status = info["status"]
+
+    if status == "complete":
+        return {"status": "complete", "entry": info["result"]}
+    elif status == "failed":
+        return {"status": "failed", "detail": str(info["result"])}
+    elif status == "not_found":
+        raise HTTPException(status_code=404, detail="Job not found")
+    else:
+        # queued / in_progress
+        return {"status": status}
 
 
 @router.get("/diary/list")

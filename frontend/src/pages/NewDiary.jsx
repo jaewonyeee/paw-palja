@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -89,10 +89,17 @@ export default function NewDiary() {
     }
   }
 
-  const handleGenerate = async () => {
-    setLoading(true)
-    setProgress(t('diary.analyzing', { name: dogName }))
+  const pollIntervalRef = useRef(null)
 
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    }
+  }, [])
+
+  const startProgressAnimation = useCallback(() => {
+    setProgress(t('diary.analyzing', { name: dogName }))
     const progressSteps = [
       { text: t('diary.fortuneTelling', { name: dogName }), delay: 2000 },
       { text: t('diary.writingDiary', { name: dogName }), delay: 5000 },
@@ -101,17 +108,58 @@ export default function NewDiary() {
     progressSteps.forEach(({ text, delay }) => {
       setTimeout(() => setProgress(text), delay)
     })
+  }, [t, dogName])
+
+  const pollJobStatus = useCallback((jobId) => {
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await api.checkDiaryJob(jobId)
+        if (res.status === 'complete') {
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
+          setLoading(false)
+          navigate(`/diary/${res.entry.entry_id}`, { state: { entry: res.entry } })
+        } else if (res.status === 'failed') {
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
+          setLoading(false)
+          alert(t('diary.generationError') + (res.detail || 'Unknown error'))
+        }
+        // queued / in_progress -> keep polling
+      } catch (err) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+        setLoading(false)
+        alert(t('diary.generationError') + err.message)
+      }
+    }, 2000)
+  }, [navigate, t])
+
+  const handleGenerate = async () => {
+    setLoading(true)
+    startProgressAnimation()
 
     try {
       const result = await api.generateDiary({
         mood, food, walk: String(walk || 0), poop, notes,
         ...(photo ? { photo } : {}),
       })
+
+      // Async task queue mode: server returned a job_id
+      if (result.job_id) {
+        pollJobStatus(result.job_id)
+        return
+      }
+
+      // Synchronous mode: result is the full diary entry
       navigate(`/diary/${result.entry_id}`, { state: { entry: result } })
     } catch (err) {
       alert(t('diary.generationError') + err.message)
     } finally {
-      setLoading(false)
+      // Only clear loading for sync path; async path clears in poll callback
+      if (!pollIntervalRef.current) {
+        setLoading(false)
+      }
     }
   }
 

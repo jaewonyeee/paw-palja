@@ -85,5 +85,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+          'ui': ['motion', 'lucide-react', '@emotion/react', '@emotion/styled'],
+        },
+      },
+    },
   },
 })
