@@ -58,12 +58,33 @@ async def init_db():
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_share_social BOOLEAN DEFAULT FALSE"
                 )
             )
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS likes JSON DEFAULT '[]'"
+                )
+            )
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS user_comments JSON DEFAULT '[]'"
+                )
+            )
         else:
             result = await conn.execute(sqlalchemy.text("PRAGMA table_info(users)"))
             columns = [row[1] for row in result.fetchall()]
             if "auto_share_social" not in columns:
                 await conn.execute(
                     sqlalchemy.text("ALTER TABLE users ADD COLUMN auto_share_social BOOLEAN DEFAULT 0")
+                )
+
+            result = await conn.execute(sqlalchemy.text("PRAGMA table_info(diary_entries)"))
+            diary_columns = [row[1] for row in result.fetchall()]
+            if "likes" not in diary_columns:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE diary_entries ADD COLUMN likes JSON DEFAULT '[]'")
+                )
+            if "user_comments" not in diary_columns:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE diary_entries ADD COLUMN user_comments JSON DEFAULT '[]'")
                 )
 
     logger.info("Database tables initialized")

@@ -3,6 +3,7 @@ Social features: share diary entries via public links, public profiles, and soci
 """
 import secrets
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -125,6 +126,8 @@ async def social_feed(
                 "is_anonymous": is_anonymous,
             },
             "comments_count": len(comments_list),
+            "like_count": len(entry.likes or []),
+            "user_comments_count": len(entry.user_comments or []),
             "created_at": entry.created_at.isoformat() if entry.created_at else None,
         })
 
@@ -197,6 +200,7 @@ async def unshare_diary(
 async def get_shared_diary(
     share_token: str,
     request: Request,
+    current_user_id: Optional[str] = Depends(_get_optional_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     lang = get_lang(request)
@@ -216,7 +220,11 @@ async def get_shared_diary(
 
     # Fetch author info (nickname + dog)
     user = await db.get(User, entry.user_id)
-    dog = _dog_to_dict(user.dog_profile) if user else {}
+    is_anonymous = not user.is_profile_public if user else True
+    dog = _dog_to_dict(user.dog_profile) if user and not is_anonymous else {}
+
+    likes_list = entry.likes or []
+    is_liked = current_user_id in likes_list if current_user_id else False
 
     return {
         "entry_id": entry.entry_id,
@@ -227,13 +235,97 @@ async def get_shared_diary(
         "comments": entry.comments or [],
         "photo": entry.photo,
         "view_count": entry.view_count,
+        "like_count": len(likes_list),
+        "user_comments": entry.user_comments or [],
+        "is_liked": is_liked,
         "created_at": entry.created_at.isoformat() if entry.created_at else None,
         "author": {
-            "nickname": user.nickname if user else "Unknown",
+            "nickname": user.nickname if user and not is_anonymous else None,
             "dog": dog,
-            "user_id": user.user_id if user else None,
+            "user_id": user.user_id if user and not is_anonymous else None,
+            "is_anonymous": is_anonymous,
         },
     }
+
+
+# ---- Like / Comment ----
+
+@router.post("/social/like/{entry_id}")
+async def toggle_like(
+    entry_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    lang = get_lang(request)
+    stmt = select(DiaryEntry).where(
+        DiaryEntry.entry_id == entry_id,
+        DiaryEntry.is_public == True,  # noqa: E712
+    )
+    result = await db.execute(stmt)
+    entry = result.scalar_one_or_none()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail=get_message("entry_not_found", lang))
+
+    user_id = current_user["user_id"]
+    likes = list(entry.likes or [])
+
+    if user_id in likes:
+        likes.remove(user_id)
+        liked = False
+    else:
+        likes.append(user_id)
+        liked = True
+
+    entry.likes = likes
+    await db.commit()
+
+    return {"liked": liked, "like_count": len(likes)}
+
+
+@router.post("/social/comment/{entry_id}")
+async def add_user_comment(
+    entry_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    lang = get_lang(request)
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Comment text is required")
+
+    stmt = select(DiaryEntry).where(
+        DiaryEntry.entry_id == entry_id,
+        DiaryEntry.is_public == True,  # noqa: E712
+    )
+    result = await db.execute(stmt)
+    entry = result.scalar_one_or_none()
+
+    if not entry:
+        raise HTTPException(status_code=404, detail=get_message("entry_not_found", lang))
+
+    user_id = current_user["user_id"]
+
+    # Fetch nickname
+    user = await db.get(User, user_id)
+    nickname = user.nickname if user else user_id
+
+    comment = {
+        "user_id": user_id,
+        "nickname": nickname,
+        "text": text[:500],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    comments = list(entry.user_comments or [])
+    comments.append(comment)
+    entry.user_comments = comments
+    await db.commit()
+
+    return comment
 
 
 # ---- Public profile ----

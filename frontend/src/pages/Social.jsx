@@ -202,6 +202,20 @@ function FeedCard({ item, lang, t, navigate }) {
           </p>
         )}
       </div>
+
+      {/* Like + Comment counts */}
+      <div style={styles.feedStats}>
+        {(item.like_count > 0 || item.user_comments_count > 0) && (
+          <>
+            {item.like_count > 0 && (
+              <span style={styles.feedStat}>{'\u2764\uFE0F'} {item.like_count}</span>
+            )}
+            {item.user_comments_count > 0 && (
+              <span style={styles.feedStat}>💬 {item.user_comments_count}</span>
+            )}
+          </>
+        )}
+      </div>
     </motion.div>
   )
 }
@@ -344,6 +358,21 @@ const styles = {
     fontSize: '0.82rem',
     lineHeight: 1.6,
     color: 'var(--text-secondary)',
+  },
+  feedStats: {
+    display: 'flex',
+    gap: 12,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTop: '1px solid var(--border-light)',
+  },
+  feedStat: {
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    color: 'var(--text-muted)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
   },
   loadMoreWrap: {
     display: 'flex',

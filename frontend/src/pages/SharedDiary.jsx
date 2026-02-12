@@ -17,10 +17,23 @@ export default function SharedDiary() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
+  const [likeLoading, setLikeLoading] = useState(false)
+  const [userComments, setUserComments] = useState([])
+  const [commentText, setCommentText] = useState('')
+  const [commentLoading, setCommentLoading] = useState(false)
+
+  const isLoggedIn = !!localStorage.getItem('pawpalja_access_token')
 
   useEffect(() => {
     api.getSharedDiary(shareToken)
-      .then(setData)
+      .then((d) => {
+        setData(d)
+        setLiked(d.is_liked || false)
+        setLikeCount(d.like_count || 0)
+        setUserComments(d.user_comments || [])
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [shareToken])
@@ -29,6 +42,28 @@ export default function SharedDiary() {
     if (!obj) return ''
     const lang = i18n.language
     return obj[`${field}_${lang}`] || obj[field] || obj[`${field}_ko`] || obj[`${field}_en`] || ''
+  }
+
+  const handleLike = async () => {
+    if (!isLoggedIn || likeLoading || !data) return
+    setLikeLoading(true)
+    try {
+      const res = await api.likeDiary(data.entry_id)
+      setLiked(res.liked)
+      setLikeCount(res.like_count)
+    } catch { /* ignore */ }
+    setLikeLoading(false)
+  }
+
+  const handleComment = async () => {
+    if (!isLoggedIn || commentLoading || !commentText.trim() || !data) return
+    setCommentLoading(true)
+    try {
+      const comment = await api.addSocialComment(data.entry_id, commentText.trim())
+      setUserComments((prev) => [...prev, comment])
+      setCommentText('')
+    } catch { /* ignore */ }
+    setCommentLoading(false)
   }
 
   if (loading) {
@@ -60,6 +95,7 @@ export default function SharedDiary() {
   const health = data.health || {}
   const comments = data.comments || []
   const author = data.author || {}
+  const isAnonymous = author.is_anonymous
 
   return (
     <motion.div {...pageTransition} style={styles.container}>
@@ -73,23 +109,44 @@ export default function SharedDiary() {
         {/* Author info */}
         <div style={styles.authorCard}>
           <div style={styles.authorAvatar}>
-            {author.dog?.image ? (
+            {isAnonymous ? (
+              <span style={{ fontSize: '1.3rem' }}>🎭</span>
+            ) : author.dog?.image ? (
               <img src={author.dog.image} alt="dog" style={styles.authorAvatarImg} />
             ) : '🐾'}
           </div>
           <div>
-            <p style={styles.authorName}>{author.nickname}</p>
-            {author.dog?.name && (
+            <p style={styles.authorName}>
+              {isAnonymous ? t('social.anonymousUser') : author.nickname}
+            </p>
+            {!isAnonymous && author.dog?.name && (
               <p style={styles.authorDog}>{author.dog.name} ({author.dog.breed})</p>
             )}
+            {isAnonymous && (
+              <p style={styles.authorDog}>{t('social.anonymousDog')}</p>
+            )}
           </div>
+        </div>
+
+        {/* Like bar */}
+        <div style={styles.likeBar}>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleLike}
+            style={styles.likeBtn}
+            disabled={!isLoggedIn}
+            aria-label={liked ? t('social.liked') : t('social.like')}
+          >
+            <span style={{ fontSize: '1.3rem' }}>{liked ? '\u2764\uFE0F' : '\uD83E\uDD0D'}</span>
+          </motion.button>
+          <span style={styles.likeCount}>{t('social.likeCount', { count: likeCount })}</span>
         </div>
 
         {/* Diary content */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <span style={{ fontSize: '1.5rem' }}>
-              {diary.mood_icon === 'heart' ? '❤️' : '✨'}
+              {diary.mood_icon === 'heart' ? '\u2764\uFE0F' : '\u2728'}
             </span>
             <h3 style={styles.cardTitle}>{getLangText(diary, 'title') || t('diary.todayDiary')}</h3>
           </div>
@@ -135,7 +192,7 @@ export default function SharedDiary() {
           </div>
         ) : null}
 
-        {/* Comments */}
+        {/* AI Comments */}
         {comments.length > 0 && (
           <div style={styles.commentsSection}>
             <h4 style={styles.commentsTitle}>
@@ -150,6 +207,64 @@ export default function SharedDiary() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* User Comments */}
+        {userComments.length > 0 && (
+          <div style={styles.commentsSection}>
+            <h4 style={styles.commentsTitle}>
+              💬 {t('social.userCommentCount', { count: userComments.length })}
+            </h4>
+            {userComments.map((c, i) => (
+              <div key={i} style={styles.commentItem}>
+                <div style={styles.userCommentAvatar}>🐶</div>
+                <div>
+                  <span style={styles.commentAuthor}>{c.nickname}</span>
+                  <p style={styles.commentText}>{c.text}</p>
+                  <span style={styles.commentTime}>
+                    {c.created_at ? new Date(c.created_at).toLocaleDateString() : ''}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Comment input or login CTA */}
+        {isLoggedIn ? (
+          <div style={styles.commentInputBar}>
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+              placeholder={t('social.writeUserComment')}
+              style={styles.commentInput}
+              maxLength={500}
+            />
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleComment}
+              disabled={commentLoading || !commentText.trim()}
+              style={{
+                ...styles.commentSendBtn,
+                opacity: commentText.trim() ? 1 : 0.4,
+              }}
+            >
+              {commentLoading ? '...' : '→'}
+            </motion.button>
+          </div>
+        ) : (
+          <div style={styles.loginCta}>
+            <p style={styles.loginCtaText}>{t('social.loginToInteract')}</p>
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="btn btn-primary"
+              style={{ padding: '10px 24px', fontSize: '0.85rem' }}
+            >
+              {t('social.loginBtn')}
+            </button>
           </div>
         )}
 
@@ -219,7 +334,7 @@ const styles = {
     background: 'white',
     borderRadius: 'var(--radius-lg)',
     border: '1.5px solid var(--border-card)',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   authorAvatar: {
     width: 44,
@@ -246,6 +361,26 @@ const styles = {
   authorDog: {
     fontSize: '0.75rem',
     color: 'var(--text-muted)',
+  },
+  likeBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    padding: '0 4px',
+  },
+  likeBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 4,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  likeCount: {
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
   },
   card: {
     background: 'white',
@@ -341,6 +476,70 @@ const styles = {
   commentText: {
     fontSize: '0.82rem',
     lineHeight: 1.5,
+    color: 'var(--text-secondary)',
+  },
+  commentTime: {
+    fontSize: '0.65rem',
+    color: 'var(--text-muted)',
+  },
+  userCommentAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: '50%',
+    background: 'var(--bg-card)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.9rem',
+    flexShrink: 0,
+  },
+  commentInputBar: {
+    display: 'flex',
+    gap: 8,
+    marginBottom: 16,
+    padding: '10px 14px',
+    background: 'white',
+    borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--border-card)',
+  },
+  commentInput: {
+    flex: 1,
+    border: 'none',
+    outline: 'none',
+    fontSize: '0.85rem',
+    fontFamily: 'inherit',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+  },
+  commentSendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: '50%',
+    background: 'var(--bg-purple)',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    fontWeight: 700,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  loginCta: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 10,
+    padding: '20px 16px',
+    background: 'var(--bg-card)',
+    borderRadius: 'var(--radius-md)',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  loginCtaText: {
+    fontSize: '0.85rem',
+    fontWeight: 600,
     color: 'var(--text-secondary)',
   },
   ctaCard: {

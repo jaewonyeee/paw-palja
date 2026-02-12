@@ -284,7 +284,14 @@
     "autoShareDesc": "Comparte automáticamente nuevos diarios al feed social.",
     "shareToSocial": "Compartir en social",
     "shareToSocialHint": "Comparte este diario en el feed social",
-    "public": "Público"
+    "public": "Público",
+    "likeCount": "{{count}} me gusta",
+    "liked": "Quitar me gusta",
+    "like": "Me gusta",
+    "writeUserComment": "Deja un comentario...",
+    "userCommentCount": "{{count}} comentarios",
+    "loginToInteract": "¡Inicia sesión para interactuar!",
+    "loginBtn": "Iniciar sesión"
   },
   "easter": {
     "title": "Nota secreta del desarrollador",

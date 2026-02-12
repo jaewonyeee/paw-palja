@@ -175,14 +175,7 @@ export const api = {
     request(`/diary/${entryId}/share`, { method: 'POST' }),
   unshareDiary: (entryId) =>
     request(`/diary/${entryId}/share`, { method: 'DELETE' }),
-  getSharedDiary: (shareToken) => {
-    // Public endpoint — no auth token needed
-    return fetch(`${BASE}/share/${shareToken}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Not found');
-        return res.json();
-      });
-  },
+  getSharedDiary: (shareToken) => request(`/share/${shareToken}`),
   getPublicProfile: (userId) => {
     return fetch(`${BASE}/profile/${userId}/public`)
       .then(res => {
@@ -199,6 +192,11 @@ export const api = {
         ...(autoShareSocial !== undefined && { auto_share_social: autoShareSocial }),
       }),
     }),
+
+  // --- Social Interactions ---
+  likeDiary: (entryId) => request(`/social/like/${entryId}`, { method: 'POST' }),
+  addSocialComment: (entryId, text) =>
+    request(`/social/comment/${entryId}`, { method: 'POST', body: JSON.stringify({ text }) }),
 
   // --- Push Notifications ---
   getVapidPublicKey: () => request('/push/vapid-public-key'),

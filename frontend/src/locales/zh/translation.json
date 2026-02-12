@@ -284,7 +284,14 @@
     "autoShareDesc": "开启后，新日记将自动分享到社交动态。",
     "shareToSocial": "分享到社交",
     "shareToSocialHint": "将此日记分享到社交动态",
-    "public": "公开"
+    "public": "公开",
+    "likeCount": "{{count}} 个赞",
+    "liked": "取消赞",
+    "like": "点赞",
+    "writeUserComment": "留下评论...",
+    "userCommentCount": "{{count}} 条评论",
+    "loginToInteract": "登录后互动吧！",
+    "loginBtn": "登录"
   },
   "easter": {
     "title": "开发者的秘密笔记",

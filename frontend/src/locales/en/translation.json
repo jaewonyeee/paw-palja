@@ -284,7 +284,14 @@
     "autoShareDesc": "Auto-shares new diaries to the social feed.",
     "shareToSocial": "Share to social",
     "shareToSocialHint": "Share this diary to the social feed",
-    "public": "Public"
+    "public": "Public",
+    "likeCount": "{{count}} likes",
+    "liked": "Unlike",
+    "like": "Like",
+    "writeUserComment": "Leave a comment...",
+    "userCommentCount": "{{count}} comments",
+    "loginToInteract": "Login to interact!",
+    "loginBtn": "Login"
   },
   "easter": {
     "title": "Developer's Secret Note",

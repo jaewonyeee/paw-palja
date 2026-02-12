@@ -284,7 +284,14 @@
     "autoShareDesc": "켜면 새 일기가 자동으로 소셜 피드에 공유됩니다.",
     "shareToSocial": "소셜에 공유",
     "shareToSocialHint": "소셜 피드에 이 일기를 공유합니다",
-    "public": "공개"
+    "public": "공개",
+    "likeCount": "좋아요 {{count}}개",
+    "liked": "좋아요 취소",
+    "like": "좋아요",
+    "writeUserComment": "댓글을 남겨보세요...",
+    "userCommentCount": "댓글 {{count}}개",
+    "loginToInteract": "로그인하고 반응해보세요!",
+    "loginBtn": "로그인"
   },
   "easter": {
     "title": "개발자의 비밀 노트",

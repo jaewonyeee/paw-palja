@@ -284,7 +284,14 @@
     "autoShareDesc": "オンにすると、新しい日記が自動的にソーシャルフィードに共有されます。",
     "shareToSocial": "ソーシャルに共有",
     "shareToSocialHint": "この日記をソーシャルフィードに共有します",
-    "public": "公開"
+    "public": "公開",
+    "likeCount": "いいね {{count}}件",
+    "liked": "いいね取消",
+    "like": "いいね",
+    "writeUserComment": "コメントを残してください...",
+    "userCommentCount": "コメント {{count}}件",
+    "loginToInteract": "ログインして反応しましょう！",
+    "loginBtn": "ログイン"
   },
   "easter": {
     "title": "開発者の秘密ノート",
