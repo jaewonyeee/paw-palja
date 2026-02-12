@@ -188,8 +188,8 @@ Latest Trends:
 
 🎯 TASK: Generate horoscope content in BOTH languages with culturally appropriate expressions."""
 
-    human_prompt = """Dog Profile: Name={{name}}, Breed={{breed}}, MBTI={{mbti}}
-Today's Mood: {{mood}}, Walk: {{walk}} minutes
+    human_prompt = """Dog Profile: Name={name}, Breed={breed}, MBTI={mbti}
+Today's Mood: {mood}, Walk: {walk} minutes
 
 Based on the above, generate today's fortune in BOTH Korean and English!"""
 

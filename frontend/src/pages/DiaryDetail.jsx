@@ -84,14 +84,30 @@ export default function DiaryDetail() {
       const canvas = await Promise.race([canvasPromise, timeoutPromise])
       const dataUrl = canvas.toDataURL('image/png')
 
-      // Try Web Share API first (mobile)
-      if (navigator.share && navigator.canShare) {
-        const blob = await (await fetch(dataUrl)).blob()
-        const file = new File([blob], `pawpalja-${activeSection}.png`, { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'Paw-Palja' })
-          setCapturing(false)
-          return
+      // Only attempt Web Share file sharing on mobile (touch) devices.
+      // Desktop browsers (especially Windows 10) can hang on navigator.share({ files }).
+      const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      if (isMobile && navigator.share && navigator.canShare) {
+        try {
+          const blob = await (await fetch(dataUrl)).blob()
+          const file = new File([blob], `pawpalja-${activeSection}.png`, { type: 'image/png' })
+          if (navigator.canShare({ files: [file] })) {
+            const shareTimeout = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('share_timeout')), 8000)
+            )
+            await Promise.race([
+              navigator.share({ files: [file], title: 'Paw-Palja' }),
+              shareTimeout,
+            ])
+            setCapturing(false)
+            return
+          }
+        } catch (shareErr) {
+          // Share cancelled or timed out — fall through to download
+          if (shareErr?.name === 'AbortError') {
+            setCapturing(false)
+            return
+          }
         }
       }
 
@@ -104,9 +120,9 @@ export default function DiaryDetail() {
       document.body.removeChild(link)
     } catch (err) {
       if (err?.message === 'timeout') {
-        addToast(t('diary.captureTimeout', '캡처 시간이 초과되었어요.'), 'error')
+        addToast(t('diary.captureTimeout'), 'error')
       } else {
-        addToast(t('diary.captureError', '이미지 캡처에 실패했어요.'), 'error')
+        addToast(t('diary.captureError'), 'error')
       }
     }
     setCapturing(false)

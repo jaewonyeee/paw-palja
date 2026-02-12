@@ -11,6 +11,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy.orm.attributes import flag_modified
+
 from backend.database import get_db
 from backend.auth import get_current_user, decode_token
 from backend.models import User, DiaryEntry, DogProfile
@@ -279,6 +281,7 @@ async def toggle_like(
         liked = True
 
     entry.likes = likes
+    flag_modified(entry, "likes")
     await db.commit()
 
     return {"liked": liked, "like_count": len(likes)}
@@ -323,6 +326,7 @@ async def add_user_comment(
     comments = list(entry.user_comments or [])
     comments.append(comment)
     entry.user_comments = comments
+    flag_modified(entry, "user_comments")
     await db.commit()
 
     return comment
