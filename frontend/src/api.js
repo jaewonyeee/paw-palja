@@ -15,6 +15,14 @@ const BASE = _isNative
   ? (import.meta.env.VITE_API_BASE_URL || 'https://pawpalja.com/api/v1')
   : (import.meta.env.VITE_API_BASE_URL || '/api/v1');
 
+// SSE must bypass Cloudflare proxy (which buffers streaming responses).
+// Use the direct backend URL for EventSource connections.
+const SSE_BASE = import.meta.env.VITE_SSE_BASE_URL
+  || import.meta.env.VITE_API_BASE_URL
+  || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+      ? 'https://api.pawpalja.com/api/v1'
+      : BASE);
+
 // --- Token helpers ---
 function getAccessToken() {
   return localStorage.getItem('pawpalja_access_token');
@@ -132,7 +140,7 @@ export const api = {
   streamComments: (entryId, onComment, onDone, mode = 'new') => {
     const token = getAccessToken();
     const es = new EventSource(
-      `${BASE}/comments/stream/${entryId}?mode=${mode}&token=${encodeURIComponent(token)}`
+      `${SSE_BASE}/comments/stream/${entryId}?mode=${mode}&token=${encodeURIComponent(token)}`
     );
     es.onmessage = (event) => {
       if (event.data === '[DONE]') {

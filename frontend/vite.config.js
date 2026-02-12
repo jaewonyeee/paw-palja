@@ -33,8 +33,13 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/videos\//],
+        navigateFallbackDenylist: [/^\/videos\//, /^\/api\//],
         runtimeCaching: [
+          {
+            // SSE streaming must NOT be cached or intercepted by the service worker
+            urlPattern: /\/api\/v1\/comments\/stream\//i,
+            handler: 'NetworkOnly',
+          },
           {
             urlPattern: /^https?:\/\/.*\/api\/v1\/.*/i,
             handler: 'NetworkFirst',
@@ -44,7 +49,7 @@ export default defineConfig({
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60,
               },
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 10,
             },
           },
           {
