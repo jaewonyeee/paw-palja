@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
     async with AsyncSessionLocal() as db:
         admin = await user_store.get_user(db, "admin")
         if not admin:
-            await user_store.signup(db, "admin", "관리자", _admin_pw, {"name": "포포자", "breed": "믹스견", "mbti": "ENTJ"})
+            await user_store.signup(db, "admin", "관리자", _admin_pw, {"name": "포팔자", "breed": "믹스견", "mbti": "ENTJ"})
             logger.info("Admin account created")
 
     _scheduler = start_scheduler()

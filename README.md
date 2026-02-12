@@ -1,4 +1,4 @@
-# Paw-Palja (포포자)
+# Paw-Palja (포팔자)
 
 반려견 운세 기반 육아일기 & 건강 관리 AI Agent 앱
 

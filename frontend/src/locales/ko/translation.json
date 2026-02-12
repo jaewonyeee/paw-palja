@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "포포자",
+    "appName": "포팔자",
     "loading": "로딩 중...",
     "error": "오류",
     "success": "성공",
@@ -138,7 +138,7 @@
     "pushError": "알림 오류"
   },
   "home": {
-    "welcome": "포포자에 오신 것을 환영합니다!",
+    "welcome": "포팔자에 오신 것을 환영합니다!",
     "greeting": "안녕하세요, {{name}}님!",
     "todayStatus": "오늘의 상태",
     "recentDiaries": "최근 일기",
@@ -158,7 +158,7 @@
     "viewAllDiaries": "모든 일기 보기"
   },
   "onboarding": {
-    "title": "🐾 포포자",
+    "title": "포팔자",
     "subtitle": "AI 강아지 일기",
     "description": "AI와 함께 강아지의 일상을 기록하세요",
     "startButton": "시작하기"
@@ -256,7 +256,7 @@
     "unshare": "공유 해제",
     "sharedNotFound": "공유된 일기를 찾을 수 없거나 더 이상 공개되지 않아요.",
     "profileNotFound": "프로필을 찾을 수 없거나 공개되지 않아요.",
-    "goHome": "포포자로 가기",
+    "goHome": "포팔자로 가기",
     "views": "조회 {{count}}회",
     "ctaText": "나만의 AI 반려견 일기를 만들어보세요!",
     "ctaButton": "시작하기",

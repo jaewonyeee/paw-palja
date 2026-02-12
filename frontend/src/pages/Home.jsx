@@ -46,7 +46,7 @@ export default function Home() {
           <div style={styles.avatarWrap}>
             <span style={styles.avatar}>🐾</span>
           </div>
-          <h1 style={styles.headerTitle}>{t('common.appName', '포포자')}</h1>
+          <h1 style={styles.headerTitle}>{t('common.appName', '포팔자')}</h1>
         </div>
         <button onClick={() => navigate('/profile')} style={styles.settingsBtn}>⚙️</button>
       </div>
