@@ -71,11 +71,17 @@ export default function DiaryDetail() {
     if (!captureRef.current || capturing) return
     setCapturing(true)
     try {
-      const canvas = await html2canvas(captureRef.current, {
+      const TIMEOUT_MS = 10000
+      const canvasPromise = html2canvas(captureRef.current, {
         backgroundColor: '#FFF8F0',
         scale: 2,
         useCORS: true,
+        foreignObjectRendering: false,
       })
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)
+      )
+      const canvas = await Promise.race([canvasPromise, timeoutPromise])
       const dataUrl = canvas.toDataURL('image/png')
 
       // Try Web Share API first (mobile)
@@ -89,16 +95,22 @@ export default function DiaryDetail() {
         }
       }
 
-      // Fallback: download
+      // Fallback: download (append to body for Firefox compatibility)
       const link = document.createElement('a')
       link.download = `pawpalja-${activeSection}-${entry.date || 'today'}.png`
       link.href = dataUrl
+      document.body.appendChild(link)
       link.click()
-    } catch {
-      /* ignore */
+      document.body.removeChild(link)
+    } catch (err) {
+      if (err?.message === 'timeout') {
+        addToast(t('diary.captureTimeout', '캡처 시간이 초과되었어요.'), 'error')
+      } else {
+        addToast(t('diary.captureError', '이미지 캡처에 실패했어요.'), 'error')
+      }
     }
     setCapturing(false)
-  }, [activeSection, entry?.date, capturing])
+  }, [activeSection, entry?.date, capturing, addToast, t])
 
   const handleShare = async () => {
     setSharing(true)
@@ -372,6 +384,9 @@ export default function DiaryDetail() {
                   <div style={styles.postActions}>
                     <div style={styles.postActionLeft}>
                       <span style={styles.postDate}>{dateStr}</span>
+                      {isPublic && (
+                        <span style={styles.publicBadge}>{t('social.public', '공개')}</span>
+                      )}
                     </div>
                     <div style={styles.postActionRight}>
                       <button
@@ -912,6 +927,14 @@ const styles = {
   postDate: {
     fontSize: '0.72rem',
     color: 'var(--text-muted)',
+  },
+  publicBadge: {
+    fontSize: '0.62rem',
+    fontWeight: 700,
+    color: 'white',
+    background: '#27AE60',
+    padding: '2px 8px',
+    borderRadius: 6,
   },
   postActionRight: {
     display: 'flex',

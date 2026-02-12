@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -38,6 +38,69 @@ const BREEDS = [
 const MBTIS = ['ENFP', 'INFJ', 'ISTP', 'ESTJ', 'ESFP', 'INTJ', 'ENFJ', 'ISFP']
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
 const MINUTES = ['00', '15', '30', '45']
+
+const ITEM_HEIGHT = 40
+const VISIBLE_COUNT = 5
+
+function ScrollPicker({ items, value, onChange }) {
+  const scrollRef = useRef(null)
+  const isScrolling = useRef(false)
+
+  const selectedIndex = useMemo(() => {
+    const idx = items.indexOf(value)
+    return idx >= 0 ? idx : 0
+  }, [items, value])
+
+  useEffect(() => {
+    if (scrollRef.current && !isScrolling.current) {
+      scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT
+    }
+  }, [selectedIndex])
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return
+    isScrolling.current = true
+    clearTimeout(scrollRef.current._snapTimer)
+    scrollRef.current._snapTimer = setTimeout(() => {
+      if (!scrollRef.current) return
+      const idx = Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT)
+      const clamped = Math.max(0, Math.min(idx, items.length - 1))
+      onChange(items[clamped])
+      isScrolling.current = false
+    }, 80)
+  }, [items, onChange])
+
+  const padCount = Math.floor(VISIBLE_COUNT / 2)
+
+  return (
+    <div style={styles.pickerContainer}>
+      <div style={styles.pickerHighlight} />
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        style={styles.pickerScroll}
+      >
+        {Array.from({ length: padCount }).map((_, i) => (
+          <div key={`pad-top-${i}`} style={{ height: ITEM_HEIGHT, flexShrink: 0 }} />
+        ))}
+        {items.map((item, i) => (
+          <div
+            key={item}
+            style={{
+              ...styles.pickerItem,
+              ...(i === selectedIndex ? styles.pickerItemActive : {}),
+            }}
+          >
+            {item}
+          </div>
+        ))}
+        {Array.from({ length: padCount }).map((_, i) => (
+          <div key={`pad-bot-${i}`} style={{ height: ITEM_HEIGHT, flexShrink: 0 }} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Signup() {
   const { t } = useTranslation()
@@ -331,36 +394,12 @@ export default function Signup() {
               <div style={styles.timePicker}>
                 <div style={styles.timeCol}>
                   <span style={styles.timeLabel}>{t('auth.hour', '시')}</span>
-                  <div style={styles.timeScroll}>
-                    {HOURS.map((h) => (
-                      <motion.button
-                        key={h}
-                        className="time-btn"
-                        whileTap={{ scale: 0.93 }}
-                        onClick={() => setHour(h)}
-                        style={{ ...styles.timeItem, ...(h === hour ? styles.timeItemActive : {}) }}
-                      >
-                        {h}
-                      </motion.button>
-                    ))}
-                  </div>
+                  <ScrollPicker items={HOURS} value={hour} onChange={setHour} />
                 </div>
                 <span style={styles.timeColon}>:</span>
                 <div style={styles.timeCol}>
                   <span style={styles.timeLabel}>{t('auth.minute', '분')}</span>
-                  <div style={styles.timeScroll}>
-                    {MINUTES.map((m) => (
-                      <motion.button
-                        key={m}
-                        className="time-btn"
-                        whileTap={{ scale: 0.93 }}
-                        onClick={() => setMinute(m)}
-                        style={{ ...styles.timeItem, ...(m === minute ? styles.timeItemActive : {}) }}
-                      >
-                        {m}
-                      </motion.button>
-                    ))}
-                  </div>
+                  <ScrollPicker items={MINUTES} value={minute} onChange={setMinute} />
                 </div>
               </div>
               <p style={styles.timePreview}>{t('auth.timePreview', '매일 {{time}}에 일기가 도착합니다', { time: `${hour}:${minute}` })}</p>
@@ -585,35 +624,52 @@ const styles = {
     color: 'var(--text-muted)',
     textTransform: 'uppercase',
   },
-  timeScroll: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'center',
-    maxWidth: 150,
+  pickerContainer: {
+    position: 'relative',
+    height: ITEM_HEIGHT * VISIBLE_COUNT,
+    width: 70,
+    overflow: 'hidden',
+    borderRadius: 14,
+    background: 'var(--bg-secondary, #F9F9F9)',
   },
-  timeItem: {
-    width: 42,
-    height: 38,
+  pickerHighlight: {
+    position: 'absolute',
+    top: ITEM_HEIGHT * Math.floor(VISIBLE_COUNT / 2),
+    left: 4,
+    right: 4,
+    height: ITEM_HEIGHT,
+    borderRadius: 10,
+    background: 'var(--bg-purple)',
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
+  pickerScroll: {
+    height: '100%',
+    overflowY: 'auto',
+    scrollSnapType: 'y mandatory',
+    WebkitOverflowScrolling: 'touch',
+    position: 'relative',
+    zIndex: 1,
+    msOverflowStyle: 'none',
+    scrollbarWidth: 'none',
+  },
+  pickerItem: {
+    height: ITEM_HEIGHT,
+    flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    border: '1.5px solid var(--border-card)',
-    background: 'white',
-    color: 'var(--text-primary)',
-    fontSize: '0.88rem',
+    fontSize: '1rem',
     fontWeight: 600,
-    fontFamily: 'inherit',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    outline: 'none',
-    WebkitTapHighlightColor: 'transparent',
+    color: 'var(--text-muted)',
+    scrollSnapAlign: 'start',
+    transition: 'color 0.15s',
+    userSelect: 'none',
   },
-  timeItemActive: {
-    background: 'var(--bg-purple)',
+  pickerItemActive: {
     color: 'white',
-    borderColor: 'var(--bg-purple)',
+    fontWeight: 800,
+    fontSize: '1.1rem',
   },
   timeColon: {
     fontSize: '1.5rem',

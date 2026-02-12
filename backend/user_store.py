@@ -56,6 +56,7 @@ def _user_to_dict(user: User) -> dict:
         "diary_time": user.diary_time or "09:00",
         "bio": user.bio,
         "is_profile_public": user.is_profile_public,
+        "auto_share_social": user.auto_share_social,
     }
 
 
@@ -189,6 +190,10 @@ async def save_diary_entry(db: AsyncSession, user_id: str, entry: dict) -> dict:
         existing.logs = entry.get("logs")
         existing.photo = entry.get("photo")
         existing.is_edited = entry.get("is_edited", False)
+        if "is_public" in entry:
+            existing.is_public = entry["is_public"]
+        if "share_token" in entry:
+            existing.share_token = entry["share_token"]
         await db.commit()
         await db.refresh(existing)
         await cache_delete_pattern(f"diaries:{user_id}:*")
@@ -207,6 +212,8 @@ async def save_diary_entry(db: AsyncSession, user_id: str, entry: dict) -> dict:
             logs=entry.get("logs"),
             photo=entry.get("photo"),
             is_edited=entry.get("is_edited", False),
+            is_public=entry.get("is_public", False),
+            share_token=entry.get("share_token"),
         )
         db.add(new_entry)
         await db.commit()

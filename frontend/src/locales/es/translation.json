@@ -118,7 +118,9 @@
     "noHospitals": "No se encontraron hospitales",
     "newCommentAlert": "💬 ¡Nuevo comentario!",
     "noContent": "Aún no hay contenido en el diario",
-    "commentCount": "{{count}} comentarios"
+    "commentCount": "{{count}} comentarios",
+    "captureTimeout": "La captura ha expirado.",
+    "captureError": "Error al capturar la imagen."
   },
   "profile": {
     "title": "Perfil",
@@ -268,7 +270,18 @@
     "recentDiaries": "Diarios publicos recientes",
     "feed": "Social",
     "emptyFeed": "Aun no hay diarios publicos",
-    "feedTitle": "El dia de otros perritos"
+    "feedTitle": "El dia de otros perritos",
+    "socialSettings": "Configuración de compartir social",
+    "anonymousSharingToggle": "Mostrar como anónimo en el feed social",
+    "anonymousSharingDesc": "Al activarlo, aparecerás como 'Anónimo' en el feed social.",
+    "anonymousUser": "Usuario anónimo",
+    "anonymousDog": "Perrito anónimo",
+    "autoShareTitle": "Compartir social automático",
+    "autoShareToggle": "Compartir automáticamente nuevos diarios",
+    "autoShareDesc": "Comparte automáticamente nuevos diarios al feed social.",
+    "shareToSocial": "Compartir en social",
+    "shareToSocialHint": "Comparte este diario en el feed social",
+    "public": "Público"
   },
   "easter": {
     "title": "Nota secreta del desarrollador",

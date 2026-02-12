@@ -24,6 +24,7 @@ export default function Profile() {
   const [minute, setMinute] = useState(user.diary_time?.split(':')[1] || '00')
   const [saving, setSaving] = useState(false)
   const [isProfilePublic, setIsProfilePublic] = useState(user.is_profile_public || false)
+  const [autoShareSocial, setAutoShareSocial] = useState(user.auto_share_social || false)
   const [bio, setBio] = useState(user.bio || '')
   const [savingVisibility, setSavingVisibility] = useState(false)
   const [pushEnabled, setPushEnabled] = useState(false)
@@ -79,7 +80,7 @@ export default function Profile() {
   const handleSaveVisibility = async () => {
     setSavingVisibility(true)
     try {
-      await api.updateVisibility(isProfilePublic, bio)
+      await api.updateVisibility(isProfilePublic, bio, autoShareSocial)
       addToast(t('common.save') + ' OK', 'success')
     } catch (err) {
       addToast(err.message, 'error')
@@ -275,7 +276,7 @@ export default function Profile() {
           </motion.div>
         )}
 
-        {/* Public Profile Settings */}
+        {/* Social Sharing Settings */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -283,27 +284,50 @@ export default function Profile() {
           style={styles.card}
         >
           <div style={styles.cardHeader}>
-            <h4 style={styles.cardTitle}>{t('social.publicProfile')}</h4>
+            <h4 style={styles.cardTitle}>{t('social.socialSettings', '소셜 공유 설정')}</h4>
           </div>
 
           <div style={styles.toggleRow}>
-            <span style={styles.toggleLabel}>{t('social.profileVisible')}</span>
+            <div style={{ flex: 1 }}>
+              <span style={styles.toggleLabel}>{t('social.anonymousSharingToggle', '소셜 피드에서 익명으로 표시')}</span>
+              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>
+                {t('social.anonymousSharingDesc', "켜면 소셜 피드에서 '익명 사용자'로 표시됩니다.")}
+              </p>
+            </div>
             <button
               onClick={() => setIsProfilePublic(!isProfilePublic)}
               style={{
                 ...styles.toggle,
-                background: isProfilePublic ? 'var(--bg-purple)' : 'var(--border-light)',
+                background: !isProfilePublic ? 'var(--bg-purple)' : 'var(--border-light)',
               }}
             >
               <span style={{
                 ...styles.toggleKnob,
-                transform: isProfilePublic ? 'translateX(20px)' : 'translateX(0)',
+                transform: !isProfilePublic ? 'translateX(20px)' : 'translateX(0)',
               }} />
             </button>
           </div>
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
-            {t('social.profileVisibleDesc', '프로필을 공개하면 다른 사용자가 내 프로필 페이지를 볼 수 있어요. 개별 일기의 공유는 일기 상세 페이지에서 별도로 설정할 수 있어요.')}
-          </p>
+
+          <div style={{ ...styles.toggleRow, marginTop: 14 }}>
+            <div style={{ flex: 1 }}>
+              <span style={styles.toggleLabel}>{t('social.autoShareToggle', '새 일기 자동으로 소셜에 공유')}</span>
+              <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>
+                {t('social.autoShareDesc', '켜면 새 일기가 자동으로 소셜 피드에 공유됩니다.')}
+              </p>
+            </div>
+            <button
+              onClick={() => setAutoShareSocial(!autoShareSocial)}
+              style={{
+                ...styles.toggle,
+                background: autoShareSocial ? 'var(--bg-purple)' : 'var(--border-light)',
+              }}
+            >
+              <span style={{
+                ...styles.toggleKnob,
+                transform: autoShareSocial ? 'translateX(20px)' : 'translateX(0)',
+              }} />
+            </button>
+          </div>
 
           <div style={{ marginTop: 12 }}>
             <span style={styles.infoLabel}>{t('social.bio')}</span>
@@ -328,7 +352,7 @@ export default function Profile() {
             {savingVisibility ? t('profile.savingChanges') : t('common.save')}
           </motion.button>
 
-          {isProfilePublic && (
+          {!isProfilePublic && (
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
               {t('social.profileLink')}: /profile/{user.user_id}
             </p>

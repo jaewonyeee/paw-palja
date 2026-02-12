@@ -7,6 +7,7 @@ Supports two execution modes controlled by USE_TASK_QUEUE env flag:
 """
 import os
 import uuid
+import secrets
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -93,6 +94,11 @@ async def generate_diary(
 
         final_state = _get_agent_graph().invoke(initial_state, config=config)
 
+        # Determine whether to share to social
+        share = logs.share_to_social
+        if share is None:
+            share = current_user.get("auto_share_social", False)
+
         entry = {
             "user_id": user_id,
             "diary": final_state["diary"],
@@ -103,6 +109,9 @@ async def generate_diary(
             "comments": [],
             "is_edited": False,
         }
+        if share:
+            entry["is_public"] = True
+            entry["share_token"] = secrets.token_urlsafe(16)
         if logs.photo:
             entry["photo"] = logs.photo
 

@@ -65,6 +65,7 @@ export default function NewDiary() {
   const [poop, setPoop] = useState('')
   const [notes, setNotes] = useState('')
   const [photo, setPhoto] = useState(null) // base64
+  const [shareToSocial, setShareToSocial] = useState(user.auto_share_social || false)
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
   const photoRef = useRef(null)
@@ -144,6 +145,7 @@ export default function NewDiary() {
     try {
       const result = await api.generateDiary({
         mood, food, walk: String(walk || 0), poop, notes,
+        share_to_social: shareToSocial,
         ...(photo ? { photo } : {}),
       })
 
@@ -349,6 +351,25 @@ export default function NewDiary() {
                         reader.readAsDataURL(file)
                       }}
                     />
+                  </div>
+                  {/* Share to social toggle */}
+                  <div style={styles.socialToggleWrap}>
+                    <div style={styles.socialToggleInfo}>
+                      <span style={styles.socialToggleLabel}>{t('social.shareToSocial', '소셜에 공유')}</span>
+                      <span style={styles.socialToggleHint}>{t('social.shareToSocialHint', '소셜 피드에 이 일기를 공유합니다')}</span>
+                    </div>
+                    <button
+                      onClick={() => setShareToSocial(!shareToSocial)}
+                      style={{
+                        ...styles.socialToggle,
+                        background: shareToSocial ? 'var(--bg-purple)' : 'var(--border-light)',
+                      }}
+                    >
+                      <span style={{
+                        ...styles.socialToggleKnob,
+                        transform: shareToSocial ? 'translateX(20px)' : 'translateX(0)',
+                      }} />
+                    </button>
                   </div>
                 </div>
               )}
@@ -581,6 +602,54 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Social toggle
+  socialToggleWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 16px',
+    background: 'white',
+    borderRadius: 14,
+    border: '1.5px solid var(--border-light)',
+    marginTop: 4,
+  },
+  socialToggleInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    flex: 1,
+  },
+  socialToggleLabel: {
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  socialToggleHint: {
+    fontSize: '0.68rem',
+    color: 'var(--text-muted)',
+  },
+  socialToggle: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    border: 'none',
+    cursor: 'pointer',
+    position: 'relative',
+    transition: 'background 0.2s',
+    padding: 0,
+    flexShrink: 0,
+  },
+  socialToggleKnob: {
+    display: 'block',
+    width: 22,
+    height: 22,
+    borderRadius: '50%',
+    background: 'white',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s',
+    marginTop: 3,
+    marginLeft: 3,
   },
   // Summary row
   summaryRow: {

@@ -57,7 +57,8 @@ async def stream_comments(
         raise HTTPException(status_code=404, detail=get_message("diary_not_found", lang))
 
     user = await user_store.get_user(db, user_id)
-    diary_text = entry.get("diary", {}).get("content", "")
+    diary_data = entry.get("diary", {})
+    diary_text = diary_data.get("content_ko") or diary_data.get("content_en") or diary_data.get("content") or ""
     dog_name = user["dog"].get("name", "멍멍이") if user else "멍멍이"
     dog_breed = user["dog"].get("breed", "믹스견") if user else "믹스견"
 

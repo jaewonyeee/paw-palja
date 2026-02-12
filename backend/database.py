@@ -48,4 +48,22 @@ async def init_db():
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Auto-migrate: add new columns if missing
+    import sqlalchemy
+    async with engine.begin() as conn:
+        if DATABASE_URL.startswith("postgresql"):
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_share_social BOOLEAN DEFAULT FALSE"
+                )
+            )
+        else:
+            result = await conn.execute(sqlalchemy.text("PRAGMA table_info(users)"))
+            columns = [row[1] for row in result.fetchall()]
+            if "auto_share_social" not in columns:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE users ADD COLUMN auto_share_social BOOLEAN DEFAULT 0")
+                )
+
     logger.info("Database tables initialized")

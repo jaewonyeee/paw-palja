@@ -118,7 +118,9 @@
     "noHospitals": "No hospitals found",
     "newCommentAlert": "💬 New comment!",
     "noContent": "No diary content yet",
-    "commentCount": "{{count}} comments"
+    "commentCount": "{{count}} comments",
+    "captureTimeout": "Capture timed out.",
+    "captureError": "Failed to capture image."
   },
   "profile": {
     "title": "Profile",
@@ -268,7 +270,18 @@
     "recentDiaries": "Recent Public Diaries",
     "feed": "Social",
     "emptyFeed": "No public diaries yet",
-    "feedTitle": "Other pups' days"
+    "feedTitle": "Other pups' days",
+    "socialSettings": "Social Sharing Settings",
+    "anonymousSharingToggle": "Show as anonymous in social feed",
+    "anonymousSharingDesc": "Shows you as 'Anonymous' in the social feed.",
+    "anonymousUser": "Anonymous User",
+    "anonymousDog": "Anonymous Pup",
+    "autoShareTitle": "Auto Social Sharing",
+    "autoShareToggle": "Auto-share new diaries to social",
+    "autoShareDesc": "Auto-shares new diaries to the social feed.",
+    "shareToSocial": "Share to social",
+    "shareToSocialHint": "Share this diary to the social feed",
+    "public": "Public"
   },
   "easter": {
     "title": "Developer's Secret Note",

@@ -118,7 +118,9 @@
     "noHospitals": "附近没有医院",
     "newCommentAlert": "💬 有新评论！",
     "noContent": "日记内容还没有哦",
-    "commentCount": "{{count}}条评论"
+    "commentCount": "{{count}}条评论",
+    "captureTimeout": "截图超时了。",
+    "captureError": "截图失败了。"
   },
   "profile": {
     "title": "个人资料",
@@ -268,7 +270,18 @@
     "recentDiaries": "最近公开的日记",
     "feed": "社交",
     "emptyFeed": "还没有公开的日记",
-    "feedTitle": "其他狗狗的一天"
+    "feedTitle": "其他狗狗的一天",
+    "socialSettings": "社交分享设置",
+    "anonymousSharingToggle": "在社交动态中匿名显示",
+    "anonymousSharingDesc": "开启后，在社交动态中将显示为「匿名用户」。",
+    "anonymousUser": "匿名用户",
+    "anonymousDog": "匿名汪",
+    "autoShareTitle": "自动社交分享",
+    "autoShareToggle": "自动将新日记分享到社交",
+    "autoShareDesc": "开启后，新日记将自动分享到社交动态。",
+    "shareToSocial": "分享到社交",
+    "shareToSocialHint": "将此日记分享到社交动态",
+    "public": "公开"
   },
   "easter": {
     "title": "开发者的秘密笔记",

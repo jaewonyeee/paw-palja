@@ -121,6 +121,7 @@ class DailyLog(BaseModel):
     poop: str = Field(max_length=50)
     notes: Optional[str] = Field(default="", max_length=500)
     photo: Optional[str] = None  # base64 이미지 (일기 사진 첨부)
+    share_to_social: Optional[bool] = Field(default=None)
 
     @field_validator("photo")
     @classmethod

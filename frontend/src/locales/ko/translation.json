@@ -118,7 +118,9 @@
     "noHospitals": "주변에 병원이 없습니다",
     "newCommentAlert": "💬 새 댓글이 달렸어요!",
     "noContent": "일기 내용이 아직 없어요",
-    "commentCount": "{{count}}개의 댓글"
+    "commentCount": "{{count}}개의 댓글",
+    "captureTimeout": "캡처 시간이 초과되었어요.",
+    "captureError": "이미지 캡처에 실패했어요."
   },
   "profile": {
     "title": "프로필",
@@ -268,7 +270,18 @@
     "recentDiaries": "최근 공개 일기",
     "feed": "소셜",
     "emptyFeed": "아직 공개된 일기가 없어요",
-    "feedTitle": "다른 댕댕이들의 하루"
+    "feedTitle": "다른 댕댕이들의 하루",
+    "socialSettings": "소셜 공유 설정",
+    "anonymousSharingToggle": "소셜 피드에서 익명으로 표시",
+    "anonymousSharingDesc": "켜면 소셜 피드에서 '익명 사용자'로 표시됩니다.",
+    "anonymousUser": "익명 사용자",
+    "anonymousDog": "익명멍",
+    "autoShareTitle": "자동 소셜 공유",
+    "autoShareToggle": "새 일기 자동으로 소셜에 공유",
+    "autoShareDesc": "켜면 새 일기가 자동으로 소셜 피드에 공유됩니다.",
+    "shareToSocial": "소셜에 공유",
+    "shareToSocialHint": "소셜 피드에 이 일기를 공유합니다",
+    "public": "공개"
   },
   "easter": {
     "title": "개발자의 비밀 노트",

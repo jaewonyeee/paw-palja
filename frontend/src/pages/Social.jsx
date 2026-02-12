@@ -157,8 +157,9 @@ function FeedCard({ item, lang, t, navigate }) {
   const moodIcon = MOOD_MAP[diary.mood_icon] || '✨'
   const title = safeText(diary, 'title', lang) || t('diary.todayDiary', '오늘의 일기')
   const content = safeText(diary, 'content', lang)
-  const nickname = user.nickname || ''
-  const dogName = user.dog_name || ''
+  const isAnonymous = user.is_anonymous
+  const nickname = isAnonymous ? t('social.anonymousUser', '익명 사용자') : (user.nickname || '')
+  const dogName = isAnonymous ? t('social.anonymousDog', '익명멍') : (user.dog_name || '')
 
   const handleClick = () => {
     if (item.share_token) {
@@ -178,7 +179,7 @@ function FeedCard({ item, lang, t, navigate }) {
       {/* User info row */}
       <div style={styles.feedUserRow}>
         <div style={styles.feedAvatar}>
-          <span style={{ fontSize: '1rem' }}>🐶</span>
+          <span style={{ fontSize: '1rem' }}>{isAnonymous ? '🎭' : '🐶'}</span>
         </div>
         <div style={styles.feedUserInfo}>
           <span style={styles.feedNickname}>{nickname}</span>

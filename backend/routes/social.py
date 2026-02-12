@@ -56,10 +56,9 @@ async def social_feed(
     Supports pagination via limit/offset. If a logged-in user passes
     include_mine=false (default), their own entries are excluded.
     """
-    # Base filter: public entries from users with public profiles
+    # Base filter: all public diary entries (regardless of profile visibility)
     base_conditions = [
         DiaryEntry.is_public == True,  # noqa: E712
-        User.is_profile_public == True,  # noqa: E712
     ]
 
     # Optionally exclude the current user's own entries
@@ -95,8 +94,12 @@ async def social_feed(
         horoscope_data = entry.horoscope or {}
         comments_list = entry.comments or []
 
-        # Don't send full base64 dog images in feed (too heavy)
-        dog_image = None
+        # Anonymous handling: users with is_profile_public=False are shown anonymously
+        is_anonymous = not user.is_profile_public
+        display_nickname = user.nickname if not is_anonymous else None
+        display_dog_name = (dog.name if dog else None) if not is_anonymous else None
+        display_dog_breed = (dog.breed if dog else None) if not is_anonymous else None
+        display_user_id = user.user_id if not is_anonymous else None
 
         items.append({
             "entry_id": entry.entry_id,
@@ -114,11 +117,12 @@ async def social_feed(
                 "summary_en": horoscope_data.get("summary_en", ""),
             },
             "user": {
-                "user_id": user.user_id,
-                "nickname": user.nickname,
-                "dog_name": dog.name if dog else None,
-                "dog_breed": dog.breed if dog else None,
-                "dog_image": dog_image,
+                "user_id": display_user_id,
+                "nickname": display_nickname,
+                "dog_name": display_dog_name,
+                "dog_breed": display_dog_breed,
+                "dog_image": None,
+                "is_anonymous": is_anonymous,
             },
             "comments_count": len(comments_list),
             "created_at": entry.created_at.isoformat() if entry.created_at else None,
@@ -305,6 +309,8 @@ async def update_profile_visibility(
         user.is_profile_public = bool(body["is_profile_public"])
     if "bio" in body:
         user.bio = str(body["bio"])[:200] if body["bio"] else None
+    if "auto_share_social" in body:
+        user.auto_share_social = bool(body["auto_share_social"])
 
     await db.commit()
     await db.refresh(user)
@@ -314,4 +320,5 @@ async def update_profile_visibility(
         "nickname": user.nickname,
         "bio": user.bio,
         "is_profile_public": user.is_profile_public,
+        "auto_share_social": user.auto_share_social,
     }

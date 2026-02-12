@@ -118,7 +118,9 @@
     "noHospitals": "近くに病院が見つかりません",
     "newCommentAlert": "💬 新しいコメント！",
     "noContent": "日記の内容がまだありません",
-    "commentCount": "{{count}}件のコメント"
+    "commentCount": "{{count}}件のコメント",
+    "captureTimeout": "キャプチャがタイムアウトしました。",
+    "captureError": "画像のキャプチャに失敗しました。"
   },
   "profile": {
     "title": "プロフィール",
@@ -268,7 +270,18 @@
     "recentDiaries": "最近の公開日記",
     "feed": "ソーシャル",
     "emptyFeed": "まだ公開された日記がありません",
-    "feedTitle": "他のわんちゃんたちの一日"
+    "feedTitle": "他のわんちゃんたちの一日",
+    "socialSettings": "ソーシャル共有設定",
+    "anonymousSharingToggle": "ソーシャルフィードで匿名表示",
+    "anonymousSharingDesc": "オンにすると、ソーシャルフィードで「匿名ユーザー」として表示されます。",
+    "anonymousUser": "匿名ユーザー",
+    "anonymousDog": "匿名わんこ",
+    "autoShareTitle": "自動ソーシャル共有",
+    "autoShareToggle": "新しい日記を自動でソーシャルに共有",
+    "autoShareDesc": "オンにすると、新しい日記が自動的にソーシャルフィードに共有されます。",
+    "shareToSocial": "ソーシャルに共有",
+    "shareToSocialHint": "この日記をソーシャルフィードに共有します",
+    "public": "公開"
   },
   "easter": {
     "title": "開発者の秘密ノート",

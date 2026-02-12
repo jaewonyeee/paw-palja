@@ -190,10 +190,14 @@ export const api = {
         return res.json();
       });
   },
-  updateVisibility: (isPublic, bio) =>
+  updateVisibility: (isPublic, bio, autoShareSocial) =>
     request('/profile/me/visibility', {
       method: 'PUT',
-      body: JSON.stringify({ is_profile_public: isPublic, bio }),
+      body: JSON.stringify({
+        is_profile_public: isPublic,
+        bio,
+        ...(autoShareSocial !== undefined && { auto_share_social: autoShareSocial }),
+      }),
     }),
 
   // --- Push Notifications ---
