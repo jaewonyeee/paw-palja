@@ -3,13 +3,17 @@
 """
 import json
 import time
+import random
 import asyncio
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.schemas import CommentRequest
-from backend.comment_agents import generate_comments, generate_edit_reactions, generate_comments_stream
+from backend.comment_agents import (
+    generate_comments, generate_edit_reactions, generate_single_comment,
+    COMMENT_PERSONAS,
+)
 from backend import user_store
 from backend.database import get_db, AsyncSessionLocal
 from backend.auth import get_current_user, decode_token
@@ -91,9 +95,13 @@ async def stream_comments(
         raise HTTPException(status_code=400, detail=get_message("invalid_comment_mode", lang))
 
     async def event_stream():
+        loop = asyncio.get_running_loop()
         try:
             if mode == "edit":
-                reactions = generate_edit_reactions("", diary_text, dog_name, dog_breed)
+                # edit 반응도 executor에서 실행 (blocking LLM 호출)
+                reactions = await loop.run_in_executor(
+                    None, lambda: generate_edit_reactions("", diary_text, dog_name, dog_breed)
+                )
                 for reaction in reactions:
                     await asyncio.sleep(2)
                     if reaction and reaction.get("text") and reaction["text"].strip():
@@ -102,13 +110,17 @@ async def stream_comments(
                         data = json.dumps(reaction, ensure_ascii=False)
                         yield f"data: {data}\n\n"
             else:
-                loop = asyncio.get_running_loop()
-                comments_list = await loop.run_in_executor(
-                    None, lambda: list(generate_comments_stream(diary_text, dog_name, dog_breed, count=3))
-                )
-                for i, comment in enumerate(comments_list):
+                # 진짜 순차 스트리밍: 댓글 1개 생성 → 즉시 전송 → 다음 생성
+                count = 3
+                selected = random.sample(COMMENT_PERSONAS, min(count, len(COMMENT_PERSONAS)))
+                for i, persona in enumerate(selected):
                     if i > 0:
-                        await asyncio.sleep(comment.get("delay_seconds", 5))
+                        await asyncio.sleep(random.uniform(3, 7))
+                    comment = await loop.run_in_executor(
+                        None, lambda p=persona, idx=i: generate_single_comment(
+                            diary_text, dog_name, dog_breed, p, idx
+                        )
+                    )
                     if comment and comment.get("text") and comment["text"].strip():
                         async with AsyncSessionLocal() as session:
                             await user_store.add_comments_to_diary(session, user_id, entry_id, [comment])

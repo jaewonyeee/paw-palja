@@ -248,61 +248,57 @@ def generate_edit_reactions(original: str, edited: str, dog_name: str, dog_breed
     return reactions
 
 
-def generate_comments_stream(diary_content: str, dog_name: str, dog_breed: str, count: int = 3) -> Generator[dict, None, None]:
-    """댓글을 하나씩 생성하여 yield합니다 (SSE 스트리밍용).
+def generate_single_comment(diary_content: str, dog_name: str, dog_breed: str, persona: dict, index: int) -> dict:
+    """댓글 1건을 동기적으로 생성합니다 (SSE 스트리밍용).
 
-    각 댓글이 생성될 때마다 바로 yield되므로 클라이언트는 실시간으로 수신 가능합니다.
+    이모지는 페르소나 기본값을 사용하여 추가 LLM 호출을 피합니다.
     """
-    llm = get_llm(temperature=0.95)
-    count = min(count, len(COMMENT_PERSONAS))
-    selected = random.sample(COMMENT_PERSONAS, count)
+    from backend.prompt_defaults import get_cached_prompt_value
+    temp = float(get_cached_prompt_value("comment.temperature", "0.95"))
+    llm = get_llm(temperature=temp)
 
-    for i, persona in enumerate(selected):
-        prompt = ChatPromptTemplate.from_messages([
-            ("system",
-             "You are '{name}' ({emoji}), a bilingual character.\n"
-             "Personality: {personality}\n"
-             "Tone: {tone}\n\n"
-             "⚠️ CRITICAL: You MUST generate comments in BOTH Korean (text_ko) and English (text_en).\n"
-             "Read your dog friend's diary and write a short, cute comment in 1-2 sentences.\n"
-             "Make it natural and emotional like real SNS comments.\n"
-             "Include 1-2 emojis naturally in BOTH versions."),
-            ("human",
-             "{dog_name} ({dog_breed})'s diary today:\n\n\"{diary}\"\n\n"
-             "Write a comment in BOTH Korean and English!"),
-        ])
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "You are '{name}' ({emoji}), a bilingual character.\n"
+         "Personality: {personality}\n"
+         "Tone: {tone}\n\n"
+         "⚠️ CRITICAL: You MUST generate comments in BOTH Korean (text_ko) and English (text_en).\n"
+         "Read your dog friend's diary and write a short, cute comment in 1-2 sentences.\n"
+         "Make it natural and emotional like real SNS comments.\n"
+         "Include 1-2 emojis naturally in BOTH versions."),
+        ("human",
+         "{dog_name} ({dog_breed})'s diary today:\n\n\"{diary}\"\n\n"
+         "Write a comment in BOTH Korean and English!"),
+    ])
 
-        try:
-            chain = prompt | llm.with_structured_output(CommentResult)
-            result = chain.invoke({
-                "name": persona["name"],
-                "emoji": persona["emoji"],
-                "personality": persona["personality"],
-                "tone": persona["tone"],
-                "dog_name": dog_name,
-                "dog_breed": dog_breed,
-                "diary": diary_content,
-            })
+    try:
+        chain = prompt | llm.with_structured_output(CommentResult)
+        result = chain.invoke({
+            "name": persona["name"],
+            "emoji": persona["emoji"],
+            "personality": persona["personality"],
+            "tone": persona["tone"],
+            "dog_name": dog_name,
+            "dog_breed": dog_breed,
+            "diary": diary_content,
+        })
 
-            # LLM으로 동적 이모지 생성 (한국어 버전 기준)
-            dynamic_emoji = generate_comment_emoji(persona["name"], result.text_ko or result.text or "")
-
-            yield {
-                "author": result.author or persona["name"],
-                "emoji": dynamic_emoji,  # 동적 생성된 이모지 사용
-                "text_ko": result.text_ko,  # 한국어 댓글
-                "text_en": result.text_en,  # 영어 댓글
-                "text": result.text_ko or result.text,  # 레거시 호환용
-                "index": i,
-            }
-        except Exception:
-            fallback_text_ko = f"{dog_name}아 오늘도 화이팅! ✨"
-            fallback_text_en = f"{dog_name}, fighting today too! ✨"
-            yield {
-                "author": persona["name"],
-                "emoji": generate_comment_emoji(persona["name"], fallback_text_ko),
-                "text_ko": fallback_text_ko,
-                "text_en": fallback_text_en,
-                "text": fallback_text_ko,  # 레거시 호환용
-                "index": i,
-            }
+        return {
+            "author": result.author or persona["name"],
+            "emoji": persona["emoji"],
+            "text_ko": result.text_ko,
+            "text_en": result.text_en,
+            "text": result.text_ko or result.text,
+            "index": index,
+        }
+    except Exception:
+        fallback_text_ko = f"{dog_name}아 오늘도 화이팅! ✨"
+        fallback_text_en = f"{dog_name}, fighting today too! ✨"
+        return {
+            "author": persona["name"],
+            "emoji": persona["emoji"],
+            "text_ko": fallback_text_ko,
+            "text_en": fallback_text_en,
+            "text": fallback_text_ko,
+            "index": index,
+        }
