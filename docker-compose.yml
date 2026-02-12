@@ -1,11 +1,55 @@
+# Paw-Palja Docker Compose
+# 실행: docker compose up --build
+# 접속: http://localhost:8000
+
 services:
+  # PostgreSQL 데이터베이스
+  db:
+    image: postgres:16-alpine
+    container_name: pawpalja-db
+    environment:
+      POSTGRES_DB: pawpalja
+      POSTGRES_USER: pawpalja
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pawpalja_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pawpalja"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Backend API + Frontend (멀티스테이지 빌드)
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: pawpalja-backend
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql+asyncpg://pawpalja:${DB_PASSWORD:-pawpalja_secret}@db:5432/pawpalja
+      - CHROMA_PATH=/app/data/chroma
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - chromadata:/app/data/chroma
+      - userdata:/app/data/users
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  pgdata:
+  chromadata:
+  userdata:
