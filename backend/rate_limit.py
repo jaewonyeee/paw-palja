@@ -39,8 +39,23 @@ def _get_user_id_from_request(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
+import logging
+
+_logger = logging.getLogger("pawpalja.rate_limit")
+
 _redis_url = os.getenv("REDIS_URL")
-_storage_uri = _redis_url if _redis_url else None
+_storage_uri = None
+
+if _redis_url:
+    try:
+        import redis as _sync_redis
+        _test_conn = _sync_redis.from_url(_redis_url, socket_connect_timeout=2)
+        _test_conn.ping()
+        _test_conn.close()
+        _storage_uri = _redis_url
+        _logger.info("Rate limiter using Redis: %s", _redis_url.split("@")[-1] if "@" in _redis_url else _redis_url)
+    except Exception:
+        _logger.warning("Redis unavailable at %s — rate limiter falling back to in-memory storage", _redis_url)
 
 limiter = Limiter(
     key_func=_get_user_id_from_request,

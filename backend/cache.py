@@ -19,7 +19,10 @@ _redis: aioredis.Redis | None = None
 async def init_redis() -> None:
     """Initialize the async Redis connection pool. Call once at startup."""
     global _redis
-    url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    url = os.getenv("REDIS_URL")
+    if not url:
+        logger.info("REDIS_URL not set — caching disabled")
+        return
     _redis = aioredis.from_url(
         url,
         decode_responses=True,
