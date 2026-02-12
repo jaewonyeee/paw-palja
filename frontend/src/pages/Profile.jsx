@@ -13,6 +13,37 @@ const pageTransition = {
   exit: { opacity: 0, x: 30, transition: { duration: 0.2 } },
 }
 
+function resizeImage(file, maxSize = 512, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width)
+            width = maxSize
+          } else {
+            width = Math.round((width * maxSize) / height)
+            height = maxSize
+          }
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = e.target.result
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function Profile() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -35,6 +66,10 @@ export default function Profile() {
   const [easterTaps, setEasterTaps] = useState(0)
   const [showEasterEgg, setShowEasterEgg] = useState(false)
   const easterTimeout = useRef(null)
+  const profileImageRef = useRef(null)
+  const dogImageRef = useRef(null)
+  const [uploadingProfile, setUploadingProfile] = useState(false)
+  const [uploadingDog, setUploadingDog] = useState(false)
 
   useEffect(() => {
     if (pushSupported) {
@@ -51,6 +86,66 @@ export default function Profile() {
       setEasterTaps(0)
     } else {
       easterTimeout.current = setTimeout(() => setEasterTaps(0), 2000)
+    }
+  }
+
+  const handleProfileImageChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingProfile(true)
+    try {
+      const base64 = await resizeImage(file)
+      const updated = await api.updateUser(null, null, undefined, base64)
+      handleUserUpdate(updated)
+      addToast(t('common.success'), 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setUploadingProfile(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveProfileImage = async () => {
+    setUploadingProfile(true)
+    try {
+      const updated = await api.updateUser(null, null, undefined, null)
+      handleUserUpdate(updated)
+      addToast(t('common.success'), 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setUploadingProfile(false)
+    }
+  }
+
+  const handleDogImageChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingDog(true)
+    try {
+      const base64 = await resizeImage(file)
+      const updated = await api.updateUser({ ...dog, image: base64 })
+      handleUserUpdate(updated)
+      addToast(t('common.success'), 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setUploadingDog(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleRemoveDogImage = async () => {
+    setUploadingDog(true)
+    try {
+      const updated = await api.updateUser({ ...dog, image: null })
+      handleUserUpdate(updated)
+      addToast(t('common.success'), 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setUploadingDog(false)
     }
   }
 
@@ -139,19 +234,43 @@ export default function Profile() {
           transition={{ delay: 0.1 }}
           style={styles.profileCard}
         >
-          <motion.div
-            animate={{ y: [0, -5, 0] }}
-            transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-            style={{ ...styles.avatarBig, cursor: 'pointer', userSelect: 'none' }}
-            onClick={handleAvatarTap}
-            whileTap={{ scale: 0.9 }}
-          >
-            {dog.image ? (
-              <img src={dog.image} alt="dog" style={styles.avatarImg} />
-            ) : (
-              '🐾'
-            )}
-          </motion.div>
+          <div style={styles.avatarRow}>
+            <motion.div
+              animate={{ y: [0, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              style={{ ...styles.avatarBig, cursor: 'pointer', userSelect: 'none' }}
+              onClick={handleAvatarTap}
+              whileTap={{ scale: 0.9 }}
+            >
+              {user.profile_image ? (
+                <img src={user.profile_image} alt="profile" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = '🐾' }} />
+              ) : dog.image ? (
+                <img src={dog.image} alt="dog" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = '🐾' }} />
+              ) : (
+                '🐾'
+              )}
+            </motion.div>
+            <button
+              onClick={() => profileImageRef.current?.click()}
+              disabled={uploadingProfile}
+              style={styles.cameraBtn}
+              title={t('profile.changePhoto')}
+            >
+              {uploadingProfile ? '...' : '📷'}
+            </button>
+            <input
+              ref={profileImageRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleProfileImageChange}
+            />
+          </div>
+          {user.profile_image && (
+            <button onClick={handleRemoveProfileImage} disabled={uploadingProfile} style={styles.removePhotoBtn}>
+              {t('profile.removePhoto')}
+            </button>
+          )}
           <h2 style={styles.nickname}>{user.nickname}</h2>
           <p style={styles.userId}>@{user.user_id}</p>
         </motion.div>
@@ -171,6 +290,40 @@ export default function Profile() {
             >
               {editingTime ? t('common.cancel') : t('profile.editTime')}
             </button>
+          </div>
+          <div style={styles.dogPhotoSection}>
+            <div style={styles.dogPhotoPreview}>
+              {dog.image ? (
+                <img src={dog.image} alt={dog.name} style={styles.dogPhotoImg} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'block') }} />
+              ) : (
+                <span style={styles.dogPhotoPlaceholder}>🐶</span>
+              )}
+            </div>
+            <div style={styles.dogPhotoBtns}>
+              <button
+                onClick={() => dogImageRef.current?.click()}
+                disabled={uploadingDog}
+                style={styles.dogPhotoChangeBtn}
+              >
+                {uploadingDog ? '...' : t('profile.changeDogPhoto')}
+              </button>
+              {dog.image && (
+                <button
+                  onClick={handleRemoveDogImage}
+                  disabled={uploadingDog}
+                  style={styles.dogPhotoRemoveBtn}
+                >
+                  {t('profile.removePhoto')}
+                </button>
+              )}
+            </div>
+            <input
+              ref={dogImageRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleDogImageChange}
+            />
           </div>
           <div style={styles.infoGrid}>
             <div style={styles.infoItem}>
@@ -553,6 +706,11 @@ const styles = {
     background: 'linear-gradient(135deg, var(--bg-purple), var(--bg-purple-light))',
     borderRadius: 'var(--radius-lg)',
   },
+  avatarRow: {
+    position: 'relative',
+    display: 'inline-flex',
+    alignItems: 'flex-end',
+  },
   avatarBig: {
     width: 72,
     height: 72,
@@ -569,6 +727,34 @@ const styles = {
     height: '100%',
     objectFit: 'cover',
   },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: -6,
+    width: 28,
+    height: 28,
+    borderRadius: '50%',
+    border: '2px solid white',
+    background: 'var(--bg-purple)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.75rem',
+    cursor: 'pointer',
+    padding: 0,
+    zIndex: 1,
+  },
+  removePhotoBtn: {
+    marginTop: 4,
+    fontSize: '0.68rem',
+    color: 'rgba(255,255,255,0.7)',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textDecoration: 'underline',
+    padding: '2px 8px',
+  },
   nickname: {
     fontSize: '1.2rem',
     fontWeight: 800,
@@ -577,6 +763,60 @@ const styles = {
   userId: {
     fontSize: '0.75rem',
     color: 'rgba(255,255,255,0.6)',
+  },
+  dogPhotoSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
+    paddingBottom: 14,
+    borderBottom: '1px solid var(--border-light)',
+  },
+  dogPhotoPreview: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    overflow: 'hidden',
+    background: 'var(--bg-purple-light)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  dogPhotoImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  dogPhotoPlaceholder: {
+    fontSize: '1.6rem',
+  },
+  dogPhotoBtns: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+  },
+  dogPhotoChangeBtn: {
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    color: 'var(--bg-purple)',
+    background: 'transparent',
+    border: '1px solid var(--bg-purple)',
+    borderRadius: 6,
+    padding: '4px 10px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
+  dogPhotoRemoveBtn: {
+    fontSize: '0.68rem',
+    fontWeight: 500,
+    color: 'var(--text-muted)',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    padding: '2px 4px',
+    textDecoration: 'underline',
   },
   card: {
     background: 'white',

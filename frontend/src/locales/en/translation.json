@@ -148,7 +148,10 @@
     "emailNotifications": "Email Notifications",
     "emailLabel": "Email Address",
     "emailPlaceholder": "Email for diary reminders",
-    "emailDesc": "Cute reminder emails arrive at your set time!"
+    "emailDesc": "Cute reminder emails arrive at your set time!",
+    "changePhoto": "Change Photo",
+    "changeDogPhoto": "Change Photo",
+    "removePhoto": "Remove Photo"
   },
   "home": {
     "welcome": "Welcome to Paw-Palja!",

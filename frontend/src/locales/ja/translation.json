@@ -148,7 +148,10 @@
     "emailNotifications": "メール通知",
     "emailLabel": "メールアドレス",
     "emailPlaceholder": "日記リマインダー用メール",
-    "emailDesc": "設定した時間にかわいいリマインダーメールが届きます！"
+    "emailDesc": "設定した時間にかわいいリマインダーメールが届きます！",
+    "changePhoto": "写真を変更",
+    "changeDogPhoto": "写真を変更",
+    "removePhoto": "写真を削除"
   },
   "home": {
     "welcome": "Paw-Paljaへようこそ！",

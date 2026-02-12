@@ -148,7 +148,10 @@
     "emailNotifications": "Notificaciones por email",
     "emailLabel": "Dirección de email",
     "emailPlaceholder": "Email para recordatorios del diario",
-    "emailDesc": "¡Recibirás lindos emails de recordatorio a tu hora configurada!"
+    "emailDesc": "¡Recibirás lindos emails de recordatorio a tu hora configurada!",
+    "changePhoto": "Cambiar foto",
+    "changeDogPhoto": "Cambiar foto",
+    "removePhoto": "Eliminar foto"
   },
   "home": {
     "welcome": "¡Bienvenido a Paw-Palja!",
