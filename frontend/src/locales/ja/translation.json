@@ -120,7 +120,10 @@
     "noContent": "日記の内容がまだありません",
     "commentCount": "{{count}}件のコメント",
     "captureTimeout": "キャプチャがタイムアウトしました。",
-    "captureError": "画像のキャプチャに失敗しました。"
+    "captureError": "画像のキャプチャに失敗しました。",
+    "overwriteWarning": "今日の日記はすでにあります。新しく作成すると既存の日記が上書きされます。",
+    "viewExisting": "既存の日記を見る",
+    "overwriteConfirm": "新しく作成する"
   },
   "profile": {
     "title": "プロフィール",

@@ -120,7 +120,10 @@
     "noContent": "No diary content yet",
     "commentCount": "{{count}} comments",
     "captureTimeout": "Capture timed out.",
-    "captureError": "Failed to capture image."
+    "captureError": "Failed to capture image.",
+    "overwriteWarning": "You already have a diary for today. Creating a new one will replace it.",
+    "viewExisting": "View existing diary",
+    "overwriteConfirm": "Write new diary"
   },
   "profile": {
     "title": "Profile",

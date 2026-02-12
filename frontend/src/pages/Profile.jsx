@@ -80,7 +80,13 @@ export default function Profile() {
   const handleSaveVisibility = async () => {
     setSavingVisibility(true)
     try {
-      await api.updateVisibility(isProfilePublic, bio, autoShareSocial)
+      const result = await api.updateVisibility(isProfilePublic, bio, autoShareSocial)
+      handleUserUpdate({
+        ...user,
+        is_profile_public: result.is_profile_public,
+        bio: result.bio,
+        auto_share_social: result.auto_share_social,
+      })
       addToast(t('common.save') + ' OK', 'success')
     } catch (err) {
       addToast(err.message, 'error')
@@ -352,7 +358,7 @@ export default function Profile() {
             {savingVisibility ? t('profile.savingChanges') : t('common.save')}
           </motion.button>
 
-          {!isProfilePublic && (
+          {isProfilePublic && (
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
               {t('social.profileLink')}: /profile/{user.user_id}
             </p>

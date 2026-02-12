@@ -120,7 +120,10 @@
     "noContent": "Aún no hay contenido en el diario",
     "commentCount": "{{count}} comentarios",
     "captureTimeout": "La captura ha expirado.",
-    "captureError": "Error al capturar la imagen."
+    "captureError": "Error al capturar la imagen.",
+    "overwriteWarning": "Ya tienes un diario de hoy. Crear uno nuevo reemplazará el existente.",
+    "viewExisting": "Ver diario existente",
+    "overwriteConfirm": "Crear nuevo"
   },
   "profile": {
     "title": "Perfil",

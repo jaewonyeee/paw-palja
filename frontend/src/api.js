@@ -168,7 +168,7 @@ export const api = {
 
   // --- Social Feed ---
   socialFeed: (limit = 20, offset = 0) =>
-    request(`/social/feed?limit=${limit}&offset=${offset}`),
+    request(`/social/feed?limit=${limit}&offset=${offset}&include_mine=true`),
 
   // --- Social / Sharing ---
   shareDiary: (entryId) =>

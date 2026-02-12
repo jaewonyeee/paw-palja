@@ -120,7 +120,10 @@
     "noContent": "日记内容还没有哦",
     "commentCount": "{{count}}条评论",
     "captureTimeout": "截图超时了。",
-    "captureError": "截图失败了。"
+    "captureError": "截图失败了。",
+    "overwriteWarning": "今天已经有日记了。重新创建将替换现有日记。",
+    "viewExisting": "查看现有日记",
+    "overwriteConfirm": "重新创建"
   },
   "profile": {
     "title": "个人资料",

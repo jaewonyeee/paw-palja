@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { api } from '../api'
+import { todayString } from '../utils/date'
 
 const pageTransition = {
   initial: { opacity: 0, y: 30 },
@@ -68,7 +69,21 @@ export default function NewDiary() {
   const [shareToSocial, setShareToSocial] = useState(user.auto_share_social || false)
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState('')
+  const [existingDiary, setExistingDiary] = useState(null)
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false)
   const photoRef = useRef(null)
+
+  // Check if today's diary already exists
+  useEffect(() => {
+    api.listDiaries().then(diaries => {
+      const today = todayString()
+      const found = diaries.find(d => d.date === today)
+      if (found) {
+        setExistingDiary(found)
+        setShowOverwriteConfirm(true)
+      }
+    }).catch(() => {})
+  }, [])
 
   const dogName = user.dog?.name || t('home.defaultDogName', '멍멍이')
 
@@ -165,6 +180,38 @@ export default function NewDiary() {
         setLoading(false)
       }
     }
+  }
+
+  if (showOverwriteConfirm && existingDiary) {
+    return (
+      <motion.div {...pageTransition} style={styles.loadingPage}>
+        <span style={{ fontSize: '3rem' }}>📝</span>
+        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
+          {t('diary.todayDiary')}
+        </h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.6, maxWidth: 280 }}>
+          {t('diary.overwriteWarning', '오늘 이미 일기가 있어요. 새로 작성하면 기존 일기가 대체됩니다.')}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '80%', maxWidth: 280, marginTop: 8 }}>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            className="btn btn-primary"
+            onClick={() => navigate(`/diary/${existingDiary.entry_id}`, { state: { entry: existingDiary } })}
+            style={{ width: '100%' }}
+          >
+            {t('diary.viewExisting', '기존 일기 보기')}
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            className="btn btn-secondary"
+            onClick={() => setShowOverwriteConfirm(false)}
+            style={{ width: '100%' }}
+          >
+            {t('diary.overwriteConfirm', '새로 작성하기')}
+          </motion.button>
+        </div>
+      </motion.div>
+    )
   }
 
   if (loading) {
