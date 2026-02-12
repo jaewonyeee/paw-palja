@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -60,26 +60,39 @@ export default function Signup() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
+  const debounceRef = useRef(null)
 
-  const checkIdAvailability = async () => {
-    if (!userId.trim() || userId.trim().length < 3) {
+  const checkIdAvailability = useCallback(async (id) => {
+    const val = (id ?? userId).trim()
+    if (!val || val.length < 3) {
       setIdAvailable(null)
       return
     }
-    if (!/^[a-zA-Z0-9]+$/.test(userId.trim())) {
+    if (!/^[a-zA-Z0-9]+$/.test(val)) {
       setIdAvailable(null)
       return
     }
     setIdChecking(true)
     try {
-      const res = await api.checkId(userId.trim())
+      const res = await api.checkId(val)
       setIdAvailable(res.available)
     } catch {
       setIdAvailable(null)
     } finally {
       setIdChecking(false)
     }
-  }
+  }, [userId])
+
+  // Debounced auto-check when userId changes
+  useEffect(() => {
+    setIdAvailable(null)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const val = userId.trim()
+    if (val.length >= 3 && /^[a-zA-Z0-9]+$/.test(val)) {
+      debounceRef.current = setTimeout(() => checkIdAvailability(val), 500)
+    }
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [userId])
 
   const handleImageSelect = (e) => {
     const file = e.target.files?.[0]
@@ -153,10 +166,7 @@ export default function Signup() {
                   className="input-field"
                   placeholder={t('auth.userIdLabel')}
                   value={userId}
-                  onChange={(e) => {
-                    setUserId(e.target.value)
-                    setIdAvailable(null)
-                  }}
+                  onChange={(e) => setUserId(e.target.value)}
                   style={{ flex: 1 }}
                 />
                 <motion.button

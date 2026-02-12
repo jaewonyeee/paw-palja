@@ -23,7 +23,7 @@ from backend.rate_limit import limiter
 
 @router.post("/comments/generate")
 @limiter.limit("5/minute")
-async def api_generate_comments(request: Request, req: CommentRequest):
+async def api_generate_comments(request: Request, req: CommentRequest, current_user: dict = Depends(get_current_user)):
     """일기에 대한 댓글을 생성합니다."""
     try:
         comments = generate_comments(req.diary_content, req.dog_name, req.dog_breed, count=3)

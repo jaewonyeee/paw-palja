@@ -3,12 +3,30 @@ Paw-Palja Structured Output 스키마 정의
 모든 Agent의 출력을 Pydantic 모델로 강제하여 파싱 에러를 방지합니다.
 다국어 지원: 모든 텍스트 필드는 _ko, _en 버전으로 동시 생성됩니다.
 """
+import re
+
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from enum import Enum
 
 # VAL: 이미지 크기 제한 (base64 기준 약 5MB)
 _MAX_IMAGE_LEN = 7_000_000
+_IMAGE_DATA_URI_RE = re.compile(r"^data:image/(jpeg|png|gif|webp);base64,")
+_IMAGE_URL_RE = re.compile(r"^https?://")
+
+
+def _validate_image_field(v: str | None) -> str | None:
+    """Validate that an image field is either a valid data URI or URL."""
+    if not v:
+        return v
+    if len(v) > _MAX_IMAGE_LEN:
+        raise ValueError("이미지 크기가 너무 큽니다 (최대 5MB)")
+    if v.startswith("data:"):
+        if not _IMAGE_DATA_URI_RE.match(v):
+            raise ValueError("지원하지 않는 이미지 형식입니다 (JPEG, PNG, GIF, WebP만 허용)")
+    elif not _IMAGE_URL_RE.match(v):
+        raise ValueError("유효하지 않은 이미지 URL입니다")
+    return v
 
 
 # --- Enums ---
@@ -92,10 +110,8 @@ class DogProfile(BaseModel):
 
     @field_validator("image")
     @classmethod
-    def check_image_size(cls, v):
-        if v and len(v) > _MAX_IMAGE_LEN:
-            raise ValueError("이미지 크기가 너무 큽니다 (최대 5MB)")
-        return v
+    def check_image(cls, v):
+        return _validate_image_field(v)
 
 
 class DailyLog(BaseModel):
@@ -108,10 +124,8 @@ class DailyLog(BaseModel):
 
     @field_validator("photo")
     @classmethod
-    def check_photo_size(cls, v):
-        if v and len(v) > _MAX_IMAGE_LEN:
-            raise ValueError("사진 크기가 너무 큽니다 (최대 5MB)")
-        return v
+    def check_photo(cls, v):
+        return _validate_image_field(v)
 
 
 class AnalysisRequest(BaseModel):

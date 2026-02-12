@@ -38,7 +38,9 @@ def get_weather(city: str = "Seoul") -> dict:
             "city": city,
         }
     except Exception as e:
-        return {"error": str(e), "weather": "조회 실패", "temp": 0, "city": city}
+        import logging
+        logging.getLogger("pawpalja.tools").exception("Weather API call failed")
+        return {"error": "날씨 정보를 가져올 수 없습니다", "weather": "조회 실패", "temp": 0, "city": city}
 
 
 @tool
@@ -46,7 +48,7 @@ def search_trends(query: str) -> str:
     """Tavily를 사용하여 최신 트렌드/뉴스를 검색합니다.
 
     Args:
-        query: 검색 쿼리 (예: "강아지 트렌드 2025")
+        query: 검색 쿼리 (예: "강아지 트렌드")
 
     Returns:
         검색 결과 요약 텍스트
@@ -64,7 +66,9 @@ def search_trends(query: str) -> str:
             summaries.append(r.get("content", "")[:200])
         return "\n---\n".join(summaries) if summaries else "검색 결과가 없습니다."
     except Exception as e:
-        return f"트렌드 검색 오류: {str(e)}"
+        import logging
+        logging.getLogger("pawpalja.tools").exception("Trend search failed")
+        return "트렌드 검색 중 오류가 발생했습니다."
 
 
 @tool
@@ -84,7 +88,9 @@ def lookup_breed_info(breed: str) -> str:
             return "\n\n".join([doc.page_content for doc in results])
         return f"{breed}에 대한 정보를 찾지 못했습니다."
     except Exception as e:
-        return f"견종 정보 검색 오류: {str(e)}"
+        import logging
+        logging.getLogger("pawpalja.tools").exception("Breed info lookup failed")
+        return "견종 정보 검색 중 오류가 발생했습니다."
 
 
 # 도구 목록

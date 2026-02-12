@@ -19,12 +19,17 @@ export default function Home() {
   const { user } = useAuth()
   const [diaries, setDiaries] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const fetchDiaries = async () => {
+    setLoading(true)
+    setError(null)
     try {
       const data = await api.listDiaries()
       setDiaries(data)
-    } catch { /* ignore */ }
+    } catch (err) {
+      setError(err.message || t('common.error'))
+    }
     setLoading(false)
   }
 
@@ -48,12 +53,25 @@ export default function Home() {
 
       {/* Content */}
       <div className="page-content" style={styles.content}>
-        <HomeTab
-          user={user}
-          diaries={diaries}
-          loading={loading}
-          hasTodayDiary={hasTodayDiary}
-        />
+        {error ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <p style={{ fontSize: '0.88rem', color: '#E74C3C', marginBottom: 16 }}>{error}</p>
+            <button
+              onClick={fetchDiaries}
+              className="btn btn-primary"
+              style={{ padding: '10px 24px' }}
+            >
+              {t('common.retry', '다시 시도')}
+            </button>
+          </div>
+        ) : (
+          <HomeTab
+            user={user}
+            diaries={diaries}
+            loading={loading}
+            hasTodayDiary={hasTodayDiary}
+          />
+        )}
       </div>
 
       {/* Bottom tab bar */}

@@ -8,7 +8,7 @@ Supports two execution modes controlled by USE_TASK_QUEUE env flag:
 import os
 import uuid
 import logging
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.schemas import DogProfile, DailyLog, DiaryEditRequest
 from backend.agents import build_agent_graph
@@ -154,7 +154,7 @@ async def poll_diary_job(
 
 @router.get("/diary/list")
 async def list_diaries(
-    limit: int = 30,
+    limit: int = Query(default=30, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

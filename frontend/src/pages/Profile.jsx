@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import { api } from '../api'
 import { isPushSupported, subscribeToPush, unsubscribeFromPush, isSubscribed } from '../utils/pushNotifications'
 
@@ -16,6 +17,7 @@ export default function Profile() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { user, handleLogout, handleUserUpdate } = useAuth()
+  const { addToast } = useToast()
   const dog = user.dog || {}
   const [editingTime, setEditingTime] = useState(false)
   const [hour, setHour] = useState(user.diary_time?.split(':')[0] || '09')
@@ -60,7 +62,7 @@ export default function Profile() {
         setPushEnabled(true)
       }
     } catch (err) {
-      alert(t('profile.pushError') + ': ' + err.message)
+      addToast(t('profile.pushError') + ': ' + err.message, 'error')
     } finally {
       setPushLoading(false)
     }
@@ -70,7 +72,7 @@ export default function Profile() {
     try {
       await api.pushTest()
     } catch (err) {
-      alert(err.message)
+      addToast(err.message, 'error')
     }
   }
 
@@ -78,8 +80,9 @@ export default function Profile() {
     setSavingVisibility(true)
     try {
       await api.updateVisibility(isProfilePublic, bio)
+      addToast(t('common.save') + ' OK', 'success')
     } catch (err) {
-      alert(err.message)
+      addToast(err.message, 'error')
     } finally {
       setSavingVisibility(false)
     }
@@ -92,7 +95,7 @@ export default function Profile() {
       handleUserUpdate(updated)
       setEditingTime(false)
     } catch (err) {
-      alert(t('common.error') + ': ' + err.message)
+      addToast(t('common.error') + ': ' + err.message, 'error')
     } finally {
       setSaving(false)
     }

@@ -4,6 +4,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import html2canvas from 'html2canvas'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import { api } from '../api'
 import { dateLabel } from '../utils/date'
 
@@ -26,6 +27,7 @@ export default function DiaryDetail() {
   const location = useLocation()
   const { entryId } = useParams()
   const { user } = useAuth()
+  const { addToast } = useToast()
   const initialEntry = location.state?.entry || null
   const [entry, setEntry] = useState(initialEntry)
   const [loadingEntry, setLoadingEntry] = useState(!initialEntry)
@@ -42,6 +44,7 @@ export default function DiaryDetail() {
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const esRef = useRef(null)
+  const streamingRef = useRef(false)
   const captureRef = useRef(null)
   const [capturing, setCapturing] = useState(false)
   const [sharing, setSharing] = useState(false)
@@ -112,7 +115,7 @@ export default function DiaryDetail() {
         setShareModal(true)
       }
     } catch (err) {
-      alert(err.message)
+      addToast(err.message, 'error')
     }
     setSharing(false)
   }
@@ -120,7 +123,7 @@ export default function DiaryDetail() {
   const handleCopyLink = () => {
     const url = `${window.location.origin}/share/${shareToken}`
     navigator.clipboard.writeText(url).then(() => {
-      alert(t('social.linkCopied'))
+      addToast(t('social.linkCopied'), 'success')
     }).catch(() => {
       // Fallback
       const input = document.createElement('input')
@@ -129,7 +132,7 @@ export default function DiaryDetail() {
       input.select()
       document.execCommand('copy')
       document.body.removeChild(input)
-      alert(t('social.linkCopied'))
+      addToast(t('social.linkCopied'), 'success')
     })
   }
 
@@ -178,8 +181,13 @@ export default function DiaryDetail() {
     if (!entry) return
     setVisibleComments(comments.length > 0 ? [...comments] : [])
 
-    if (comments.length === 0 && entry.entry_id) {
+    if (comments.length === 0 && entry.entry_id && !streamingRef.current) {
+      streamingRef.current = true
       setStreaming(true)
+      if (esRef.current) {
+        esRef.current.close()
+        esRef.current = null
+      }
       esRef.current = api.streamComments(
         entry.entry_id,
         (comment) => {
@@ -193,7 +201,7 @@ export default function DiaryDetail() {
             setTimeout(() => setNewCommentAlert(false), 2000)
           }
         },
-        () => setStreaming(false),
+        () => { setStreaming(false); streamingRef.current = false },
       )
     }
 
@@ -202,6 +210,7 @@ export default function DiaryDetail() {
         esRef.current.close()
         esRef.current = null
       }
+      streamingRef.current = false
     }
   }, [entry?.entry_id])
 
@@ -225,6 +234,7 @@ export default function DiaryDetail() {
         esRef.current.close()
         esRef.current = null
       }
+      streamingRef.current = true
       esRef.current = api.streamComments(
         entry.entry_id,
         (comment) => {
@@ -238,11 +248,11 @@ export default function DiaryDetail() {
             setTimeout(() => setNewCommentAlert(false), 2000)
           }
         },
-        () => setStreaming(false),
+        () => { setStreaming(false); streamingRef.current = false },
         'edit',
       )
     } catch (err) {
-      alert(t('diary.editError') + err.message)
+      addToast(t('diary.editError') + err.message, 'error')
     }
     setEditSaving(false)
   }
@@ -253,7 +263,7 @@ export default function DiaryDetail() {
       await api.deleteDiary(entry.entry_id)
       navigate('/home')
     } catch (err) {
-      alert(t('diary.deleteError') + err.message)
+      addToast(t('diary.deleteError') + err.message, 'error')
       setDeleting(false)
       setDeleteConfirm(false)
     }
@@ -316,7 +326,7 @@ export default function DiaryDetail() {
                 {/* Photo */}
                 {entry.photo && !isEditing && (
                   <div style={styles.diaryPhoto}>
-                    <img src={entry.photo} alt="diary" style={styles.diaryPhotoImg} />
+                    <img src={entry.photo} alt="diary" style={styles.diaryPhotoImg} onError={(e) => { e.target.style.display = 'none' }} />
                   </div>
                 )}
 

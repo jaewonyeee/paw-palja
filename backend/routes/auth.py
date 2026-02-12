@@ -23,6 +23,7 @@ from backend.auth import (
     get_current_user,
 )
 from backend.i18n import get_message, get_lang
+from backend.rate_limit import limiter
 
 logger = logging.getLogger("pawpalja.auth.routes")
 
@@ -62,6 +63,7 @@ async def check_id(user_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/auth/login")
+@limiter.limit("5/minute")
 async def auth_login(request: Request, req: LoginRequest, db: AsyncSession = Depends(get_db)):
     lang = get_lang(request)
     result = await user_store.login(db, req.user_id, req.password, lang=lang)

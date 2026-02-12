@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import { api } from '../api'
 
 const pageTransition = {
@@ -15,6 +16,7 @@ export default function NewDiary() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { addToast } = useToast()
 
   const MOODS = [
     { value: '최고', icon: '🤩', label: t('mood.best') },
@@ -123,14 +125,14 @@ export default function NewDiary() {
           clearInterval(pollIntervalRef.current)
           pollIntervalRef.current = null
           setLoading(false)
-          alert(t('diary.generationError') + (res.detail || 'Unknown error'))
+          addToast(t('diary.generationError') + (res.detail || 'Unknown error'), 'error')
         }
         // queued / in_progress -> keep polling
       } catch (err) {
         clearInterval(pollIntervalRef.current)
         pollIntervalRef.current = null
         setLoading(false)
-        alert(t('diary.generationError') + err.message)
+        addToast(t('diary.generationError') + err.message, 'error')
       }
     }, 2000)
   }, [navigate, t])
@@ -154,7 +156,7 @@ export default function NewDiary() {
       // Synchronous mode: result is the full diary entry
       navigate(`/diary/${result.entry_id}`, { state: { entry: result } })
     } catch (err) {
-      alert(t('diary.generationError') + err.message)
+      addToast(t('diary.generationError') + err.message, 'error')
     } finally {
       // Only clear loading for sync path; async path clears in poll callback
       if (!pollIntervalRef.current) {
@@ -339,7 +341,7 @@ export default function NewDiary() {
                         const file = e.target.files?.[0]
                         if (!file) return
                         if (file.size > 3 * 1024 * 1024) {
-                          alert(t('auth.imageSizeLimit'))
+                          addToast(t('auth.imageSizeLimit'), 'error')
                           return
                         }
                         const reader = new FileReader()

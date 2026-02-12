@@ -52,7 +52,7 @@ export default function Login() {
             type="text"
             placeholder={t('auth.userIdPlaceholder', '회원가입 시 발급된 아이디를 입력하세요')}
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            onChange={(e) => { setUserId(e.target.value); setError('') }}
           />
         </div>
         <div style={styles.inputGroup}>
@@ -62,7 +62,7 @@ export default function Login() {
             type="password"
             placeholder={t('auth.passwordPlaceholder', '비밀번호를 입력하세요')}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); setError('') }}
           />
         </div>
 
