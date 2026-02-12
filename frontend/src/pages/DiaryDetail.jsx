@@ -204,7 +204,8 @@ export default function DiaryDetail() {
 
   const dateStr = dateLabel(entry?.date)
 
-  // Show existing comments, then start SSE for new ones
+  // Show existing comments, then start SSE for new ones.
+  // Fallback: if SSE fails or no comments arrive within timeout, poll the API.
   useEffect(() => {
     if (!entry) return
     setVisibleComments(comments.length > 0 ? [...comments] : [])
@@ -212,10 +213,40 @@ export default function DiaryDetail() {
     if (comments.length === 0 && entry.entry_id && !streamingRef.current) {
       streamingRef.current = true
       setStreaming(true)
+      let receivedAny = false
+      let fallbackTimer = null
+
       if (esRef.current) {
         esRef.current.close()
         esRef.current = null
       }
+
+      // Fallback: if no SSE comment arrives within 15s, poll the API for saved comments
+      fallbackTimer = setTimeout(() => {
+        if (!receivedAny && streamingRef.current) {
+          console.warn('SSE comment timeout — falling back to API poll')
+          if (esRef.current) { esRef.current.close(); esRef.current = null }
+          const pollForComments = (attempts = 0) => {
+            api.getDiary(entry.entry_id).then((fresh) => {
+              if (fresh.comments && fresh.comments.length > 0) {
+                setVisibleComments(fresh.comments)
+                setStreaming(false)
+                streamingRef.current = false
+              } else if (attempts < 5) {
+                setTimeout(() => pollForComments(attempts + 1), 5000)
+              } else {
+                setStreaming(false)
+                streamingRef.current = false
+              }
+            }).catch(() => {
+              setStreaming(false)
+              streamingRef.current = false
+            })
+          }
+          pollForComments()
+        }
+      }, 15000)
+
       esRef.current = api.streamComments(
         entry.entry_id,
         (comment) => {
@@ -224,12 +255,18 @@ export default function DiaryDetail() {
                           (comment.text_en && comment.text_en.trim()) ||
                           (comment.text && comment.text.trim())
           if (comment && hasText) {
+            receivedAny = true
+            if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null }
             setVisibleComments((prev) => [...prev, comment])
             setNewCommentAlert(true)
             setTimeout(() => setNewCommentAlert(false), 2000)
           }
         },
-        () => { setStreaming(false); streamingRef.current = false },
+        () => {
+          if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null }
+          setStreaming(false)
+          streamingRef.current = false
+        },
       )
     }
 
@@ -263,20 +300,43 @@ export default function DiaryDetail() {
         esRef.current = null
       }
       streamingRef.current = true
+      let editReceivedAny = false
+      const editFallbackTimer = setTimeout(() => {
+        if (!editReceivedAny && streamingRef.current) {
+          console.warn('SSE edit comment timeout — falling back to API poll')
+          if (esRef.current) { esRef.current.close(); esRef.current = null }
+          const poll = (attempts = 0) => {
+            api.getDiary(entry.entry_id).then((fresh) => {
+              if (fresh.comments && fresh.comments.length > 0) {
+                setVisibleComments(fresh.comments)
+                setStreaming(false)
+                streamingRef.current = false
+              } else if (attempts < 5) {
+                setTimeout(() => poll(attempts + 1), 5000)
+              } else {
+                setStreaming(false)
+                streamingRef.current = false
+              }
+            }).catch(() => { setStreaming(false); streamingRef.current = false })
+          }
+          poll()
+        }
+      }, 15000)
       esRef.current = api.streamComments(
         entry.entry_id,
         (comment) => {
-          // Validate comment is not empty (check both text_ko and text_en)
           const hasText = (comment.text_ko && comment.text_ko.trim()) ||
                           (comment.text_en && comment.text_en.trim()) ||
                           (comment.text && comment.text.trim())
           if (comment && hasText) {
+            editReceivedAny = true
+            clearTimeout(editFallbackTimer)
             setVisibleComments((prev) => [...prev, comment])
             setNewCommentAlert(true)
             setTimeout(() => setNewCommentAlert(false), 2000)
           }
         },
-        () => { setStreaming(false); streamingRef.current = false },
+        () => { clearTimeout(editFallbackTimer); setStreaming(false); streamingRef.current = false },
         'edit',
       )
     } catch (err) {
