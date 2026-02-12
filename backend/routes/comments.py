@@ -2,6 +2,7 @@
 댓글 관련 API 라우터 (생성, SSE 스트리밍)
 """
 import json
+import time
 import asyncio
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
@@ -23,13 +24,37 @@ from backend.rate_limit import limiter
 
 @router.post("/comments/generate")
 @limiter.limit("5/minute")
-async def api_generate_comments(request: Request, req: CommentRequest, current_user: dict = Depends(get_current_user)):
+async def api_generate_comments(
+    request: Request,
+    req: CommentRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """일기에 대한 댓글을 생성합니다."""
     try:
+        start_time = time.time()
         comments = generate_comments(req.diary_content, req.dog_name, req.dog_breed, count=3)
+        duration_ms = int((time.time() - start_time) * 1000)
+        try:
+            from backend import user_store as _us
+            await _us.log_api_usage(
+                db, user_id=current_user["user_id"], endpoint="/comments/generate",
+                model_name="comment-agents", duration_ms=duration_ms, success=True,
+            )
+        except Exception:
+            logger.warning("Failed to log API usage")
         return {"comments": comments}
     except Exception as e:
         logger.exception("댓글 생성 실패")
+        try:
+            from backend import user_store as _us
+            await _us.log_api_usage(
+                db, user_id=current_user["user_id"], endpoint="/comments/generate",
+                model_name="comment-agents", success=False,
+                error_message=str(e)[:500],
+            )
+        except Exception:
+            logger.warning("Failed to log API usage error")
         raise HTTPException(status_code=500, detail=get_message("comment_create_error", get_lang(request)))
 
 

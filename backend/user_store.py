@@ -11,7 +11,7 @@ import bcrypt
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models import User, DogProfile, DiaryEntry, UserEvent
+from backend.models import User, DogProfile, DiaryEntry, UserEvent, ApiUsageLog
 from backend.i18n import get_message
 from backend.cache import cache_get, cache_set, cache_delete, cache_delete_pattern
 
@@ -387,4 +387,34 @@ async def track_event(db: AsyncSession, user_id: str, event_type: str, metadata:
     """Record a user event for analytics."""
     event = UserEvent(user_id=user_id, event_type=event_type, metadata_json=metadata)
     db.add(event)
+    await db.commit()
+
+
+async def log_api_usage(
+    db: AsyncSession,
+    user_id: str | None,
+    endpoint: str,
+    model_name: str | None = None,
+    input_tokens: int = 0,
+    output_tokens: int = 0,
+    total_tokens: int = 0,
+    cost_usd: float = 0.0,
+    duration_ms: int = 0,
+    success: bool = True,
+    error_message: str | None = None,
+) -> None:
+    """Record an API usage log entry."""
+    log = ApiUsageLog(
+        user_id=user_id,
+        endpoint=endpoint,
+        model_name=model_name,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+        cost_usd=cost_usd,
+        duration_ms=duration_ms,
+        success=success,
+        error_message=error_message,
+    )
+    db.add(log)
     await db.commit()

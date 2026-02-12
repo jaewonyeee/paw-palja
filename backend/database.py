@@ -44,7 +44,7 @@ async def get_db():
 
 async def init_db():
     """Create all tables (for development / first run)."""
-    from backend.models import User, DogProfile, DiaryEntry, UserEvent, PushSubscription  # noqa: F401
+    from backend.models import User, DogProfile, DiaryEntry, UserEvent, PushSubscription, ApiUsageLog  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

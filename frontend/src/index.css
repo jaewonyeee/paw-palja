@@ -72,6 +72,41 @@ body {
   #root { background: #F0EAE0; }
 }
 
+/* Admin full-screen layout */
+.app-frame:has(.admin-dashboard) {
+  max-width: 100%;
+  max-height: 100dvh;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (min-width: 768px) {
+  .app-frame:has(.admin-dashboard) {
+    border-radius: 0;
+    box-shadow: none;
+    height: 100dvh;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-dashboard .admin-sidebar {
+    display: none !important;
+  }
+  .admin-dashboard .admin-mobile-nav {
+    display: block !important;
+  }
+  .admin-dashboard main {
+    padding: 16px !important;
+  }
+}
+@media (min-width: 768px) {
+  .admin-dashboard .admin-mobile-nav {
+    display: none !important;
+  }
+  .admin-dashboard .admin-sidebar {
+    display: flex !important;
+  }
+}
+
 .page-content {
   flex: 1;
   overflow-y: auto;

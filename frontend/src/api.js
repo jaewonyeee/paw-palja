@@ -159,6 +159,18 @@ export const api = {
   adminStats: () => request('/admin/stats'),
   adminSystem: () => request('/admin/system'),
 
+  // --- Admin Extended ---
+  adminUsers: (q = '', page = 1, limit = 20) =>
+    request(`/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`),
+  adminUserDetail: (userId) => request(`/admin/users/${userId}/detail`),
+  adminDeleteUser: (userId) =>
+    request(`/admin/users/${userId}`, { method: 'DELETE' }),
+  adminDiaries: ({ q = '', user_id = '', date_from = '', date_to = '', page = 1, limit = 20 } = {}) =>
+    request(`/admin/diaries?q=${encodeURIComponent(q)}&user_id=${encodeURIComponent(user_id)}&date_from=${date_from}&date_to=${date_to}&page=${page}&limit=${limit}`),
+  adminDiaryDetail: (entryId) => request(`/admin/diaries/${entryId}`),
+  adminDbStatus: () => request('/admin/db-status'),
+  adminApiUsage: (period = 'today') => request(`/admin/api-usage?period=${period}`),
+
   // --- Analytics (admin only) ---
   analyticsOverview: () => request('/admin/analytics/overview'),
   analyticsEngagement: () => request('/admin/analytics/engagement'),

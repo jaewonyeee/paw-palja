@@ -6,6 +6,7 @@ Supports two execution modes controlled by USE_TASK_QUEUE env flag:
   - Async task queue: enqueues the job, returns a job_id for polling
 """
 import os
+import time
 import uuid
 import secrets
 import logging
@@ -92,7 +93,9 @@ async def generate_diary(
         thread_id = str(uuid.uuid4())
         config = {"configurable": {"thread_id": thread_id}}
 
+        start_time = time.time()
         final_state = _get_agent_graph().invoke(initial_state, config=config)
+        duration_ms = int((time.time() - start_time) * 1000)
 
         # Determine whether to share to social
         share = logs.share_to_social
@@ -120,9 +123,25 @@ async def generate_diary(
         # Track diary_created event
         await user_store.track_event(db, user_id, "diary_created")
 
+        try:
+            await user_store.log_api_usage(
+                db, user_id=user_id, endpoint="/diary/generate",
+                model_name="agent-graph", duration_ms=duration_ms, success=True,
+            )
+        except Exception:
+            logger.warning("Failed to log API usage")
+
         return saved
     except Exception as e:
         logger.exception("다이어리 생성 실패")
+        try:
+            await user_store.log_api_usage(
+                db, user_id=user_id, endpoint="/diary/generate",
+                model_name="agent-graph", success=False,
+                error_message=str(e)[:500],
+            )
+        except Exception:
+            logger.warning("Failed to log API usage error")
         raise HTTPException(status_code=500, detail=get_message("diary_create_error", get_lang(request)))
 
 

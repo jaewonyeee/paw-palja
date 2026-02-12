@@ -3,7 +3,7 @@ SQLAlchemy ORM models for Paw-Palja.
 """
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Index, Integer, JSON
+from sqlalchemy import String, Text, Boolean, DateTime, Float, ForeignKey, Index, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.database import Base
 
@@ -119,3 +119,28 @@ class PushSubscription(Base):
     )
 
     user: Mapped["User"] = relationship("User")
+
+
+class ApiUsageLog(Base):
+    __tablename__ = "api_usage_logs"
+    __table_args__ = (
+        Index("ix_api_usage_created", "created_at"),
+        Index("ix_api_usage_user", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[str | None] = mapped_column(
+        String(30), ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
+    )
+    endpoint: Mapped[str] = mapped_column(String(100), nullable=False)
+    model_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    duration_ms: Mapped[int] = mapped_column(Integer, default=0)
+    success: Mapped[bool] = mapped_column(Boolean, default=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
