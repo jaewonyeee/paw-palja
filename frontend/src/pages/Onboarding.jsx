@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -16,23 +16,33 @@ export default function Onboarding() {
   const videoRef = useRef(null)
   const [videoReady, setVideoReady] = useState(false)
 
-  const showVideo = useCallback(() => setVideoReady(true), [])
-
-  // Ensure muted attribute is set (React bug workaround) + autoplay
+  // Force muted (React bug) + play + fallback timer
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
     v.muted = true
-    v.playsInline = true
-    v.play().then(showVideo).catch(() => {})
-    // Fallback: show video after 3s even if events don't fire
-    const timer = setTimeout(showVideo, 3000)
+    v.setAttribute('muted', '')
+    v.setAttribute('playsinline', '')
+    const tryPlay = () => {
+      v.play()
+        .then(() => setVideoReady(true))
+        .catch(() => {})
+    }
+    if (v.readyState >= 2) {
+      // Already has enough data
+      setVideoReady(true)
+      tryPlay()
+    } else {
+      v.addEventListener('loadeddata', () => { setVideoReady(true); tryPlay() }, { once: true })
+      tryPlay()
+    }
+    const timer = setTimeout(() => setVideoReady(true), 2000)
     return () => clearTimeout(timer)
-  }, [showVideo])
+  }, [])
 
   return (
     <motion.div {...pageTransition} style={styles.container}>
-      {/* Video Background */}
+      {/* Video Background — always in DOM, always visible */}
       <video
         ref={videoRef}
         autoPlay
@@ -40,14 +50,16 @@ export default function Onboarding() {
         loop
         playsInline
         preload="auto"
-        onLoadedData={showVideo}
-        style={{ ...styles.videoBg, opacity: videoReady ? 1 : 0 }}
-      >
-        <source src="/videos/burti-bg.mp4" type="video/mp4" />
-      </video>
+        src="/videos/burti-bg.mp4"
+        style={styles.videoBg}
+      />
 
-      {/* Fallback gradient while video loads */}
-      <div style={{ ...styles.fallbackBg, opacity: videoReady ? 0 : 1 }} />
+      {/* Fallback gradient — fades out once video is ready */}
+      <div style={{
+        ...styles.fallbackBg,
+        opacity: videoReady ? 0 : 1,
+        pointerEvents: 'none',
+      }} />
 
       {/* Cinematic vignette overlay */}
       <div style={styles.vignette} />
