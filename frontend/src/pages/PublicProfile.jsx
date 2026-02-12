@@ -74,7 +74,7 @@ export default function PublicProfile() {
             style={styles.avatar}
           >
             {dog.image ? (
-              <img src={dog.image} alt="dog" style={styles.avatarImg} />
+              <img src={dog.image} alt="dog" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = '🐾' }} />
             ) : '🐾'}
           </motion.div>
           <h2 style={styles.nickname}>{profile.nickname}</h2>

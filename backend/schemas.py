@@ -208,12 +208,6 @@ class UpdateUserRequest(BaseModel):
     dog: Optional[DogProfile] = None
     diary_time: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     email: Optional[str] = Field(default=None, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-    profile_image: Optional[str] = None
-
-    @field_validator("profile_image")
-    @classmethod
-    def validate_profile_image(cls, v):
-        return _validate_image_field(v)
 
 
 class PushSubscribeRequest(BaseModel):

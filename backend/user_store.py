@@ -58,7 +58,6 @@ def _user_to_dict(user: User) -> dict:
         "email": user.email,
         "is_profile_public": user.is_profile_public,
         "auto_share_social": user.auto_share_social,
-        "profile_image": user.profile_image,
     }
 
 
@@ -145,7 +144,7 @@ async def get_user(db: AsyncSession, user_id: str) -> dict | None:
     return result
 
 
-async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_time: str = None, lang: str = "ko", email: str | None = ..., profile_image: str | None = ...) -> dict:
+async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_time: str = None, lang: str = "ko", email: str | None = ...) -> dict:
     if _validate_user_id(user_id, lang):
         return {"error": get_message("user_not_found", lang)}
 
@@ -171,8 +170,6 @@ async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_ti
         user.diary_time = diary_time
     if email is not ...:
         user.email = email
-    if profile_image is not ...:
-        user.profile_image = profile_image
 
     await db.commit()
     await db.refresh(user)

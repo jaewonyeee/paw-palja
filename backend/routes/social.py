@@ -141,7 +141,7 @@ async def social_feed(
                 "nickname": display_nickname,
                 "dog_name": display_dog_name,
                 "dog_breed": display_dog_breed,
-                "dog_image": None,
+                "dog_image": (dog.image if dog else None) if not is_anonymous else None,
                 "is_anonymous": is_anonymous,
             },
             "comments_count": len(comments_list),

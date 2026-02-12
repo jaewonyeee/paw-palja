@@ -65,11 +65,6 @@ async def init_db():
             )
             await conn.execute(
                 sqlalchemy.text(
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT"
-                )
-            )
-            await conn.execute(
-                sqlalchemy.text(
                     "ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS likes JSON DEFAULT '[]'"
                 )
             )
@@ -88,10 +83,6 @@ async def init_db():
             if "email" not in columns:
                 await conn.execute(
                     sqlalchemy.text("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
-                )
-            if "profile_image" not in columns:
-                await conn.execute(
-                    sqlalchemy.text("ALTER TABLE users ADD COLUMN profile_image TEXT")
                 )
 
             result = await conn.execute(sqlalchemy.text("PRAGMA table_info(diary_entries)"))

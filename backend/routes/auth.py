@@ -180,7 +180,6 @@ async def update_me(
         body.diary_time,
         lang=lang,
         email=body.email if "email" in body.model_fields_set else ...,
-        profile_image=body.profile_image if "profile_image" in body.model_fields_set else ...,
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])

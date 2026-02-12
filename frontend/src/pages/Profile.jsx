@@ -66,9 +66,7 @@ export default function Profile() {
   const [easterTaps, setEasterTaps] = useState(0)
   const [showEasterEgg, setShowEasterEgg] = useState(false)
   const easterTimeout = useRef(null)
-  const profileImageRef = useRef(null)
   const dogImageRef = useRef(null)
-  const [uploadingProfile, setUploadingProfile] = useState(false)
   const [uploadingDog, setUploadingDog] = useState(false)
 
   useEffect(() => {
@@ -86,36 +84,6 @@ export default function Profile() {
       setEasterTaps(0)
     } else {
       easterTimeout.current = setTimeout(() => setEasterTaps(0), 2000)
-    }
-  }
-
-  const handleProfileImageChange = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploadingProfile(true)
-    try {
-      const base64 = await resizeImage(file)
-      const updated = await api.updateUser(null, null, undefined, base64)
-      handleUserUpdate(updated)
-      addToast(t('common.success'), 'success')
-    } catch (err) {
-      addToast(err.message, 'error')
-    } finally {
-      setUploadingProfile(false)
-      e.target.value = ''
-    }
-  }
-
-  const handleRemoveProfileImage = async () => {
-    setUploadingProfile(true)
-    try {
-      const updated = await api.updateUser(null, null, undefined, null)
-      handleUserUpdate(updated)
-      addToast(t('common.success'), 'success')
-    } catch (err) {
-      addToast(err.message, 'error')
-    } finally {
-      setUploadingProfile(false)
     }
   }
 
@@ -234,43 +202,19 @@ export default function Profile() {
           transition={{ delay: 0.1 }}
           style={styles.profileCard}
         >
-          <div style={styles.avatarRow}>
-            <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-              style={{ ...styles.avatarBig, cursor: 'pointer', userSelect: 'none' }}
-              onClick={handleAvatarTap}
-              whileTap={{ scale: 0.9 }}
-            >
-              {user.profile_image ? (
-                <img src={user.profile_image} alt="profile" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = '🐾' }} />
-              ) : dog.image ? (
-                <img src={dog.image} alt="dog" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = '🐾' }} />
-              ) : (
-                '🐾'
-              )}
-            </motion.div>
-            <button
-              onClick={() => profileImageRef.current?.click()}
-              disabled={uploadingProfile}
-              style={styles.cameraBtn}
-              title={t('profile.changePhoto')}
-            >
-              {uploadingProfile ? '...' : '📷'}
-            </button>
-            <input
-              ref={profileImageRef}
-              type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
-              style={{ display: 'none' }}
-              onChange={handleProfileImageChange}
-            />
-          </div>
-          {user.profile_image && (
-            <button onClick={handleRemoveProfileImage} disabled={uploadingProfile} style={styles.removePhotoBtn}>
-              {t('profile.removePhoto')}
-            </button>
-          )}
+          <motion.div
+            animate={{ y: [0, -5, 0] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+            style={{ ...styles.avatarBig, cursor: 'pointer', userSelect: 'none' }}
+            onClick={handleAvatarTap}
+            whileTap={{ scale: 0.9 }}
+          >
+            {dog.image ? (
+              <img src={dog.image} alt="dog" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = '🐾' }} />
+            ) : (
+              '🐾'
+            )}
+          </motion.div>
           <h2 style={styles.nickname}>{user.nickname}</h2>
           <p style={styles.userId}>@{user.user_id}</p>
         </motion.div>
@@ -706,11 +650,6 @@ const styles = {
     background: 'linear-gradient(135deg, var(--bg-purple), var(--bg-purple-light))',
     borderRadius: 'var(--radius-lg)',
   },
-  avatarRow: {
-    position: 'relative',
-    display: 'inline-flex',
-    alignItems: 'flex-end',
-  },
   avatarBig: {
     width: 72,
     height: 72,
@@ -726,34 +665,6 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-  },
-  cameraBtn: {
-    position: 'absolute',
-    bottom: 0,
-    right: -6,
-    width: 28,
-    height: 28,
-    borderRadius: '50%',
-    border: '2px solid white',
-    background: 'var(--bg-purple)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '0.75rem',
-    cursor: 'pointer',
-    padding: 0,
-    zIndex: 1,
-  },
-  removePhotoBtn: {
-    marginTop: 4,
-    fontSize: '0.68rem',
-    color: 'rgba(255,255,255,0.7)',
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    textDecoration: 'underline',
-    padding: '2px 8px',
   },
   nickname: {
     fontSize: '1.2rem',

@@ -57,7 +57,11 @@ export default function Home() {
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.avatarWrap}>
-            <span style={styles.avatar}>🐾</span>
+            {user.dog?.image ? (
+              <img src={user.dog.image} alt="" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<span style="font-size:1.1rem">🐾</span>' }} />
+            ) : (
+              <span style={styles.avatar}>🐾</span>
+            )}
           </div>
           <h1 style={styles.headerTitle}>{t('common.appName', '포팔자')}</h1>
         </div>
@@ -254,8 +258,14 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     border: '1.5px solid var(--border-card)',
+    overflow: 'hidden',
   },
   avatar: { fontSize: '1.1rem' },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
   headerTitle: {
     fontSize: '1rem',
     fontWeight: 700,

@@ -22,7 +22,6 @@ class User(Base):
     refresh_token_family: Mapped[str | None] = mapped_column(String(36), nullable=True)
     bio: Mapped[str | None] = mapped_column(String(200), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    profile_image: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_profile_public: Mapped[bool] = mapped_column(Boolean, default=False)
     auto_share_social: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(

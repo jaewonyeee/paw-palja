@@ -196,6 +196,7 @@ function FeedCard({ item, lang, t, navigate }) {
   const isAnonymous = user.is_anonymous
   const nickname = isAnonymous ? t('social.anonymousUser', '익명 사용자') : (user.nickname || '')
   const dogName = isAnonymous ? t('social.anonymousDog', '익명멍') : (user.dog_name || '')
+  const dogImage = user.dog_image
 
   const handleClick = () => {
     if (item.share_token) {
@@ -215,7 +216,11 @@ function FeedCard({ item, lang, t, navigate }) {
       {/* User info row */}
       <div style={styles.feedUserRow}>
         <div style={styles.feedAvatar}>
-          <span style={{ fontSize: '1rem' }}>{isAnonymous ? '🎭' : '🐶'}</span>
+          {dogImage && !isAnonymous ? (
+            <img src={dogImage} alt="" style={styles.feedAvatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<span style="font-size:1rem">🐶</span>' }} />
+          ) : (
+            <span style={{ fontSize: '1rem' }}>{isAnonymous ? '🎭' : '🐶'}</span>
+          )}
         </div>
         <div style={styles.feedUserInfo}>
           <span style={styles.feedNickname}>{nickname}</span>
@@ -354,6 +359,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  feedAvatarImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
   feedUserInfo: {
     display: 'flex',
