@@ -142,10 +142,19 @@ export const api = {
       }
       try {
         const comment = JSON.parse(event.data);
+        if (comment.error) {
+          console.error('Comment stream error from server:', comment.error);
+          es.close();
+          onDone?.();
+          return;
+        }
         onComment(comment);
-      } catch { /* ignore */ }
+      } catch (err) {
+        console.error('Failed to parse comment SSE data:', event.data, err);
+      }
     };
-    es.onerror = () => {
+    es.onerror = (err) => {
+      console.error('Comment SSE connection error:', err);
       es.close();
       onDone?.();
     };

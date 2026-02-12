@@ -105,11 +105,18 @@ async def stream_comments(
                 )
                 for reaction in reactions:
                     await asyncio.sleep(2)
-                    if reaction and reaction.get("text") and reaction["text"].strip():
+                    has_text = (
+                        (reaction.get("text_ko") and reaction["text_ko"].strip()) or
+                        (reaction.get("text_en") and reaction["text_en"].strip()) or
+                        (reaction.get("text") and reaction["text"].strip())
+                    )
+                    if reaction and has_text:
                         async with AsyncSessionLocal() as session:
                             await user_store.add_comments_to_diary(session, user_id, entry_id, [reaction])
                         data = json.dumps(reaction, ensure_ascii=False)
                         yield f"data: {data}\n\n"
+                    else:
+                        logger.warning("Empty comment skipped for entry %s: %s", entry_id, reaction)
             else:
                 # 진짜 순차 스트리밍: 댓글 1개 생성 → 즉시 전송 → 다음 생성
                 count = 3
@@ -122,11 +129,18 @@ async def stream_comments(
                             diary_text, dog_name, dog_breed, p, idx
                         )
                     )
-                    if comment and comment.get("text") and comment["text"].strip():
+                    has_text = (
+                        (comment.get("text_ko") and comment["text_ko"].strip()) or
+                        (comment.get("text_en") and comment["text_en"].strip()) or
+                        (comment.get("text") and comment["text"].strip())
+                    )
+                    if comment and has_text:
                         async with AsyncSessionLocal() as session:
                             await user_store.add_comments_to_diary(session, user_id, entry_id, [comment])
                         data = json.dumps(comment, ensure_ascii=False)
                         yield f"data: {data}\n\n"
+                    else:
+                        logger.warning("Empty comment skipped for entry %s: %s", entry_id, comment)
         except Exception:
             logger.exception("SSE 스트리밍 중 오류")
             yield f'data: {json.dumps({"error": get_message("comment_create_error", lang)}, ensure_ascii=False)}\n\n'

@@ -4,11 +4,14 @@
 각 에이전트는 서로 다른 성격을 가지며, 무작위 딜레이로 "진짜 사람처럼" 반응합니다.
 SSE 스트리밍을 통해 실시간으로 댓글이 도착합니다.
 """
+import logging
 import random
 from typing import Generator
 from langchain_core.prompts import ChatPromptTemplate
 from backend.llm_provider import get_llm
 from backend.schemas import CommentResult
+
+logger = logging.getLogger("pawpalja.comments")
 
 # LLM 이모지 생성을 위한 캐시
 EMOJI_CACHE = {}
@@ -167,6 +170,7 @@ def generate_comments(diary_content: str, dog_name: str, dog_breed: str, count: 
                 "delay_seconds": delay,
             })
         except Exception as e:
+            logger.error("Comment generation failed for persona %s: %s", persona["name"], e, exc_info=True)
             fallback_text_ko = f"{dog_name}아 오늘도 화이팅! ✨"
             fallback_text_en = f"{dog_name}, fighting today too! ✨"
             comments.append({
@@ -231,7 +235,8 @@ def generate_edit_reactions(original: str, edited: str, dog_name: str, dog_breed
                 "delay_seconds": random.randint(5, 60),
                 "is_edit_reaction": True,
             })
-        except Exception:
+        except Exception as e:
+            logger.error("Edit reaction failed for persona %s: %s", persona["name"], e, exc_info=True)
             fallback_text_ko = f"오 {dog_name} 수정했구나! 👀"
             fallback_text_en = f"Oh {dog_name} edited it! 👀"
             reactions.append({
@@ -291,7 +296,8 @@ def generate_single_comment(diary_content: str, dog_name: str, dog_breed: str, p
             "text": result.text_ko or result.text,
             "index": index,
         }
-    except Exception:
+    except Exception as e:
+        logger.error("Single comment generation failed for persona %s: %s", persona["name"], e, exc_info=True)
         fallback_text_ko = f"{dog_name}아 오늘도 화이팅! ✨"
         fallback_text_en = f"{dog_name}, fighting today too! ✨"
         return {

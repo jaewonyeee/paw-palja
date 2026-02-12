@@ -151,8 +151,8 @@ class CommentRequest(BaseModel):
 class CommentResult(BaseModel):
     author: str = Field(description="댓글 작성자 이름 (에이전트 페르소나)")
     emoji: str = Field(description="작성자 이모지")
-    text_ko: str = Field(description="댓글 내용 (1~2문장, 귀엽고 감성적, 한국어)")
-    text_en: str = Field(description="Comment content (1-2 sentences, cute & emotional, English)")
+    text_ko: str = Field(min_length=1, description="댓글 내용 (1~2문장, 귀엽고 감성적, 한국어)")
+    text_en: str = Field(min_length=1, description="Comment content (1-2 sentences, cute & emotional, English)")
 
     # Legacy field for backward compatibility (deprecated)
     text: Optional[str] = None
