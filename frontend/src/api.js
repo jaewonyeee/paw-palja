@@ -104,12 +104,13 @@ export const api = {
 
   // --- User (token auto-attached) ---
   getUser: () => request('/user/me'),
-  updateUser: (dog, diaryTime) =>
+  updateUser: (dog, diaryTime, email) =>
     request('/user/me', {
       method: 'PUT',
       body: JSON.stringify({
         ...(dog && { dog }),
         ...(diaryTime && { diary_time: diaryTime }),
+        ...(email !== undefined && { email }),
       }),
     }),
 

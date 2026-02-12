@@ -55,6 +55,7 @@ def _user_to_dict(user: User) -> dict:
         "dog": _dog_to_dict(user.dog_profile),
         "diary_time": user.diary_time or "09:00",
         "bio": user.bio,
+        "email": user.email,
         "is_profile_public": user.is_profile_public,
         "auto_share_social": user.auto_share_social,
     }
@@ -75,12 +76,14 @@ def _entry_to_dict(entry: DiaryEntry) -> dict:
         "is_edited": entry.is_edited,
         "is_public": entry.is_public,
         "share_token": entry.share_token,
+        "likes": entry.likes or [],
+        "user_comments": entry.user_comments or [],
         "view_count": entry.view_count,
         "created_at": entry.created_at.isoformat() if entry.created_at else None,
     }
 
 
-async def signup(db: AsyncSession, user_id: str, nickname: str, password: str, dog: dict, diary_time: str = "09:00", lang: str = "ko") -> dict:
+async def signup(db: AsyncSession, user_id: str, nickname: str, password: str, dog: dict, diary_time: str = "09:00", lang: str = "ko", email: str | None = None) -> dict:
     err = _validate_user_id(user_id, lang)
     if err:
         return {"error": err}
@@ -94,6 +97,7 @@ async def signup(db: AsyncSession, user_id: str, nickname: str, password: str, d
         nickname=nickname,
         password_hash=_hash_pw(password),
         diary_time=diary_time,
+        email=email,
     )
     dog_profile = DogProfile(
         user_id=user_id,
@@ -140,7 +144,7 @@ async def get_user(db: AsyncSession, user_id: str) -> dict | None:
     return result
 
 
-async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_time: str = None, lang: str = "ko") -> dict:
+async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_time: str = None, lang: str = "ko", email: str | None = ...) -> dict:
     if _validate_user_id(user_id, lang):
         return {"error": get_message("user_not_found", lang)}
 
@@ -164,6 +168,8 @@ async def update_user(db: AsyncSession, user_id: str, dog: dict = None, diary_ti
             )
     if diary_time:
         user.diary_time = diary_time
+    if email is not ...:
+        user.email = email
 
     await db.commit()
     await db.refresh(user)

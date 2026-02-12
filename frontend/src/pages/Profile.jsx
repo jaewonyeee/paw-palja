@@ -30,6 +30,8 @@ export default function Profile() {
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
   const pushSupported = isPushSupported()
+  const [email, setEmail] = useState(user.email || '')
+  const [savingEmail, setSavingEmail] = useState(false)
   const [easterTaps, setEasterTaps] = useState(0)
   const [showEasterEgg, setShowEasterEgg] = useState(false)
   const easterTimeout = useRef(null)
@@ -66,6 +68,19 @@ export default function Profile() {
       addToast(t('profile.pushError') + ': ' + err.message, 'error')
     } finally {
       setPushLoading(false)
+    }
+  }
+
+  const handleSaveEmail = async () => {
+    setSavingEmail(true)
+    try {
+      const updated = await api.updateUser(null, null, email.trim() || null)
+      handleUserUpdate(updated)
+      addToast(t('common.save') + ' OK', 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    } finally {
+      setSavingEmail(false)
     }
   }
 
@@ -282,6 +297,41 @@ export default function Profile() {
           </motion.div>
         )}
 
+        {/* Email Notifications */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+          style={styles.card}
+        >
+          <div style={styles.cardHeader}>
+            <h4 style={styles.cardTitle}>{t('profile.emailNotifications', 'Email Notifications')}</h4>
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.infoLabel}>{t('profile.emailLabel', 'Email Address')}</label>
+            <input
+              className="input-field"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('profile.emailPlaceholder', 'Email for diary reminders')}
+              style={{ marginTop: 4, fontSize: '0.85rem' }}
+            />
+            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4 }}>
+              {t('profile.emailDesc', 'Cute reminder emails arrive at your set time!')}
+            </p>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSaveEmail}
+            disabled={savingEmail}
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: 10 }}
+          >
+            {savingEmail ? t('profile.savingChanges') : t('common.save')}
+          </motion.button>
+        </motion.div>
+
         {/* Social Sharing Settings */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -363,6 +413,27 @@ export default function Profile() {
               {t('social.profileLink')}: /profile/{user.user_id}
             </p>
           )}
+        </motion.div>
+
+        {/* View Service Guide */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.33 }}
+          style={styles.menuSection}
+        >
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              localStorage.removeItem('pawpalja_guide_seen')
+              navigate('/home')
+            }}
+            style={styles.menuItem}
+          >
+            <span style={styles.menuIcon}>📖</span>
+            <span style={styles.menuLabel}>{t('profile.viewGuide', 'View Service Guide')}</span>
+            <span style={styles.menuArrow}>→</span>
+          </motion.button>
         </motion.div>
 
         {/* Menu items - admin only */}
@@ -578,6 +649,11 @@ const styles = {
     fontSize: '0.88rem',
     fontWeight: 700,
     color: 'var(--text-primary)',
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
   },
   // Menu
   menuSection: {

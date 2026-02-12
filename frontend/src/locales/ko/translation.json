@@ -10,7 +10,8 @@
     "delete": "삭제",
     "edit": "수정",
     "back": "뒤로",
-    "close": "닫기"
+    "close": "닫기",
+    "retry": "다시 시도"
   },
   "auth": {
     "login": "로그인",
@@ -49,7 +50,11 @@
     "hour": "시",
     "minute": "분",
     "timePreview": "매일 {{time}}에 일기가 도착합니다",
-    "startNow": "시작하기!"
+    "startNow": "시작하기!",
+    "emailRequired": "이메일 (일기 알림용)",
+    "emailPlaceholder": "example@email.com",
+    "privacyConsent": "[필수] 개인정보 수집·이용 동의",
+    "privacyDetail": "• 수집 항목: 이메일 주소\n• 수집 목적: 일기 알림 이메일 발송\n• 보유 기간: 회원 탈퇴 시까지\n• 동의를 거부할 수 있으나, 거부 시 서비스 이용이 제한됩니다."
   },
   "dog": {
     "profile": "반려견 프로필",
@@ -138,7 +143,12 @@
     "pushNotifications": "푸시 알림",
     "enablePush": "일기 알림 받기",
     "testPush": "테스트 알림 보내기",
-    "pushError": "알림 오류"
+    "pushError": "알림 오류",
+    "viewGuide": "서비스 가이드 보기",
+    "emailNotifications": "이메일 알림",
+    "emailLabel": "이메일 주소",
+    "emailPlaceholder": "일기 알림을 받을 이메일",
+    "emailDesc": "매일 설정한 시간에 귀여운 알림 이메일이 도착해요!"
   },
   "home": {
     "welcome": "포팔자에 오신 것을 환영합니다!",
@@ -303,6 +313,21 @@
     "closing": "이 고민은 계속됩니다... 어쩌면 당신의 의견이 정답일지도?",
     "version": "v0.1 - made with ❤️",
     "pawprint": "🐾"
+  },
+  "guide": {
+    "slide1Title": "AI 강아지 일기",
+    "slide1Desc": "AI가 당신의 강아지 하루를 일기로 만들어드려요",
+    "slide2Title": "일기 + 운세 + 건강",
+    "slide2Desc": "기분, 식사, 산책을 기록하면 AI가 생성해요",
+    "slide3Title": "AI 댓글 친구들",
+    "slide3Desc": "5명의 개성있는 AI 캐릭터가 댓글을 달아줘요",
+    "slide4Title": "소셜 피드",
+    "slide4Desc": "다른 댕댕이 친구들의 일기를 구경하세요",
+    "slide5Title": "시작해볼까요?",
+    "slide5Desc": "지금 바로 오늘의 일기를 만들어보세요!",
+    "skip": "건너뛰기",
+    "next": "다음",
+    "start": "시작하기"
   },
   "language": {
     "korean": "한국어",

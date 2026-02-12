@@ -112,6 +112,8 @@ export default function Signup() {
   const [idChecking, setIdChecking] = useState(false)
   const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
+  const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [dogName, setDogName] = useState('')
   const [breed, setBreed] = useState('푸들')
   const [breedSearch, setBreedSearch] = useState('')
@@ -172,8 +174,9 @@ export default function Signup() {
     reader.readAsDataURL(file)
   }
 
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   const canProceedStep0 = userId.trim().length >= 3 && /^[a-zA-Z0-9]+$/.test(userId.trim()) &&
-    idAvailable === true && nickname.trim() && password.trim()
+    idAvailable === true && nickname.trim() && password.trim().length >= 4 && isValidEmail && privacyAgreed
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -190,6 +193,7 @@ export default function Signup() {
           ...(dogImage ? { image: dogImage } : {}),
         },
         diary_time: `${hour}:${minute}`,
+        email: email.trim(),
       })
       handleLogin(data)
       navigate('/home')
@@ -235,7 +239,7 @@ export default function Signup() {
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   className="btn btn-secondary"
-                  onClick={checkIdAvailability}
+                  onClick={() => checkIdAvailability()}
                   disabled={idChecking || !userId.trim() || userId.trim().length < 3}
                   style={styles.checkBtn}
                 >
@@ -260,12 +264,41 @@ export default function Signup() {
               <label style={styles.label}>{t('auth.password')}</label>
               <input className="input-field" type="password" placeholder={t('auth.password')} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>{t('auth.emailRequired', '이메일 (일기 알림용)')}</label>
+              <input className="input-field" type="email" placeholder={t('auth.emailPlaceholder', 'example@email.com')} value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            {/* Privacy consent */}
+            <div
+              role="checkbox"
+              aria-checked={privacyAgreed}
+              tabIndex={0}
+              style={styles.privacyRow}
+              onClick={() => setPrivacyAgreed(!privacyAgreed)}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setPrivacyAgreed(!privacyAgreed) } }}
+            >
+              <span style={{
+                ...styles.checkbox,
+                ...(privacyAgreed ? styles.checkboxChecked : {}),
+              }}>
+                {privacyAgreed ? '✓' : ''}
+              </span>
+              <span style={styles.privacyText}>
+                {t('auth.privacyConsent', '[필수] 개인정보 수집·이용 동의')}
+              </span>
+            </div>
+            <div style={styles.privacyBox}>
+              <p style={styles.privacyDetail}>
+                {t('auth.privacyDetail', '• 수집 항목: 이메일 주소\n• 수집 목적: 일기 알림 이메일 발송\n• 보유 기간: 회원 탈퇴 시까지\n• 동의를 거부할 수 있으나, 거부 시 서비스 이용이 제한됩니다.')}
+              </p>
+            </div>
           </div>
           {error && <p style={styles.error}>{error}</p>}
           <motion.button
-            whileTap={{ scale: 0.97 }}
+            whileTap={canProceedStep0 ? { scale: 0.97 } : {}}
             className="btn btn-primary"
-            onClick={() => canProceedStep0 ? setStep(1) : null}
+            disabled={!canProceedStep0}
+            onClick={() => canProceedStep0 && setStep(1)}
             style={{ width: '100%', marginTop: 16, opacity: canProceedStep0 ? 1 : 0.5 }}
           >
             {t('auth.nextBtn')}
@@ -527,6 +560,51 @@ const styles = {
     width: '100%',
     marginTop: 'auto',
     paddingTop: 20,
+  },
+  // Privacy consent
+  privacyRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    cursor: 'pointer',
+    userSelect: 'none',
+    padding: '2px 0',
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    border: '2px solid var(--border-card)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    color: 'white',
+    flexShrink: 0,
+    transition: 'all 0.2s',
+  },
+  checkboxChecked: {
+    background: 'var(--bg-purple)',
+    borderColor: 'var(--bg-purple)',
+  },
+  privacyText: {
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  privacyBox: {
+    background: 'var(--bg-secondary, #F9F9F9)',
+    borderRadius: 10,
+    padding: '10px 14px',
+    border: '1px solid var(--border-light)',
+  },
+  privacyDetail: {
+    fontSize: '0.68rem',
+    color: 'var(--text-muted)',
+    lineHeight: 1.7,
+    margin: 0,
+    whiteSpace: 'pre-line',
   },
   // Dog image
   imageSection: {

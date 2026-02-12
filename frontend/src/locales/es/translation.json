@@ -10,7 +10,8 @@
     "delete": "Eliminar",
     "edit": "Editar",
     "back": "Atrás",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "retry": "Reintentar"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -49,7 +50,11 @@
     "hour": "Hora",
     "minute": "Minuto",
     "timePreview": "Recibirás el diario todos los días a las {{time}}",
-    "startNow": "¡Empezar!"
+    "startNow": "¡Empezar!",
+    "emailRequired": "Email (para recordatorios del diario)",
+    "emailPlaceholder": "example@email.com",
+    "privacyConsent": "[Obligatorio] Consentimiento para recopilar y usar datos personales",
+    "privacyDetail": "• Datos recopilados: Dirección de email\n• Propósito: Envío de emails de recordatorio del diario\n• Retención: Hasta la eliminación de la cuenta\n• Puede rechazar, pero el uso del servicio será restringido."
   },
   "dog": {
     "profile": "Perfil del perro",
@@ -138,7 +143,12 @@
     "pushNotifications": "Notificaciones push",
     "enablePush": "Recordatorios de diario",
     "testPush": "Enviar notificación de prueba",
-    "pushError": "Error de notificación"
+    "pushError": "Error de notificación",
+    "viewGuide": "Ver guía del servicio",
+    "emailNotifications": "Notificaciones por email",
+    "emailLabel": "Dirección de email",
+    "emailPlaceholder": "Email para recordatorios del diario",
+    "emailDesc": "¡Recibirás lindos emails de recordatorio a tu hora configurada!"
   },
   "home": {
     "welcome": "¡Bienvenido a Paw-Palja!",
@@ -252,28 +262,28 @@
     "thisMonth": "Este mes"
   },
   "social": {
-    "shareReady": "El enlace para compartir esta listo!",
+    "shareReady": "¡El enlace para compartir está listo!",
     "copyLink": "Copiar enlace",
     "shareVia": "Compartir",
     "linkCopied": "Enlace copiado al portapapeles!",
     "unshare": "Dejar de compartir",
-    "sharedNotFound": "No se encontro el diario compartido o ya no es publico.",
-    "profileNotFound": "No se encontro el perfil o no es publico.",
+    "sharedNotFound": "No se encontró el diario compartido o ya no es público.",
+    "profileNotFound": "No se encontró el perfil o no es público.",
     "goHome": "Ir a Paw-Palja",
     "views": "{{count}} vistas",
     "ctaText": "Crea tu propio diario de mascotas con IA!",
     "ctaButton": "Comenzar",
-    "publicProfile": "Perfil publico",
-    "profileVisible": "Hacer perfil publico",
+    "publicProfile": "Perfil público",
+    "profileVisible": "Hacer perfil público",
     "profileVisibleDesc": "Al hacer tu perfil público, otros usuarios pueden ver tu página de perfil. El compartir diarios individuales se configura por separado en la página de detalle de cada diario.",
     "bio": "Bio",
-    "bioPlaceholder": "Escribe una breve descripcion sobre ti y tu mascota...",
-    "profileLink": "Enlace publico",
-    "publicDiaries": "Diarios publicos",
-    "recentDiaries": "Diarios publicos recientes",
+    "bioPlaceholder": "Escribe una breve descripción sobre ti y tu mascota...",
+    "profileLink": "Enlace público",
+    "publicDiaries": "Diarios públicos",
+    "recentDiaries": "Diarios públicos recientes",
     "feed": "Social",
-    "emptyFeed": "Aun no hay diarios publicos",
-    "feedTitle": "El dia de otros perritos",
+    "emptyFeed": "Aún no hay diarios públicos",
+    "feedTitle": "El día de otros perritos",
     "socialSettings": "Configuración de compartir social",
     "anonymousSharingToggle": "Mostrar como anónimo en el feed social",
     "anonymousSharingDesc": "Al activarlo, aparecerás como 'Anónimo' en el feed social.",
@@ -303,6 +313,21 @@
     "closing": "Este dilema continúa... ¿Quizás tu opinión sea la respuesta?",
     "version": "v0.1 - made with ❤️",
     "pawprint": "🐾"
+  },
+  "guide": {
+    "slide1Title": "Diario Canino con IA",
+    "slide1Desc": "La IA escribe el diario diario de tu perro",
+    "slide2Title": "Diario + Horóscopo + Salud",
+    "slide2Desc": "Registra ánimo, comidas, paseos — la IA genera el resto",
+    "slide3Title": "Amigos Comentaristas IA",
+    "slide3Desc": "5 personajes IA únicos dejan comentarios",
+    "slide4Title": "Feed Social",
+    "slide4Desc": "Explora los diarios de otros perritos",
+    "slide5Title": "¿Listo para empezar?",
+    "slide5Desc": "¡Crea el diario de hoy ahora mismo!",
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "start": "¡Vamos!"
   },
   "language": {
     "korean": "Coreano",

@@ -77,7 +77,13 @@ async def stream_comments(
                         data = json.dumps(reaction, ensure_ascii=False)
                         yield f"data: {data}\n\n"
             else:
-                for comment in generate_comments_stream(diary_text, dog_name, dog_breed, count=3):
+                loop = asyncio.get_running_loop()
+                comments_list = await loop.run_in_executor(
+                    None, lambda: list(generate_comments_stream(diary_text, dog_name, dog_breed, count=3))
+                )
+                for i, comment in enumerate(comments_list):
+                    if i > 0:
+                        await asyncio.sleep(comment.get("delay_seconds", 5))
                     if comment and comment.get("text") and comment["text"].strip():
                         async with AsyncSessionLocal() as session:
                             await user_store.add_comments_to_diary(session, user_id, entry_id, [comment])

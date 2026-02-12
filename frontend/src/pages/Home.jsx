@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { todayString } from '../utils/date'
 import DiaryCard from '../components/DiaryCard'
+import GuideOverlay from '../components/GuideOverlay'
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -20,6 +21,13 @@ export default function Home() {
   const [diaries, setDiaries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showGuide, setShowGuide] = useState(false)
+
+  useEffect(() => {
+    if (!localStorage.getItem('pawpalja_guide_seen')) {
+      setShowGuide(true)
+    }
+  }, [])
 
   const fetchDiaries = async () => {
     setLoading(true)
@@ -40,6 +48,11 @@ export default function Home() {
 
   return (
     <motion.div {...pageTransition} style={styles.container}>
+      {/* Service Guide Overlay */}
+      <AnimatePresence>
+        {showGuide && <GuideOverlay onClose={() => setShowGuide(false)} />}
+      </AnimatePresence>
+
       {/* Top header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>

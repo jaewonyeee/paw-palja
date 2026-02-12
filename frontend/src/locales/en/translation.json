@@ -10,7 +10,8 @@
     "delete": "Delete",
     "edit": "Edit",
     "back": "Back",
-    "close": "Close"
+    "close": "Close",
+    "retry": "Retry"
   },
   "auth": {
     "login": "Login",
@@ -49,7 +50,11 @@
     "hour": "Hour",
     "minute": "Minute",
     "timePreview": "Diary arrives daily at {{time}}",
-    "startNow": "Start Now!"
+    "startNow": "Start Now!",
+    "emailRequired": "Email (for diary reminders)",
+    "emailPlaceholder": "example@email.com",
+    "privacyConsent": "[Required] Consent to collect & use personal information",
+    "privacyDetail": "• Collected: Email address\n• Purpose: Sending diary reminder emails\n• Retention: Until account deletion\n• You may refuse, but service use will be restricted."
   },
   "dog": {
     "profile": "Dog Profile",
@@ -138,7 +143,12 @@
     "pushNotifications": "Push Notifications",
     "enablePush": "Diary Reminders",
     "testPush": "Send Test Notification",
-    "pushError": "Notification error"
+    "pushError": "Notification error",
+    "viewGuide": "View Service Guide",
+    "emailNotifications": "Email Notifications",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "Email for diary reminders",
+    "emailDesc": "Cute reminder emails arrive at your set time!"
   },
   "home": {
     "welcome": "Welcome to Paw-Palja!",
@@ -303,6 +313,21 @@
     "closing": "This dilemma continues... Maybe your opinion is the answer?",
     "version": "v0.1 - made with ❤️",
     "pawprint": "🐾"
+  },
+  "guide": {
+    "slide1Title": "AI Dog Diary",
+    "slide1Desc": "AI writes your dog's daily diary",
+    "slide2Title": "Diary + Horoscope + Health",
+    "slide2Desc": "Record mood, meals, walks — AI generates the rest",
+    "slide3Title": "AI Comment Friends",
+    "slide3Desc": "5 unique AI characters leave comments",
+    "slide4Title": "Social Feed",
+    "slide4Desc": "Browse other dogs' diaries",
+    "slide5Title": "Ready to start?",
+    "slide5Desc": "Create today's diary right now!",
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Let's go!"
   },
   "language": {
     "korean": "Korean",

@@ -201,11 +201,13 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=4, max_length=100)
     dog: DogProfile
     diary_time: str = Field(default="09:00", pattern=r"^\d{2}:\d{2}$")
+    email: str = Field(min_length=1, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 class UpdateUserRequest(BaseModel):
     dog: Optional[DogProfile] = None
     diary_time: Optional[str] = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    email: Optional[str] = Field(default=None, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 class PushSubscribeRequest(BaseModel):

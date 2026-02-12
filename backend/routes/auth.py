@@ -33,7 +33,7 @@ router = APIRouter()
 @router.post("/auth/signup")
 async def auth_signup(request: Request, req: SignupRequest, db: AsyncSession = Depends(get_db)):
     lang = get_lang(request)
-    result = await user_store.signup(db, req.user_id, req.nickname, req.password, req.dog.model_dump(), req.diary_time, lang=lang)
+    result = await user_store.signup(db, req.user_id, req.nickname, req.password, req.dog.model_dump(), req.diary_time, lang=lang, email=req.email)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
 
@@ -179,6 +179,7 @@ async def update_me(
         body.dog.model_dump() if body.dog else None,
         body.diary_time,
         lang=lang,
+        email=body.email if "email" in body.model_fields_set else ...,
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])

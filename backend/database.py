@@ -60,6 +60,11 @@ async def init_db():
             )
             await conn.execute(
                 sqlalchemy.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)"
+                )
+            )
+            await conn.execute(
+                sqlalchemy.text(
                     "ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS likes JSON DEFAULT '[]'"
                 )
             )
@@ -74,6 +79,10 @@ async def init_db():
             if "auto_share_social" not in columns:
                 await conn.execute(
                     sqlalchemy.text("ALTER TABLE users ADD COLUMN auto_share_social BOOLEAN DEFAULT 0")
+                )
+            if "email" not in columns:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
                 )
 
             result = await conn.execute(sqlalchemy.text("PRAGMA table_info(diary_entries)"))

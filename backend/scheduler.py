@@ -80,30 +80,58 @@ def send_diary_reminders():
                     logger.info(f"Diary reminder: {len(users)} users matched time {current_time}")
 
                     for user in users:
+                        dog_name = ""
+                        if user.dog_profile:
+                            dog_name = user.dog_profile.name
+
+                        # --- Push notifications ---
                         sub_stmt = select(PushSubscription).where(
                             PushSubscription.user_id == user.user_id
                         )
                         sub_result = await db.execute(sub_stmt)
                         subscriptions = sub_result.scalars().all()
 
-                        if not subscriptions:
-                            continue
+                        if subscriptions:
+                            payload = json.dumps({
+                                "title": "Paw-Palja",
+                                "body": f"{dog_name or 'Your pup'}의 오늘 일기를 작성할 시간이에요!",
+                                "url": "/home",
+                            })
 
-                        dog_name = ""
-                        if user.dog_profile:
-                            dog_name = user.dog_profile.name
+                            results = send_push_to_user_subscriptions(subscriptions, payload)
+                            ok_count = sum(1 for r in results if r[0] == "ok")
+                            logger.info(
+                                f"Push sent to {user.user_id}: {ok_count}/{len(subscriptions)} delivered"
+                            )
 
-                        payload = json.dumps({
-                            "title": "Paw-Palja",
-                            "body": f"{dog_name or 'Your pup'}의 오늘 일기를 작성할 시간이에요!",
-                            "url": "/home",
-                        })
+                        # --- Email notification ---
+                        if user.email:
+                            try:
+                                from backend.email_service import send_diary_reminder_email
+                                from backend.models import DiaryEntry
 
-                        results = send_push_to_user_subscriptions(subscriptions, payload)
-                        ok_count = sum(1 for r in results if r[0] == "ok")
-                        logger.info(
-                            f"Push sent to {user.user_id}: {ok_count}/{len(subscriptions)} delivered"
-                        )
+                                # Fetch most recent diary for personalized content
+                                recent_stmt = (
+                                    select(DiaryEntry)
+                                    .where(DiaryEntry.user_id == user.user_id)
+                                    .order_by(DiaryEntry.created_at.desc())
+                                    .limit(1)
+                                )
+                                recent_result = await db.execute(recent_stmt)
+                                recent_entry = recent_result.scalar_one_or_none()
+                                recent_data = None
+                                if recent_entry:
+                                    recent_data = {"diary": recent_entry.diary}
+
+                                send_diary_reminder_email(
+                                    to_email=user.email,
+                                    dog_name=dog_name or "Your pup",
+                                    nickname=user.nickname,
+                                    recent_diary_data=recent_data,
+                                    lang="ko",
+                                )
+                            except Exception as email_err:
+                                logger.error(f"Email send error for {user.user_id}: {email_err}")
             finally:
                 await engine.dispose()
 
@@ -111,6 +139,7 @@ def send_diary_reminders():
             logger.error(f"Diary reminder error: {e}", exc_info=True)
 
     # Run the async function in a new event loop (scheduler runs in a thread)
+    loop = None
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -118,7 +147,8 @@ def send_diary_reminders():
     except Exception as e:
         logger.error(f"Diary reminder loop error: {e}", exc_info=True)
     finally:
-        loop.close()
+        if loop:
+            loop.close()
 
 
 def start_scheduler():

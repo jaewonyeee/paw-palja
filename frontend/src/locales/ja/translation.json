@@ -10,7 +10,8 @@
     "delete": "削除",
     "edit": "編集",
     "back": "戻る",
-    "close": "閉じる"
+    "close": "閉じる",
+    "retry": "再試行"
   },
   "auth": {
     "login": "ログイン",
@@ -49,7 +50,11 @@
     "hour": "時",
     "minute": "分",
     "timePreview": "毎日{{time}}に日記が届きます",
-    "startNow": "始めましょう！"
+    "startNow": "始めましょう！",
+    "emailRequired": "メールアドレス（日記リマインダー用）",
+    "emailPlaceholder": "example@email.com",
+    "privacyConsent": "[必須] 個人情報の収集・利用に同意",
+    "privacyDetail": "• 収集項目：メールアドレス\n• 収集目的：日記リマインダーメールの送信\n• 保有期間：退会時まで\n• 同意を拒否できますが、サービスの利用が制限されます。"
   },
   "dog": {
     "profile": "わんちゃんプロフィール",
@@ -138,7 +143,12 @@
     "pushNotifications": "プッシュ通知",
     "enablePush": "日記リマインダー",
     "testPush": "テスト通知を送信",
-    "pushError": "通知エラー"
+    "pushError": "通知エラー",
+    "viewGuide": "サービスガイドを見る",
+    "emailNotifications": "メール通知",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "日記リマインダー用メール",
+    "emailDesc": "設定した時間にかわいいリマインダーメールが届きます！"
   },
   "home": {
     "welcome": "Paw-Paljaへようこそ！",
@@ -303,6 +313,21 @@
     "closing": "この悩みは続きます...もしかしたらあなたの意見が正解かも？",
     "version": "v0.1 - made with ❤️",
     "pawprint": "🐾"
+  },
+  "guide": {
+    "slide1Title": "AI犬日記",
+    "slide1Desc": "AIがあなたの愛犬の一日を日記にします",
+    "slide2Title": "日記 + 占い + 健康",
+    "slide2Desc": "気分、食事、散歩を記録するとAIが生成します",
+    "slide3Title": "AIコメントフレンズ",
+    "slide3Desc": "5人の個性的なAIキャラクターがコメントします",
+    "slide4Title": "ソーシャルフィード",
+    "slide4Desc": "他のわんちゃんの日記を見てみましょう",
+    "slide5Title": "始めましょうか？",
+    "slide5Desc": "今すぐ今日の日記を作りましょう！",
+    "skip": "スキップ",
+    "next": "次へ",
+    "start": "始めましょう！"
   },
   "language": {
     "korean": "韓国語",
