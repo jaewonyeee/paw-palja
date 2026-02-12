@@ -119,7 +119,9 @@ def generate_comments(diary_content: str, dog_name: str, dog_breed: str, count: 
     Returns:
         댓글 리스트 (각 댓글에 author, emoji, text, delay_seconds 포함)
     """
-    llm = get_llm(temperature=0.95)
+    from backend.prompt_defaults import get_cached_prompt_value
+    temp = float(get_cached_prompt_value("comment.temperature", "0.95"))
+    llm = get_llm(temperature=temp)
     count = min(count, len(COMMENT_PERSONAS))
     selected = random.sample(COMMENT_PERSONAS, count)
     comments = []
@@ -182,7 +184,9 @@ def generate_comments(diary_content: str, dog_name: str, dog_breed: str, count: 
 
 def generate_edit_reactions(original: str, edited: str, dog_name: str, dog_breed: str) -> list[dict]:
     """일기 수정 시 에이전트들이 수정 사항에 반응하는 댓글을 생성합니다."""
-    llm = get_llm(temperature=0.9)
+    from backend.prompt_defaults import get_cached_prompt_value
+    temp = float(get_cached_prompt_value("comment.edit_reaction.temperature", "0.9"))
+    llm = get_llm(temperature=temp)
     selected = random.sample(COMMENT_PERSONAS, 2)
     reactions = []
 

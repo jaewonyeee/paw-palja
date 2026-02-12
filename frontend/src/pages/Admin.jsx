@@ -4,7 +4,11 @@ import { useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
-import { LayoutDashboard, Users, BookOpen, BarChart3, Database, Settings, Search, ChevronLeft, ChevronRight, X, Trash2, Eye, RefreshCw } from 'lucide-react'
+import {
+  LayoutDashboard, Users, BookOpen, BarChart3, Database, Settings,
+  Search, ChevronLeft, ChevronRight, X, Trash2, Eye, RefreshCw,
+  Brain, FileText, Image, Activity, DollarSign, Zap, AlertTriangle
+} from 'lucide-react'
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -82,22 +86,6 @@ function DetailModal({ open, title, onClose, children }) {
   )
 }
 
-// --- Dashboard Panel ---
-function DashboardPanel({ stats, system, t }) {
-  if (!stats) return <Spinner />
-  return (
-    <div>
-      <h2 style={s.panelTitle}>{t('admin.dashboard')}</h2>
-      <div style={s.statGrid}>
-        <StatCard icon="👥" value={stats.total_users} label={t('admin.totalUsers')} />
-        <StatCard icon="📖" value={stats.total_diaries} label={t('admin.totalDiaries')} />
-        <StatCard icon="🤖" value={system?.agents?.length || 3} label={t('admin.agents')} />
-        <StatCard icon="💬" value={system?.comment_personas?.length || 5} label="Comment Bots" />
-      </div>
-    </div>
-  )
-}
-
 function StatCard({ icon, value, label, color }) {
   return (
     <div style={s.statCard}>
@@ -112,6 +100,419 @@ function Spinner() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
       <div className="spinner" style={{ width: 24, height: 24 }} />
+    </div>
+  )
+}
+
+// --- KPI Bar ---
+function KpiBar({ t }) {
+  const [kpi, setKpi] = useState(null)
+
+  const fetchKpi = useCallback(async () => {
+    try { setKpi(await api.adminKpiSummary()) } catch {}
+  }, [])
+
+  useEffect(() => {
+    fetchKpi()
+    const interval = setInterval(fetchKpi, 30000)
+    return () => clearInterval(interval)
+  }, [fetchKpi])
+
+  if (!kpi) return null
+
+  return (
+    <div style={s.kpiBar}>
+      <KpiItem icon={<DollarSign size={14}/>} label={t('admin.costToday')} value={`$${(kpi.cost_today || 0).toFixed(2)}`} />
+      <KpiItem icon={<DollarSign size={14}/>} label={t('admin.costMonth')} value={`$${(kpi.cost_month || 0).toFixed(2)}`} />
+      <KpiItem icon={<Zap size={14}/>} label={t('admin.tokensToday')} value={(kpi.tokens_today || 0).toLocaleString()} />
+      <KpiItem icon={<Users size={14}/>} label={t('admin.activeUsers')} value={kpi.active_users || 0} />
+      <KpiItem icon={<Activity size={14}/>} label={t('admin.avgLatency')} value={`${kpi.avg_latency_ms || 0}ms`} />
+      <KpiItem icon={<AlertTriangle size={14}/>} label={t('admin.errorRate')} value={`${(kpi.error_rate || 0).toFixed(1)}%`} color={kpi.error_rate > 5 ? '#e74c3c' : undefined} />
+    </div>
+  )
+}
+
+function KpiItem({ icon, label, value, color }) {
+  return (
+    <div style={s.kpiItem}>
+      <span style={{ color: color || 'var(--bg-purple)' }}>{icon}</span>
+      <span style={s.kpiValue}>{value}</span>
+      <span style={s.kpiLabel}>{label}</span>
+    </div>
+  )
+}
+
+// --- Dashboard Panel ---
+function DashboardPanel({ stats, system, t }) {
+  const [apiUsage, setApiUsage] = useState(null)
+
+  useEffect(() => {
+    api.adminApiUsage('today').then(setApiUsage).catch(() => {})
+  }, [])
+
+  if (!stats) return <Spinner />
+  return (
+    <div>
+      <h2 style={s.panelTitle}>{t('admin.dashboard')}</h2>
+      <div style={s.statGrid}>
+        <StatCard icon="👥" value={stats.total_users} label={t('admin.totalUsers')} />
+        <StatCard icon="📖" value={stats.total_diaries} label={t('admin.totalDiaries')} />
+        <StatCard icon="🤖" value={system?.agents?.length || 3} label={t('admin.agents')} />
+        <StatCard icon="💬" value={system?.comment_personas?.length || 5} label="Comment Bots" />
+      </div>
+
+      {/* Today/Week/Month stats */}
+      {apiUsage && (
+        <div style={{ ...s.card, marginTop: 16 }}>
+          <h4 style={s.cardTitle}>{t('admin.apiUsage')} — {t('admin.today')}</h4>
+          <div style={s.statGrid}>
+            <StatCard icon="📡" value={apiUsage.total_calls} label={t('admin.apiCalls')} />
+            <StatCard icon="🎯" value={`${apiUsage.success_rate}%`} label={t('admin.successRate')} />
+            <StatCard icon="🔤" value={(apiUsage.total_tokens || 0).toLocaleString()} label={t('admin.totalTokens')} />
+            <StatCard icon="💰" value={`$${apiUsage.total_cost_usd}`} label={t('admin.estimatedCost')} />
+          </div>
+        </div>
+      )}
+
+      {/* Recent errors */}
+      {apiUsage?.recent_errors?.length > 0 && (
+        <div style={{ ...s.card, marginTop: 14 }}>
+          <h4 style={s.cardTitle}>{t('admin.recentErrors')}</h4>
+          {apiUsage.recent_errors.slice(0, 5).map((e, i) => (
+            <div key={i} style={s.miniCard}>
+              <div style={{ fontWeight: 600, fontSize: '0.78rem' }}>{e.endpoint}</div>
+              <div style={{ fontSize: '0.72rem', color: '#e74c3c' }}>{e.error}</div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{e.created_at?.slice(0, 19)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// --- LLM & Agents Panel ---
+function LlmAgentsPanel({ t }) {
+  const [perf, setPerf] = useState(null)
+  const [mcpStats, setMcpStats] = useState(null)
+  const [period, setPeriod] = useState('today')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    Promise.all([
+      api.adminAgentPerformance(period),
+      api.adminMcpStats(),
+    ]).then(([p, m]) => { setPerf(p); setMcpStats(m) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [period])
+
+  if (loading) return <Spinner />
+
+  return (
+    <div>
+      <h2 style={s.panelTitle}>{t('admin.llmAgents')}</h2>
+
+      {/* Period selector */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+        {['today', 'week', 'month'].map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            style={{ ...s.periodBtn, ...(period === p ? s.periodBtnActive : {}) }}
+          >
+            {t(`admin.${p === 'today' ? 'today' : p === 'week' ? 'thisWeek' : 'thisMonth'}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* Agent performance cards */}
+      {perf?.agents && (
+        <div style={s.statGrid}>
+          {perf.agents.map((agent) => (
+            <div key={agent.name} style={{ ...s.card, padding: '16px 18px' }}>
+              <h4 style={{ ...s.cardTitle, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Brain size={16} style={{ color: 'var(--bg-purple)' }} />
+                {agent.name}
+              </h4>
+              <div style={s.kvRow}><span style={s.kvLabel}>Calls</span><span style={s.kvValue}>{agent.call_count || 0}</span></div>
+              <div style={s.kvRow}><span style={s.kvLabel}>Errors</span><span style={{ ...s.kvValue, color: (agent.error_count || 0) > 0 ? '#e74c3c' : undefined }}>{agent.error_count || 0}</span></div>
+              <div style={s.kvRow}><span style={s.kvLabel}>Avg Duration</span><span style={s.kvValue}>{agent.avg_duration || '—'}</span></div>
+              <div style={s.kvRow}><span style={s.kvLabel}>Tokens</span><span style={s.kvValue}>{(agent.total_tokens || 0).toLocaleString()}</span></div>
+              <div style={s.kvRow}><span style={s.kvLabel}>Cost</span><span style={s.kvValue}>${(agent.total_cost || 0).toFixed(4)}</span></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Comment persona stats */}
+      {perf?.comment_personas && perf.comment_personas.length > 0 && (
+        <div style={{ ...s.card, marginTop: 16 }}>
+          <h4 style={s.cardTitle}>Comment Persona Stats</h4>
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  <th style={s.th}>Persona</th>
+                  <th style={s.th}>Calls</th>
+                  <th style={s.th}>Avg Duration</th>
+                  <th style={s.th}>Tokens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {perf.comment_personas.map((cp) => (
+                  <tr key={cp.name}>
+                    <td style={s.td}>{cp.name}</td>
+                    <td style={s.td}>{cp.call_count || 0}</td>
+                    <td style={s.td}>{cp.avg_duration || '—'}</td>
+                    <td style={s.td}>{(cp.total_tokens || 0).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* MCP Tools table */}
+      {mcpStats?.tools && mcpStats.tools.length > 0 && (
+        <div style={{ ...s.card, marginTop: 16 }}>
+          <h4 style={s.cardTitle}>MCP Tools</h4>
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  <th style={s.th}>Tool</th>
+                  <th style={s.th}>Usage</th>
+                  <th style={s.th}>Errors</th>
+                  <th style={s.th}>Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mcpStats.tools.map((tool) => (
+                  <tr key={tool.name}>
+                    <td style={s.td}>{tool.name}</td>
+                    <td style={s.td}>{tool.usage_count || 0}</td>
+                    <td style={{ ...s.td, color: (tool.error_count || 0) > 0 ? '#e74c3c' : undefined }}>{tool.error_count || 0}</td>
+                    <td style={s.td}>{tool.category || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Model usage breakdown */}
+      {perf?.model_usage && perf.model_usage.length > 0 && (
+        <div style={{ ...s.card, marginTop: 16 }}>
+          <h4 style={s.cardTitle}>Model Usage</h4>
+          {perf.model_usage.map((m) => (
+            <div key={m.model} style={s.kvRow}>
+              <span style={s.kvLabel}>{m.model}</span>
+              <span style={s.kvValue}>{m.count} calls — ${(m.cost || 0).toFixed(4)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// --- Prompts Panel ---
+function PromptsPanel({ t }) {
+  const [prompts, setPrompts] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [editingKey, setEditingKey] = useState(null)
+  const [editValue, setEditValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [resetConfirm, setResetConfirm] = useState(null)
+  const [collapsed, setCollapsed] = useState({})
+
+  const fetchPrompts = async () => {
+    try { setPrompts(await api.adminPrompts()) } catch {}
+    setLoading(false)
+  }
+  useEffect(() => { fetchPrompts() }, [])
+
+  const startEdit = (key, currentValue) => {
+    setEditingKey(key)
+    setEditValue(currentValue)
+  }
+
+  const savePrompt = async (key) => {
+    setSaving(true)
+    try {
+      const prompt = prompts.find(p => p.key === key)
+      await api.adminUpdatePrompt(key, { value: editValue, config_type: prompt?.type || 'text' })
+      await fetchPrompts()
+      setEditingKey(null)
+    } catch {}
+    setSaving(false)
+  }
+
+  const resetPrompt = async (key) => {
+    try {
+      await api.adminResetPrompt(key)
+      await fetchPrompts()
+      setResetConfirm(null)
+    } catch {}
+  }
+
+  const toggleCollapse = (key) => {
+    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  if (loading) return <Spinner />
+  if (!prompts || prompts.length === 0) {
+    return (
+      <div>
+        <h2 style={s.panelTitle}>{t('admin.promptManagement')}</h2>
+        <div style={s.card}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No prompts configured.</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Group prompts by category
+  const temperatures = prompts.filter(p => p.key?.includes('temperature'))
+  const systemPrompts = prompts.filter(p => p.key?.includes('system_prompt'))
+  const personaConfigs = prompts.filter(p => p.key?.startsWith('persona.'))
+  const commentConfigs = prompts.filter(p => p.key?.startsWith('comment.'))
+  const otherPrompts = prompts.filter(p =>
+    !p.key?.includes('temperature') &&
+    !p.key?.includes('system_prompt') &&
+    !p.key?.startsWith('persona.') &&
+    !p.key?.startsWith('comment.')
+  )
+
+  const renderPromptItem = (prompt, isTextarea = false) => {
+    const isEditing = editingKey === prompt.key
+    return (
+      <div key={prompt.key} style={s.promptItem}>
+        <div style={s.promptHeader}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={s.promptLabel}>{prompt.description || prompt.key}</span>
+            {prompt.is_overridden && <span style={s.modifiedBadge}>Modified</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {prompt.is_overridden && (
+              <button onClick={() => setResetConfirm(prompt.key)} style={s.resetBtn}>Reset to Default</button>
+            )}
+            {isTextarea && !isEditing && (
+              <button onClick={() => toggleCollapse(prompt.key)} style={s.collapseBtn}>
+                {collapsed[prompt.key] ? 'Expand' : 'Collapse'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {isTextarea ? (
+          <>
+            {!collapsed[prompt.key] && (
+              isEditing ? (
+                <div>
+                  <textarea
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    style={s.promptTextarea}
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button onClick={() => savePrompt(prompt.key)} disabled={saving} style={s.saveBtn}>
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button onClick={() => setEditingKey(null)} style={s.resetBtn}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => startEdit(prompt.key, prompt.value || prompt.default_value || '')}
+                  style={{ ...s.promptTextarea, cursor: 'pointer', minHeight: 60, background: 'var(--bg-card)' }}
+                >
+                  {(prompt.value || prompt.default_value || '').slice(0, 300)}
+                  {(prompt.value || prompt.default_value || '').length > 300 ? '...' : ''}
+                </div>
+              )
+            )}
+          </>
+        ) : (
+          isEditing ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="number"
+                step={0.05}
+                min={0}
+                max={2}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                style={s.tempInput}
+              />
+              <button onClick={() => savePrompt(prompt.key)} disabled={saving} style={s.saveBtn}>
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button onClick={() => setEditingKey(null)} style={s.resetBtn}>Cancel</button>
+            </div>
+          ) : (
+            <div
+              onClick={() => startEdit(prompt.key, prompt.value || prompt.default_value || '')}
+              style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: 'var(--bg-purple)' }}
+            >
+              {prompt.value || prompt.default_value || '—'}
+            </div>
+          )
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <h2 style={s.panelTitle}>{t('admin.promptManagement')}</h2>
+
+      {temperatures.length > 0 && (
+        <div style={s.promptSection}>
+          <h3 style={{ ...s.cardTitle, marginBottom: 12 }}>Temperature Settings</h3>
+          {temperatures.map((p) => renderPromptItem(p, false))}
+        </div>
+      )}
+
+      {systemPrompts.length > 0 && (
+        <div style={s.promptSection}>
+          <h3 style={{ ...s.cardTitle, marginBottom: 12 }}>System Prompts</h3>
+          {systemPrompts.map((p) => renderPromptItem(p, true))}
+        </div>
+      )}
+
+      {personaConfigs.length > 0 && (
+        <div style={s.promptSection}>
+          <h3 style={{ ...s.cardTitle, marginBottom: 12 }}>Persona Config</h3>
+          {personaConfigs.map((p) => renderPromptItem(p, true))}
+        </div>
+      )}
+
+      {commentConfigs.length > 0 && (
+        <div style={s.promptSection}>
+          <h3 style={{ ...s.cardTitle, marginBottom: 12 }}>Comment Config</h3>
+          {commentConfigs.map((p) => renderPromptItem(p, true))}
+        </div>
+      )}
+
+      {otherPrompts.length > 0 && (
+        <div style={s.promptSection}>
+          <h3 style={{ ...s.cardTitle, marginBottom: 12 }}>Other</h3>
+          {otherPrompts.map((p) => renderPromptItem(p, true))}
+        </div>
+      )}
+
+      <ConfirmModal
+        open={!!resetConfirm}
+        title="Reset Prompt"
+        message={`Reset "${resetConfirm}" to its default value?`}
+        onConfirm={() => resetPrompt(resetConfirm)}
+        onCancel={() => setResetConfirm(null)}
+      />
     </div>
   )
 }
@@ -381,101 +782,151 @@ function DiariesPanel({ t }) {
   )
 }
 
-// --- Analytics Panel (existing logic) ---
-function AnalyticsPanel({ t }) {
-  const [analytics, setAnalytics] = useState(null)
-  const [engagement, setEngagement] = useState(null)
-  const [agentData, setAgentData] = useState(null)
+// --- RAG Data Panel ---
+function RagDataPanel({ t }) {
+  const [ragStatus, setRagStatus] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [reindexing, setReindexing] = useState(false)
+
+  useEffect(() => {
+    api.adminRagStatus().then(setRagStatus).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  const handleReindex = async () => {
+    setReindexing(true)
+    try {
+      await api.adminRagReindex()
+      const updated = await api.adminRagStatus()
+      setRagStatus(updated)
+    } catch {}
+    setReindexing(false)
+  }
+
+  if (loading) return <Spinner />
+
+  const maxDocs = ragStatus?.sources
+    ? Math.max(...ragStatus.sources.map(src => src.doc_count || 0), 1)
+    : 1
+
+  return (
+    <div>
+      <h2 style={s.panelTitle}>{t('admin.ragData')}</h2>
+
+      {/* Collection overview */}
+      <div style={s.statGrid}>
+        <StatCard icon="📚" value={ragStatus?.total_docs || 0} label="Total Documents" />
+        <StatCard icon="🗃️" value={ragStatus?.collection_count || 0} label="Collections" />
+      </div>
+
+      {/* Source breakdown */}
+      {ragStatus?.sources && ragStatus.sources.length > 0 && (
+        <div style={{ ...s.card, marginTop: 16 }}>
+          <h4 style={s.cardTitle}>Source Breakdown</h4>
+          {ragStatus.sources.map((src) => (
+            <div key={src.name} style={s.barContainer}>
+              <span style={s.barLabel}>{src.name}</span>
+              <div style={s.bar}>
+                <div
+                  style={{
+                    ...s.barFill,
+                    width: `${Math.max(2, (src.doc_count / maxDocs) * 100)}%`,
+                  }}
+                />
+              </div>
+              <span style={s.barValue}>{src.doc_count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Directory size */}
+      {ragStatus?.directory_size && (
+        <div style={{ ...s.card, marginTop: 14 }}>
+          <h4 style={s.cardTitle}>Storage</h4>
+          <div style={s.kvRow}>
+            <span style={s.kvLabel}>Directory Size</span>
+            <span style={s.kvValue}>{ragStatus.directory_size}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Reindex button */}
+      <div style={{ marginTop: 16 }}>
+        <button
+          onClick={handleReindex}
+          disabled={reindexing}
+          style={{
+            ...s.saveBtn,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            opacity: reindexing ? 0.6 : 1,
+          }}
+        >
+          <RefreshCw size={14} style={reindexing ? { animation: 'spin 1s linear infinite' } : {}} />
+          {reindexing ? 'Reindexing...' : 'Reindex All'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// --- Images Panel ---
+function ImagesPanel({ t }) {
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      api.analyticsOverview(),
-      api.analyticsEngagement(),
-      api.analyticsAgents(),
-    ])
-      .then(([ov, eng, ag]) => {
-        setAnalytics(ov)
-        setEngagement(eng)
-        setAgentData(ag)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    api.adminImageStats().then(setStats).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   if (loading) return <Spinner />
 
+  const totalSizeMb = (stats?.total_size_bytes || 0) / (1024 * 1024)
+  const WARN_THRESHOLD_MB = 500
+
   return (
     <div>
-      <h2 style={s.panelTitle}>{t('admin.analytics')}</h2>
-      {analytics && (
-        <>
-          <div style={s.statGrid}>
-            <StatCard icon="👥" value={analytics.total_users} label={t('admin.totalUsers')} />
-            <StatCard icon="📈" value={analytics.dau} label={t('admin.dau')} />
-            <StatCard icon="📅" value={analytics.mau} label={t('admin.mau')} />
-            <StatCard icon="📖" value={analytics.total_diaries} label={t('admin.totalDiaries')} />
-          </div>
-          <div style={{ ...s.card, marginTop: 14 }}>
-            <h4 style={s.cardTitle}>{t('admin.newToday')} / {t('admin.newThisWeek')} / {t('admin.newThisMonth')}</h4>
-            <div style={s.breakdownRow}>
-              <div style={s.breakdownItem}>
-                <span style={s.breakdownNum}>{analytics.new_users_today}</span>
-                <span style={s.breakdownLabel}>{t('admin.today')}</span>
-              </div>
-              <div style={s.breakdownItem}>
-                <span style={s.breakdownNum}>{analytics.new_users_week}</span>
-                <span style={s.breakdownLabel}>{t('admin.thisWeek')}</span>
-              </div>
-              <div style={s.breakdownItem}>
-                <span style={s.breakdownNum}>{analytics.new_users_month}</span>
-                <span style={s.breakdownLabel}>{t('admin.thisMonth')}</span>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-      {engagement && (
-        <>
-          <div style={{ ...s.statGrid, marginTop: 16 }}>
-            <StatCard icon="📊" value={engagement.avg_diaries_per_user} label={t('admin.avgDiariesPerUser')} />
-            <StatCard icon="🔄" value={`${engagement.retention_rate_7d}%`} label={t('admin.retentionRate')} />
-          </div>
-          {engagement.active_hours?.length > 0 && (
-            <div style={{ ...s.card, marginTop: 14 }}>
-              <h4 style={s.cardTitle}>{t('admin.mostActiveHours')}</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {engagement.active_hours.slice(0, 6).map((h) => (
-                  <div key={h.hour} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', width: 40, textAlign: 'right' }}>{t('admin.hour', { hour: h.hour })}</span>
-                    <div style={{ flex: 1, height: 14, background: 'var(--bg-card)', borderRadius: 7, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--bg-purple), var(--bg-purple-light))', borderRadius: 7, width: `${Math.min(100, (h.count / Math.max(...engagement.active_hours.map(x => x.count))) * 100)}%` }} />
-                    </div>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 700, width: 28, textAlign: 'right' }}>{h.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-      {agentData?.agent_usage?.length > 0 && (
-        <div style={{ ...s.card, marginTop: 14 }}>
-          <h4 style={s.cardTitle}>{t('admin.agentUsage')}</h4>
-          {agentData.agent_usage.map((a) => (
-            <div key={a.agent} style={s.kvRow}>
-              <span style={s.kvLabel}>{a.agent}</span>
-              <span style={s.kvValue}>{t('admin.diariesCount', { count: a.count })}</span>
-            </div>
-          ))}
+      <h2 style={s.panelTitle}>{t('admin.imageData')}</h2>
+
+      <div style={s.statGrid}>
+        <StatCard icon="👤" value={stats?.profile_count || 0} label="Profile Images" />
+        <StatCard icon="📷" value={stats?.diary_photo_count || 0} label="Diary Photos" />
+        <StatCard icon="💾" value={`${totalSizeMb.toFixed(1)} MB`} label="Total Storage" />
+      </div>
+
+      {/* Size breakdowns */}
+      <div style={{ ...s.card, marginTop: 16 }}>
+        <h4 style={s.cardTitle}>Storage Details</h4>
+        <div style={s.kvRow}>
+          <span style={s.kvLabel}>Profile Images</span>
+          <span style={s.kvValue}>
+            {stats?.profile_count || 0} files — {((stats?.profile_size_bytes || 0) / (1024 * 1024)).toFixed(1)} MB
+          </span>
+        </div>
+        <div style={s.kvRow}>
+          <span style={s.kvLabel}>Diary Photos</span>
+          <span style={s.kvValue}>
+            {stats?.diary_photo_count || 0} files — {((stats?.diary_photo_size_bytes || 0) / (1024 * 1024)).toFixed(1)} MB
+          </span>
+        </div>
+      </div>
+
+      {/* Warning if over threshold */}
+      {totalSizeMb > WARN_THRESHOLD_MB && (
+        <div style={s.warningBox}>
+          <AlertTriangle size={16} style={{ color: '#e74c3c', flexShrink: 0 }} />
+          <span style={s.warningText}>
+            Storage usage ({totalSizeMb.toFixed(0)} MB) exceeds {WARN_THRESHOLD_MB} MB threshold.
+          </span>
         </div>
       )}
     </div>
   )
 }
 
-// --- DB & API Panel ---
-function DbApiPanel({ t }) {
+// --- System Panel (enhanced) ---
+function SystemPanel({ system, t }) {
   const [dbStatus, setDbStatus] = useState(null)
   const [apiUsage, setApiUsage] = useState(null)
   const [period, setPeriod] = useState('today')
@@ -493,15 +944,47 @@ function DbApiPanel({ t }) {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  if (loading) return <Spinner />
+  if (!system) return <Spinner />
 
   return (
     <div>
-      <h2 style={s.panelTitle}>{t('admin.dbAndApi')}</h2>
+      <h2 style={s.panelTitle}>{t('admin.system')}</h2>
+
+      {/* Server info */}
+      <div style={s.card}>
+        <h4 style={s.cardTitle}>Server Info</h4>
+        <div style={s.kvRow}><span style={s.kvLabel}>Version</span><span style={s.kvValue}>{system.version}</span></div>
+        {system.llm_provider && (
+          <div style={s.kvRow}><span style={s.kvLabel}>LLM Provider</span><span style={s.kvValue}>{system.llm_provider}</span></div>
+        )}
+      </div>
+
+      <div style={{ ...s.card, marginTop: 14 }}>
+        <h4 style={s.cardTitle}>AI Agents</h4>
+        <div style={s.tagRow}>
+          {system.agents.map((a) => <span key={a} style={s.tag}>{a}</span>)}
+        </div>
+      </div>
+
+      <div style={{ ...s.card, marginTop: 14 }}>
+        <h4 style={s.cardTitle}>Comment Personas</h4>
+        <div style={s.tagRow}>
+          {system.comment_personas.map((p) => <span key={p} style={s.tag}>{p}</span>)}
+        </div>
+      </div>
+
+      <div style={{ ...s.card, marginTop: 14 }}>
+        <h4 style={s.cardTitle}>Features</h4>
+        <div style={s.tagRow}>
+          {system.features.map((f) => (
+            <span key={f} style={{ ...s.tag, background: 'rgba(108,92,231,0.08)', color: 'var(--bg-purple)' }}>{f}</span>
+          ))}
+        </div>
+      </div>
 
       {/* DB Status */}
       {dbStatus && (
-        <div style={s.card}>
+        <div style={{ ...s.card, marginTop: 16 }}>
           <h4 style={s.cardTitle}>{t('admin.dbStatus')}</h4>
           <div style={s.kvRow}><span style={s.kvLabel}>{t('admin.dbType')}</span><span style={s.kvValue}>{dbStatus.db_type}</span></div>
           {dbStatus.db_size && <div style={s.kvRow}><span style={s.kvLabel}>{t('admin.dbSize')}</span><span style={s.kvValue}>{dbStatus.db_size}</span></div>}
@@ -537,12 +1020,12 @@ function DbApiPanel({ t }) {
           </div>
         </div>
 
-        {apiUsage && (
+        {loading ? <Spinner /> : apiUsage && (
           <>
             <div style={s.statGrid}>
               <StatCard icon="📡" value={apiUsage.total_calls} label={t('admin.apiCalls')} />
               <StatCard icon="🎯" value={`${apiUsage.success_rate}%`} label={t('admin.successRate')} />
-              <StatCard icon="🔤" value={apiUsage.total_tokens.toLocaleString()} label={t('admin.totalTokens')} />
+              <StatCard icon="🔤" value={(apiUsage.total_tokens || 0).toLocaleString()} label={t('admin.totalTokens')} />
               <StatCard icon="💰" value={`$${apiUsage.total_cost_usd}`} label={t('admin.estimatedCost')} />
             </div>
 
@@ -589,48 +1072,16 @@ function DbApiPanel({ t }) {
   )
 }
 
-// --- System Panel (existing logic) ---
-function SystemPanel({ system, t }) {
-  if (!system) return <Spinner />
-  return (
-    <div>
-      <h2 style={s.panelTitle}>{t('admin.system')}</h2>
-      <div style={s.card}>
-        <h4 style={s.cardTitle}>Server Info</h4>
-        <div style={s.kvRow}><span style={s.kvLabel}>Version</span><span style={s.kvValue}>{system.version}</span></div>
-      </div>
-      <div style={{ ...s.card, marginTop: 14 }}>
-        <h4 style={s.cardTitle}>AI Agents</h4>
-        <div style={s.tagRow}>
-          {system.agents.map((a) => <span key={a} style={s.tag}>{a}</span>)}
-        </div>
-      </div>
-      <div style={{ ...s.card, marginTop: 14 }}>
-        <h4 style={s.cardTitle}>Comment Personas</h4>
-        <div style={s.tagRow}>
-          {system.comment_personas.map((p) => <span key={p} style={s.tag}>{p}</span>)}
-        </div>
-      </div>
-      <div style={{ ...s.card, marginTop: 14 }}>
-        <h4 style={s.cardTitle}>Features</h4>
-        <div style={s.tagRow}>
-          {system.features.map((f) => (
-            <span key={f} style={{ ...s.tag, background: 'rgba(108,92,231,0.08)', color: 'var(--bg-purple)' }}>{f}</span>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 
 // --- Main Admin Component ---
 const NAV_ITEMS = [
   { id: 'dashboard', icon: LayoutDashboard, labelKey: 'admin.dashboard' },
+  { id: 'llm', icon: Brain, labelKey: 'admin.llmAgents' },
+  { id: 'prompts', icon: FileText, labelKey: 'admin.promptManagement' },
   { id: 'users', icon: Users, labelKey: 'admin.userManagement' },
   { id: 'diaries', icon: BookOpen, labelKey: 'admin.diaryBrowser' },
-  { id: 'analytics', icon: BarChart3, labelKey: 'admin.analytics' },
-  { id: 'dbapi', icon: Database, labelKey: 'admin.dbAndApi' },
+  { id: 'rag', icon: Database, labelKey: 'admin.ragData' },
+  { id: 'images', icon: Image, labelKey: 'admin.imageData' },
   { id: 'system', icon: Settings, labelKey: 'admin.system' },
 ]
 
@@ -703,11 +1154,14 @@ export default function Admin() {
 
       {/* Main content */}
       <main style={s.main}>
+        <KpiBar t={t} />
         {activePanel === 'dashboard' && <DashboardPanel stats={stats} system={system} t={t} />}
+        {activePanel === 'llm' && <LlmAgentsPanel t={t} />}
+        {activePanel === 'prompts' && <PromptsPanel t={t} />}
         {activePanel === 'users' && <UsersPanel t={t} />}
         {activePanel === 'diaries' && <DiariesPanel t={t} />}
-        {activePanel === 'analytics' && <AnalyticsPanel t={t} />}
-        {activePanel === 'dbapi' && <DbApiPanel t={t} />}
+        {activePanel === 'rag' && <RagDataPanel t={t} />}
+        {activePanel === 'images' && <ImagesPanel t={t} />}
         {activePanel === 'system' && <SystemPanel system={system} t={t} />}
       </main>
     </motion.div>
@@ -1165,5 +1619,175 @@ const s = {
     maxHeight: 200,
     overflowY: 'auto',
     color: 'var(--text-secondary)',
+  },
+
+  // KPI Bar
+  kpiBar: {
+    display: 'flex',
+    gap: 16,
+    padding: '12px 20px',
+    background: 'white',
+    borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--border-card)',
+    marginBottom: 20,
+    overflowX: 'auto',
+    flexWrap: 'wrap',
+  },
+  kpiItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '4px 0',
+    minWidth: 'fit-content',
+  },
+  kpiValue: {
+    fontSize: '0.9rem',
+    fontWeight: 800,
+    color: 'var(--text-primary)',
+  },
+  kpiLabel: {
+    fontSize: '0.68rem',
+    fontWeight: 600,
+    color: 'var(--text-muted)',
+  },
+
+  // Prompt editing
+  promptSection: {
+    marginBottom: 20,
+  },
+  promptItem: {
+    background: 'white',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border-light)',
+    padding: '14px 18px',
+    marginBottom: 8,
+  },
+  promptHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  promptLabel: {
+    fontSize: '0.82rem',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+  },
+  modifiedBadge: {
+    fontSize: '0.65rem',
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: 6,
+    background: 'rgba(108,92,231,0.1)',
+    color: 'var(--bg-purple)',
+  },
+  tempInput: {
+    width: 80,
+    padding: '6px 10px',
+    border: '1.5px solid var(--border-card)',
+    borderRadius: 8,
+    fontFamily: 'inherit',
+    fontSize: '0.85rem',
+    fontWeight: 700,
+    textAlign: 'center',
+    outline: 'none',
+  },
+  promptTextarea: {
+    width: '100%',
+    minHeight: 100,
+    padding: '10px 14px',
+    border: '1.5px solid var(--border-card)',
+    borderRadius: 10,
+    fontFamily: 'inherit',
+    fontSize: '0.8rem',
+    resize: 'vertical',
+    outline: 'none',
+    lineHeight: 1.5,
+  },
+  saveBtn: {
+    padding: '6px 16px',
+    borderRadius: 8,
+    border: 'none',
+    background: 'var(--bg-purple)',
+    color: 'white',
+    fontFamily: 'inherit',
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  resetBtn: {
+    padding: '6px 16px',
+    borderRadius: 8,
+    border: '1px solid var(--border-card)',
+    background: 'transparent',
+    color: 'var(--text-muted)',
+    fontFamily: 'inherit',
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+
+  // RAG bars
+  barContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '6px 0',
+  },
+  barLabel: {
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    color: 'var(--text-muted)',
+    width: 100,
+    textAlign: 'right',
+  },
+  bar: {
+    flex: 1,
+    height: 18,
+    background: 'var(--bg-card)',
+    borderRadius: 9,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    background: 'linear-gradient(90deg, var(--bg-purple), var(--bg-purple-light))',
+    borderRadius: 9,
+    transition: 'width 0.3s ease',
+  },
+  barValue: {
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    width: 50,
+    textAlign: 'right',
+  },
+
+  // Warning
+  warningBox: {
+    padding: '12px 16px',
+    background: 'rgba(231, 76, 60, 0.08)',
+    borderRadius: 10,
+    border: '1px solid rgba(231, 76, 60, 0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  warningText: {
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    color: '#e74c3c',
+  },
+
+  // Collapsible
+  collapseBtn: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: 6,
+    fontFamily: 'inherit',
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    color: 'var(--bg-purple)',
   },
 }

@@ -25,6 +25,15 @@ function safeText(obj, field, lang) {
   return ''
 }
 
+function useDebounce(value, delay) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return debounced
+}
+
 export default function Social() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -32,11 +41,13 @@ export default function Social() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedQuery = useDebounce(searchQuery, 400)
   const LIMIT = 20
 
-  const fetchFeed = useCallback(async (offset = 0, append = false) => {
+  const fetchFeed = useCallback(async (offset = 0, append = false, query = '') => {
     try {
-      const data = await api.socialFeed(LIMIT, offset)
+      const data = await api.socialFeed(LIMIT, offset, query)
       const items = data.items || data || []
       if (append) {
         setEntries((prev) => [...prev, ...items])
@@ -51,18 +62,22 @@ export default function Social() {
     setLoadingMore(false)
   }, [])
 
-  useEffect(() => { fetchFeed() }, [fetchFeed])
+  useEffect(() => {
+    setLoading(true)
+    setHasMore(true)
+    fetchFeed(0, false, debouncedQuery)
+  }, [debouncedQuery, fetchFeed])
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return
     setLoadingMore(true)
-    fetchFeed(entries.length, true)
+    fetchFeed(entries.length, true, debouncedQuery)
   }
 
   const handleRefresh = () => {
     setLoading(true)
     setHasMore(true)
-    fetchFeed()
+    fetchFeed(0, false, debouncedQuery)
   }
 
   return (
@@ -81,6 +96,27 @@ export default function Social() {
             <polyline points="21 3 21 9 15 9" />
           </svg>
         </button>
+      </div>
+
+      {/* Search */}
+      <div style={styles.searchWrap}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16, color: 'var(--text-muted)', flexShrink: 0 }}>
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t('social.searchPlaceholder', '닉네임 또는 내용으로 검색...')}
+          style={styles.searchInput}
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery('')} style={styles.searchClear}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -378,5 +414,34 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     padding: '12px 0',
+  },
+  searchWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    margin: '0 20px',
+    padding: '8px 14px',
+    background: 'var(--bg-card)',
+    borderRadius: 12,
+    border: '1.5px solid var(--border-light)',
+  },
+  searchInput: {
+    flex: 1,
+    border: 'none',
+    outline: 'none',
+    background: 'transparent',
+    fontSize: '0.85rem',
+    color: 'var(--text-primary)',
+  },
+  searchClear: {
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    padding: 2,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--text-muted)',
+    flexShrink: 0,
   },
 }

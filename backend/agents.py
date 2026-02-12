@@ -118,7 +118,9 @@ class AgentState(TypedDict):
 
 # --- Oracle Agent (Tool Calling + A2A + MCP + Cache) ---
 def oracle_agent(state: AgentState):
-    llm = get_llm(temperature=0.8)
+    from backend.prompt_defaults import get_cached_prompt_value
+    temp = float(get_cached_prompt_value("agent.oracle.temperature", "0.8"))
+    llm = get_llm(temperature=temp)
     profile = state["dog_profile"]
     logs = state["daily_logs"]
 
@@ -230,7 +232,9 @@ Based on the above, generate today's fortune in BOTH Korean and English!"""
 
 # --- Journalist Agent (Few-Shot + RAG + A2A + 페르소나 + 다국어) ---
 def journalist_agent(state: AgentState):
-    llm = get_llm(temperature=0.9)
+    from backend.prompt_defaults import get_cached_prompt_value
+    temp = float(get_cached_prompt_value("agent.journalist.temperature", "0.9"))
+    llm = get_llm(temperature=temp)
     profile = state["dog_profile"]
     logs = state["daily_logs"]
 
@@ -414,7 +418,9 @@ Generate diary content in BOTH Korean and English!"""
 
 # --- Vet Agent (CoT + RAG + A2A) ---
 def vet_agent(state: AgentState):
-    llm = get_llm(temperature=0.3)
+    from backend.prompt_defaults import get_cached_prompt_value
+    temp = float(get_cached_prompt_value("agent.vet.temperature", "0.3"))
+    llm = get_llm(temperature=temp)
     profile = state["dog_profile"]
     logs = state["daily_logs"]
 

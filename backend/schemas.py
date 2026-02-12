@@ -214,3 +214,8 @@ class PushSubscribeRequest(BaseModel):
     endpoint: str = Field(max_length=2000)
     p256dh: str = Field(max_length=500)
     auth_key: str = Field(max_length=500)
+
+
+class PromptUpdateRequest(BaseModel):
+    value: str
+    config_type: str = Field(default="text", pattern=r"^(text|float|json)$")

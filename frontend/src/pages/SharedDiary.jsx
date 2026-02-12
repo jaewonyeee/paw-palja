@@ -101,7 +101,14 @@ export default function SharedDiary() {
     <motion.div {...pageTransition} style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <span style={styles.brand}>{t('common.appName')}</span>
+        <div style={styles.headerLeft}>
+          <button onClick={() => navigate(-1)} style={styles.backBtn} aria-label={t('common.back')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <span style={styles.brand}>{t('common.appName')}</span>
+        </div>
         <span style={styles.viewCount}>{t('social.views', { count: data.view_count || 0 })}</span>
       </div>
 
@@ -313,6 +320,24 @@ const styles = {
     borderBottom: '1px solid var(--border-light)',
     background: 'rgba(255,248,240,0.95)',
     backdropFilter: 'blur(20px)',
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    border: 'none',
+    background: 'var(--bg-card)',
+    borderRadius: 10,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--text-secondary)',
+    flexShrink: 0,
   },
   brand: {
     fontSize: '0.95rem',

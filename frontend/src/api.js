@@ -171,6 +171,19 @@ export const api = {
   adminDbStatus: () => request('/admin/db-status'),
   adminApiUsage: (period = 'today') => request(`/admin/api-usage?period=${period}`),
 
+  // --- Admin Command Center ---
+  adminKpiSummary: () => request('/admin/kpi-summary'),
+  adminAgentPerformance: (period = 'today') => request(`/admin/agent-performance?period=${period}`),
+  adminMcpStats: () => request('/admin/mcp-stats'),
+  adminPrompts: () => request('/admin/prompts'),
+  adminUpdatePrompt: (key, data) =>
+    request(`/admin/prompts/${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminResetPrompt: (key) =>
+    request(`/admin/prompts/${encodeURIComponent(key)}`, { method: 'DELETE' }),
+  adminRagStatus: () => request('/admin/rag-status'),
+  adminRagReindex: () => request('/admin/rag-reindex', { method: 'POST' }),
+  adminImageStats: () => request('/admin/image-stats'),
+
   // --- Analytics (admin only) ---
   analyticsOverview: () => request('/admin/analytics/overview'),
   analyticsEngagement: () => request('/admin/analytics/engagement'),
@@ -180,8 +193,8 @@ export const api = {
   analyze: (data) => request('/analyze', { method: 'POST', body: JSON.stringify(data) }),
 
   // --- Social Feed ---
-  socialFeed: (limit = 20, offset = 0) =>
-    request(`/social/feed?limit=${limit}&offset=${offset}&include_mine=true`),
+  socialFeed: (limit = 20, offset = 0, q = '') =>
+    request(`/social/feed?limit=${limit}&offset=${offset}&include_mine=true&q=${encodeURIComponent(q)}`),
 
   // --- Social / Sharing ---
   shareDiary: (entryId) =>

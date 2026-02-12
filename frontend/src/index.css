@@ -72,12 +72,18 @@ body {
   #root { background: #F0EAE0; }
 }
 
-/* Admin full-screen layout */
+/* Admin full-screen layout — true viewport coverage */
 .app-frame:has(.admin-dashboard) {
   max-width: 100%;
   max-height: 100dvh;
+  width: 100vw;
+  height: 100dvh;
   border-radius: 0;
   box-shadow: none;
+}
+#root:has(.admin-dashboard) {
+  align-items: stretch;
+  justify-content: stretch;
 }
 @media (min-width: 768px) {
   .app-frame:has(.admin-dashboard) {

@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy.orm.attributes import flag_modified
@@ -51,13 +51,14 @@ async def social_feed(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     include_mine: bool = Query(default=False),
+    q: str = Query(default="", description="Search by nickname or diary content"),
     current_user_id: Optional[str] = Depends(_get_optional_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """Return public diary entries from users with public profiles.
 
-    Supports pagination via limit/offset. If a logged-in user passes
-    include_mine=false (default), their own entries are excluded.
+    Supports pagination via limit/offset and search via q parameter.
+    If a logged-in user passes include_mine=false (default), their own entries are excluded.
     """
     # Base filter: all public diary entries (regardless of profile visibility)
     base_conditions = [
@@ -68,6 +69,15 @@ async def social_feed(
     if current_user_id and not include_mine:
         base_conditions.append(DiaryEntry.user_id != current_user_id)
 
+    # Search filter: nickname or diary content
+    search_condition = None
+    if q.strip():
+        pattern = f"%{q.strip()}%"
+        search_condition = or_(
+            User.nickname.ilike(pattern),
+            cast(DiaryEntry.diary, String).ilike(pattern),
+        )
+
     # Count total matching entries
     count_stmt = (
         select(func.count())
@@ -75,6 +85,8 @@ async def social_feed(
         .join(User, DiaryEntry.user_id == User.user_id)
         .where(*base_conditions)
     )
+    if search_condition is not None:
+        count_stmt = count_stmt.where(search_condition)
     count_result = await db.execute(count_stmt)
     total = count_result.scalar() or 0
 
@@ -84,6 +96,11 @@ async def social_feed(
         .join(User, DiaryEntry.user_id == User.user_id)
         .outerjoin(DogProfile, DogProfile.user_id == User.user_id)
         .where(*base_conditions)
+    )
+    if search_condition is not None:
+        items_stmt = items_stmt.where(search_condition)
+    items_stmt = (
+        items_stmt
         .order_by(DiaryEntry.created_at.desc())
         .offset(offset)
         .limit(limit)

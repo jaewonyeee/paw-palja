@@ -144,3 +144,16 @@ class ApiUsageLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+
+
+class PromptConfig(Base):
+    __tablename__ = "prompt_configs"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    config_key: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
+    config_value: Mapped[str] = mapped_column(Text, nullable=False)
+    config_type: Mapped[str] = mapped_column(String(20), default="text")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_by: Mapped[str | None] = mapped_column(String(30), nullable=True)
