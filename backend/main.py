@@ -248,6 +248,9 @@ _FRONTEND_RESOLVED = Path(FRONTEND_DIR).resolve()
 
 if os.path.exists(FRONTEND_DIR):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
+    _videos_dir = os.path.join(FRONTEND_DIR, "videos")
+    if os.path.exists(_videos_dir):
+        app.mount("/videos", StaticFiles(directory=_videos_dir), name="videos")
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str, request: Request):
