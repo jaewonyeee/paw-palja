@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +16,20 @@ export default function Onboarding() {
   const videoRef = useRef(null)
   const [videoReady, setVideoReady] = useState(false)
 
+  const showVideo = useCallback(() => setVideoReady(true), [])
+
+  // Ensure muted attribute is set (React bug workaround) + autoplay
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    v.muted = true
+    v.playsInline = true
+    v.play().then(showVideo).catch(() => {})
+    // Fallback: show video after 3s even if events don't fire
+    const timer = setTimeout(showVideo, 3000)
+    return () => clearTimeout(timer)
+  }, [showVideo])
+
   return (
     <motion.div {...pageTransition} style={styles.container}>
       {/* Video Background */}
@@ -26,7 +40,7 @@ export default function Onboarding() {
         loop
         playsInline
         preload="auto"
-        onCanPlayThrough={() => setVideoReady(true)}
+        onLoadedData={showVideo}
         style={{ ...styles.videoBg, opacity: videoReady ? 1 : 0 }}
       >
         <source src="/videos/burti-bg.mp4" type="video/mp4" />
