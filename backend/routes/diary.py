@@ -219,6 +219,9 @@ async def edit_diary(
 
     diary = entry.get("diary", {})
     diary["content"] = req.edited_diary
+    # Clear bilingual variants so getLangText falls back to the edited content
+    diary.pop("content_ko", None)
+    diary.pop("content_en", None)
     updated = await user_store.update_diary_entry(db, user_id, entry_id, {"diary": diary})
 
     if not updated:

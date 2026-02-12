@@ -247,7 +247,7 @@ export default function DiaryDetail() {
     setEditSaving(true)
     try {
       const result = await api.editDiary(entry.entry_id, {
-        original_diary: diary.content,
+        original_diary: getLangText(diary, 'content'),
         edited_diary: editText,
         dog_name: user.dog?.name || '멍멍이',
         dog_breed: user.dog?.breed || '믹스견',
@@ -435,7 +435,7 @@ export default function DiaryDetail() {
                     >
                       <button
                         onClick={() => {
-                          setEditText(diary.content || '')
+                          setEditText(getLangText(diary, 'content'))
                           setIsEditing(true)
                           setShowMenu(false)
                         }}

@@ -88,8 +88,9 @@ async def stream_comments(
     user = await user_store.get_user(db, user_id)
     diary_data = entry.get("diary", {})
     diary_text = diary_data.get("content_ko") or diary_data.get("content_en") or diary_data.get("content") or ""
-    dog_name = user["dog"].get("name", "멍멍이") if user else "멍멍이"
-    dog_breed = user["dog"].get("breed", "믹스견") if user else "믹스견"
+    dog = user.get("dog") if user else None
+    dog_name = dog.get("name", "멍멍이") if dog else "멍멍이"
+    dog_breed = dog.get("breed", "믹스견") if dog else "믹스견"
 
     if mode not in ("new", "edit"):
         raise HTTPException(status_code=400, detail=get_message("invalid_comment_mode", lang))
