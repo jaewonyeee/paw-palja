@@ -50,7 +50,7 @@ export default function Onboarding() {
         loop
         playsInline
         preload="auto"
-        src="/videos/burti-bg.mp4"
+        src="/videos/pawpalja_onboarding.mov"
         style={styles.videoBg}
       />
 
