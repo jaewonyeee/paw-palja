@@ -40,10 +40,14 @@ class JSONFormatter(logging.Formatter):
                 "traceback": self.formatException(record.exc_info),
             }
 
-        # 추가 필드 (extra) — request context
+        # 추가 필드 (extra) — request context + observability
         _extra_fields = [
             "user_id", "request_id", "agent_name", "tool_name",
             "method", "path", "status_code", "duration_ms",
+            # Observability: RAG metrics
+            "rag_hit", "rag_source_count",
+            # Observability: LLM metrics
+            "llm_model", "attempt", "risk_level",
         ]
         for field in _extra_fields:
             if hasattr(record, field):

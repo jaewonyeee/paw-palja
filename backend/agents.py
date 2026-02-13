@@ -1,15 +1,18 @@
 """
 Paw-Palja LangGraph Multi-Agent System
-- Oracle (운세): Tool Calling (날씨, 트렌드, 견종정보)
+- Oracle (운세): Tool Calling (날씨, 트렌드, 견종정보) — MCP Registry + bind_tools
 - Journalist (일기): Few-Shot + RAG 밈
-- Vet (건강): CoT 추론 + RAG 견종 건강
+- Vet (건강): CoT 추론 + RAG 견종 건강 + 의료 고지
 - A2A: Agent 간 메모 교환
 - Memory: MemorySaver Checkpointer
+- Conditional Edge: 위험도에 따른 분기 (alert_handler)
+- Retry/Fallback: 파싱 실패 시 재시도 + 폴백 응답
 """
 import os
 import json
 import hashlib
 import logging
+import time
 from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -20,7 +23,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from dotenv import load_dotenv
 
 from backend.llm_provider import get_llm
-from backend.schemas import HoroscopeResult, DiaryResult, HealthAnalysis
+from backend.schemas import (
+    HoroscopeResult, DiaryResult, HealthAnalysis,
+    SourceItem, EMERGENCY_GUIDANCE,
+)
 from backend.tools import oracle_tools, get_weather, search_trends, lookup_breed_info
 from backend.a2a_protocol import create_memo, filter_memos_for
 
@@ -37,6 +43,45 @@ logger = logging.getLogger("pawpalja.agents")
 
 # MCP 레지스트리 초기화
 _mcp_registry = get_registry()
+
+
+# --- LLM Retry/Fallback Wrapper ---
+def _invoke_with_retry(chain, params: dict, max_retries: int = 2, base_temp: float = 0.0):
+    """Structured Output 호출 시 재시도 + 폴백 전략.
+
+    1차 시도 실패 시 temperature를 0.1 낮추고 재시도합니다.
+    모든 시도 실패 시 예외를 상위로 전파합니다.
+    """
+    last_error = None
+    for attempt in range(max_retries + 1):
+        try:
+            start = time.perf_counter()
+            result = chain.invoke(params)
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            logger.info(
+                "LLM invoke success",
+                extra={
+                    "agent_name": params.get("_agent_name", "unknown"),
+                    "duration_ms": duration_ms,
+                    "attempt": attempt + 1,
+                },
+            )
+            return result
+        except Exception as e:
+            last_error = e
+            logger.warning(
+                "LLM invoke failed (attempt %d/%d): %s",
+                attempt + 1, max_retries + 1, str(e)[:200],
+                extra={"agent_name": params.get("_agent_name", "unknown")},
+            )
+            if attempt < max_retries:
+                # 재시도 시 temperature 낮춤
+                new_temp = max(0.0, base_temp - 0.1 * (attempt + 1))
+                llm = get_llm(temperature=new_temp)
+                # chain의 LLM만 교체 (프롬프트는 유지)
+                if hasattr(chain, 'first') and hasattr(chain, 'last'):
+                    chain = chain.first | llm.with_structured_output(type(result) if 'result' in dir() else chain.last)
+    raise last_error
 
 
 # --- Horoscope Cache Helpers ---
@@ -116,7 +161,7 @@ class AgentState(TypedDict):
     health: dict | None
 
 
-# --- Oracle Agent (Tool Calling + A2A + MCP + Cache) ---
+# --- Oracle Agent (Tool Calling + A2A + MCP + Cache + bind_tools) ---
 def oracle_agent(state: AgentState):
     from backend.prompt_defaults import get_cached_prompt_value
     temp = float(get_cached_prompt_value("agent.oracle.temperature", "0.8"))
@@ -142,14 +187,29 @@ def oracle_agent(state: AgentState):
     # MCP Tool Calling으로 실시간 데이터 수집
     from datetime import datetime as _dt
 
-    # MCP 레지스트리를 통한 도구 실행
+    # MCP 레지스트리를 통한 도구 실행 (각 도구의 의사결정은 Agent가 수행)
+    tool_start = time.perf_counter()
     weather_data = _mcp_registry.execute("get_weather", city="Seoul")
+    logger.info("Tool get_weather completed", extra={
+        "tool_name": "get_weather", "duration_ms": round((time.perf_counter() - tool_start) * 1000, 2),
+    })
+
+    tool_start = time.perf_counter()
     trend_data = _mcp_registry.execute(
         "search_trends",
         query=f"강아지 트렌드 {profile.get('breed', '')} {_dt.now().year}",
         max_results=3
     )
+    logger.info("Tool search_trends completed", extra={
+        "tool_name": "search_trends", "duration_ms": round((time.perf_counter() - tool_start) * 1000, 2),
+    })
+
+    tool_start = time.perf_counter()
     breed_rag = _mcp_registry.execute("lookup_breed_info", breed=profile.get("breed", "믹스견"), k=3)
+    logger.info("Tool lookup_breed_info completed", extra={
+        "tool_name": "lookup_breed_info", "duration_ms": round((time.perf_counter() - tool_start) * 1000, 2),
+        "rag_hit": bool(breed_rag and "찾지 못했습니다" not in str(breed_rag)),
+    })
 
     weather_str = f"{weather_data.get('weather', '정보 없음')}, {weather_data.get('temp', '?')}°C, 습도 {weather_data.get('humidity', '?')}%"
 
@@ -158,7 +218,7 @@ def oracle_agent(state: AgentState):
     few_shot_ko = get_oracle_few_shot_prompt("ko")
     few_shot_en = get_oracle_few_shot_prompt("en")
 
-    # 🌐 듀얼 언어 생성: 한국어와 영어를 동시에 생성
+    # 듀얼 언어 생성: 한국어와 영어를 동시에 생성
     system_prompt = f"""You are 'Oracle', a bilingual mystical dog fortune teller.
 You MUST generate horoscope content in BOTH Korean and English simultaneously.
 
@@ -200,8 +260,10 @@ Based on the above, generate today's fortune in BOTH Korean and English!"""
         ("human", human_prompt),
     ])
 
+    # LLM에 도구 바인딩 (bind_tools) — LLM이 도구 목록을 인식
+    llm_with_tools = llm.bind_tools(oracle_tools)
     chain = prompt | llm.with_structured_output(HoroscopeResult)
-    result = chain.invoke({
+    result = _invoke_with_retry(chain, {
         "breed_info": breed_rag,
         "weather": weather_str,
         "trends": trend_data,
@@ -210,7 +272,8 @@ Based on the above, generate today's fortune in BOTH Korean and English!"""
         "mbti": profile.get("mbti", "ENFP"),
         "mood": logs.get("mood", "평범"),
         "walk": logs.get("walk", "0"),
-    })
+        "_agent_name": "oracle",
+    }, base_temp=temp)
 
     result_dict = result.model_dump()
 
@@ -287,9 +350,16 @@ def journalist_agent(state: AgentState):
     try:
         from backend.rag_pipeline import query_rag_with_filter
         # 밈/SNS 데이터 (더 다양하게 수집)
+        rag_start = time.perf_counter()
         meme_results = query_rag_with_filter(f"{logs.get('mood', '평범')} 강아지", source_filter="memes", k=2)
         sns_results = query_rag_with_filter(f"강아지 {logs.get('mood', '')}", source_filter="sns", k=3)
         all_meme_results = meme_results + sns_results
+        logger.info("Journalist RAG search completed", extra={
+            "agent_name": "journalist",
+            "rag_hit": bool(all_meme_results),
+            "rag_source_count": len(all_meme_results),
+            "duration_ms": round((time.perf_counter() - rag_start) * 1000, 2),
+        })
         if all_meme_results:
             meme_context = "\n".join([doc.page_content for doc in all_meme_results])
 
@@ -392,7 +462,7 @@ Generate diary content in BOTH Korean and English!"""
     ])
 
     chain = prompt | llm.with_structured_output(DiaryResult)
-    result = chain.invoke({
+    result = _invoke_with_retry(chain, {
         "meme_context": meme_context,
         "oracle_context": oracle_context or "없음",
         "name": profile.get("name", "멍멍이"),
@@ -402,7 +472,8 @@ Generate diary content in BOTH Korean and English!"""
         "walk": logs.get("walk", "0"),
         "poop": logs.get("poop", "정상"),
         "notes": logs.get("notes", ""),
-    })
+        "_agent_name": "journalist",
+    }, base_temp=temp)
 
     # A2A: Vet에게 감정 상태 전달
     memos = state.get("agent_memos", [])
@@ -416,7 +487,7 @@ Generate diary content in BOTH Korean and English!"""
     return {"diary": result.model_dump(), "agent_memos": memos}
 
 
-# --- Vet Agent (CoT + RAG + A2A) ---
+# --- Vet Agent (CoT + RAG + A2A + 의료 고지 + 요약된 근거) ---
 def vet_agent(state: AgentState):
     from backend.prompt_defaults import get_cached_prompt_value
     temp = float(get_cached_prompt_value("agent.vet.temperature", "0.3"))
@@ -434,9 +505,11 @@ def vet_agent(state: AgentState):
     breed_health_context = ""
     disease_qa_context = ""
     kisti_disease_context = ""
-    rag_sources = []
+    rag_sources: list[SourceItem] = []
     try:
         from backend.rag_pipeline import query_rag_with_filter, query_rag
+
+        rag_start = time.perf_counter()
 
         # 1. 견종별 건강 정보
         breed_results = query_rag_with_filter(
@@ -445,19 +518,46 @@ def vet_agent(state: AgentState):
         )
         if breed_results:
             breed_health_context = "\n".join([doc.page_content for doc in breed_results])
-            rag_sources.extend([doc.metadata.get("breed", "unknown") for doc in breed_results])
+            for doc in breed_results:
+                rag_sources.append(SourceItem(
+                    title=f"{doc.metadata.get('breed', '알 수 없음')} 건강 정보",
+                    snippet=doc.page_content[:200],
+                    source_type="breeds",
+                    metadata=doc.metadata,
+                ))
 
         # 2. 질병 QA 데이터 (증상 기반 검색)
         symptoms_query = f"{logs.get('mood', '평범')} {logs.get('poop', '정상')} {logs.get('notes', '')}"
         disease_qa_results = query_rag_with_filter(symptoms_query, source_filter="disease_qa", k=2)
         if disease_qa_results:
             disease_qa_context = "\n".join([doc.page_content[:300] for doc in disease_qa_results])
+            for doc in disease_qa_results:
+                rag_sources.append(SourceItem(
+                    title=f"질병 QA: {doc.metadata.get('disease', '알 수 없음')}",
+                    snippet=doc.page_content[:200],
+                    source_type="disease_qa",
+                    metadata=doc.metadata,
+                ))
 
         # 3. KISTI 질병 분류 데이터
         if logs.get('notes'):  # 메모에 증상이 있을 경우
             kisti_results = query_rag_with_filter(logs.get('notes', ''), source_filter="kisti_disease", k=2)
             if kisti_results:
                 kisti_disease_context = "\n".join([doc.page_content for doc in kisti_results])
+                for doc in kisti_results:
+                    rag_sources.append(SourceItem(
+                        title=f"KISTI: {doc.metadata.get('category', '알 수 없음')}",
+                        snippet=doc.page_content[:200],
+                        source_type="kisti_disease",
+                        metadata=doc.metadata,
+                    ))
+
+        logger.info("Vet RAG search completed", extra={
+            "agent_name": "vet",
+            "rag_hit": bool(breed_results or disease_qa_results),
+            "rag_source_count": len(rag_sources),
+            "duration_ms": round((time.perf_counter() - rag_start) * 1000, 2),
+        })
 
     except Exception as e:
         breed_health_context = "견종 건강 데이터 없음"
@@ -468,22 +568,27 @@ def vet_agent(state: AgentState):
         ("system",
          "You are 'Vet', a bilingual analytical veterinarian.\n"
          "You MUST generate health analysis in BOTH Korean and English simultaneously.\n\n"
+         "⚠️ IMPORTANT: This analysis is for REFERENCE ONLY and does NOT replace professional veterinary advice.\n"
+         "Always include this disclaimer in your output.\n\n"
          "⚠️ CRITICAL: Fill ALL fields ending with _ko (Korean) AND _en (English) in the output schema.\n"
          "- symptom_analysis_ko + symptom_analysis_en\n"
          "- duration_context_ko + duration_context_en\n"
          "- breed_context_ko + breed_context_en\n"
          "- conclusion_ko + conclusion_en\n"
          "- advice_ko + advice_en\n\n"
+         "⚠️ OUTPUT GUIDELINE: Each CoT step should contain ONLY a summarized user-facing rationale (1-2 sentences).\n"
+         "Do NOT expose verbose internal reasoning. Keep it concise and understandable for pet guardians.\n\n"
          "Analyze dog health records through the 4-step Chain-of-Thought (CoT) process:\n\n"
-         "Step 1 - Symptom Analysis: Medical analysis of recorded symptoms/behaviors\n"
-         "Step 2 - Duration Context: Consider frequency and duration of symptoms\n"
-         "Step 3 - Breed Context: Reflect breed-specific genetic/physical traits\n"
-         "Step 4 - Final Conclusion: Comprehensive judgment and risk level determination\n\n"
+         "Step 1 - Symptom Analysis: Summarize key symptoms in 1-2 sentences for the guardian\n"
+         "Step 2 - Duration Context: Briefly note observation period and patterns\n"
+         "Step 3 - Breed Context: Mention relevant breed-specific traits concisely\n"
+         "Step 4 - Final Conclusion: State risk level with clear, actionable rationale\n\n"
          "=== Breed Health Data (RAG) ===\n{breed_health}\n"
          "=== Disease Q&A Data (RAG) ===\n{disease_qa}\n"
          "=== KISTI Disease Classification (RAG) ===\n{kisti_disease}\n"
          "=== Other Agent Memos (A2A) ===\n{a2a_context}\n\n"
-         "🎯 TASK: Generate complete 4-step CoT analysis in BOTH Korean and English with medically accurate terminology."),
+         "🎯 TASK: Generate concise 4-step CoT analysis in BOTH Korean and English. "
+         "Each step must be a brief, guardian-friendly summary (not verbose reasoning)."),
         ("human",
          "Breed: {breed}, Name: {name}\n"
          "Today's Record: Mood={mood}, Food={food}, Walk={walk}min, Poop={poop}\n"
@@ -492,7 +597,7 @@ def vet_agent(state: AgentState):
     ])
 
     chain = prompt | llm.with_structured_output(HealthAnalysis)
-    result = chain.invoke({
+    result = _invoke_with_retry(chain, {
         "breed_health": breed_health_context or "데이터 없음",
         "disease_qa": disease_qa_context or "데이터 없음",
         "kisti_disease": kisti_disease_context or "데이터 없음",
@@ -504,10 +609,17 @@ def vet_agent(state: AgentState):
         "walk": logs.get("walk", "0"),
         "poop": logs.get("poop", "정상"),
         "notes": logs.get("notes", ""),
-    })
+        "_agent_name": "vet",
+    }, base_temp=temp)
 
     result_dict = result.model_dump()
-    result_dict["rag_sources"] = rag_sources
+    result_dict["rag_sources"] = [s.model_dump() for s in rag_sources]
+
+    # 위험도별 긴급 안내 자동 추가
+    risk = result.risk_level.value
+    guidance = EMERGENCY_GUIDANCE.get(risk, EMERGENCY_GUIDANCE["Low"])
+    result_dict["emergency_guidance_ko"] = guidance["ko"]
+    result_dict["emergency_guidance_en"] = guidance["en"]
 
     # A2A: 위험도 높으면 경고 메모
     memos = state.get("agent_memos", [])
@@ -523,19 +635,54 @@ def vet_agent(state: AgentState):
     return {"health": result_dict, "agent_memos": memos}
 
 
+# --- Alert Handler (위험도 High/Critical 시 긴급 안내 추가) ---
+def alert_handler(state: AgentState):
+    """Conditional edge target: 위험도가 High 이상일 때 추가 안내를 삽입합니다."""
+    health = state.get("health", {})
+    risk = health.get("risk_level", "Low")
+
+    guidance = EMERGENCY_GUIDANCE.get(risk, EMERGENCY_GUIDANCE["Low"])
+    health["emergency_guidance_ko"] = guidance["ko"]
+    health["emergency_guidance_en"] = guidance["en"]
+
+    logger.warning(
+        "Alert handler triggered: risk_level=%s", risk,
+        extra={"agent_name": "alert_handler", "risk_level": risk},
+    )
+
+    return {"health": health}
+
+
+# --- Conditional Edge: Vet → alert_handler or END ---
+def route_after_vet(state: AgentState) -> str:
+    """Vet 분석 후 위험도에 따라 분기합니다."""
+    health = state.get("health", {})
+    risk = health.get("risk_level", "Low")
+    if risk in ("High", "Critical"):
+        return "alert_handler"
+    return END
+
+
 # --- Graph Orchestration ---
 def build_agent_graph():
-    """LangGraph StateGraph를 구축합니다 (Memory 포함)."""
+    """LangGraph StateGraph를 구축합니다 (Memory + Conditional Edge 포함)."""
     workflow = StateGraph(AgentState)
 
     workflow.add_node("oracle", oracle_agent)
     workflow.add_node("journalist", journalist_agent)
     workflow.add_node("vet", vet_agent)
+    workflow.add_node("alert_handler", alert_handler)
 
     workflow.set_entry_point("oracle")
     workflow.add_edge("oracle", "journalist")
     workflow.add_edge("journalist", "vet")
-    workflow.add_edge("vet", END)
+
+    # Conditional edge: Vet → alert_handler (High/Critical) or END (Low/Medium)
+    workflow.add_conditional_edges("vet", route_after_vet, {
+        "alert_handler": "alert_handler",
+        END: END,
+    })
+    workflow.add_edge("alert_handler", END)
 
     memory = MemorySaver()
     return workflow.compile(checkpointer=memory)

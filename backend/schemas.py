@@ -37,6 +37,40 @@ class RiskLevel(str, Enum):
     CRITICAL = "Critical"
 
 
+# --- 의료 고지 (Safety Disclaimer) ---
+MEDICAL_DISCLAIMER_KO = "이 분석은 수의학적 참고 정보이며, 전문 수의사의 진료를 대체하지 않습니다."
+MEDICAL_DISCLAIMER_EN = "This analysis is for reference only and does not replace professional veterinary advice."
+
+EMERGENCY_GUIDANCE = {
+    "Low": {
+        "ko": "현재 특별한 이상은 보이지 않습니다.",
+        "en": "No significant concerns at this time.",
+    },
+    "Medium": {
+        "ko": "1주 내 호전되지 않으면 수의사 상담을 권장합니다.",
+        "en": "If symptoms don't improve within a week, consult a veterinarian.",
+    },
+    "High": {
+        "ko": "가능한 빨리 가까운 동물병원을 방문해주세요.",
+        "en": "Please visit a veterinary clinic as soon as possible.",
+    },
+    "Critical": {
+        "ko": "즉시 응급 동물병원을 방문해주세요. 야간/공휴일 응급 진료 가능 병원을 확인하세요.",
+        "en": "Visit an emergency veterinary hospital immediately. Check for 24-hour emergency clinics.",
+    },
+}
+
+
+# --- RAG 근거 출처 표준화 ---
+class SourceItem(BaseModel):
+    """RAG 검색 결과의 표준화된 출처 정보"""
+    title: str = Field(description="문서 제목 (예: '푸들 건강 정보')")
+    snippet: str = Field(default="", max_length=300, description="관련 텍스트 스니펫")
+    source_type: str = Field(description="데이터 소스 (breeds/memes/sns/disease_qa/kisti_disease/personas)")
+    score: float = Field(default=0.0, ge=0.0, le=1.0, description="유사도 점수")
+    metadata: dict = Field(default_factory=dict, description="추가 메타데이터 (breed, disease_code 등)")
+
+
 # --- Agent Output Models (다국어 지원) ---
 class HoroscopeResult(BaseModel):
     """Oracle Agent 구조화 출력 - 한국어/영어 동시 생성"""
@@ -79,19 +113,27 @@ class DiaryResult(BaseModel):
 
 
 class HealthAnalysis(BaseModel):
-    """Vet Agent 구조화 출력 - CoT 사고 과정 포함, 한국어/영어 동시 생성"""
+    """Vet Agent 구조화 출력 - CoT 사고 과정 포함, 한국어/영어 동시 생성
+
+    CoT 각 단계는 보호자가 이해할 수 있는 '요약된 근거' 수준으로 작성됩니다.
+    내부 추론 과정은 숨기고, 사용자에게 유용한 결론과 근거만 노출합니다.
+    """
     risk_level: RiskLevel = Field(description="위험도 수준")
-    symptom_analysis_ko: str = Field(description="Step 1: 증상 분석 (한국어)")
-    symptom_analysis_en: str = Field(description="Step 1: Symptom analysis (English)")
-    duration_context_ko: str = Field(description="Step 2: 기간/빈도 맥락 (한국어)")
-    duration_context_en: str = Field(description="Step 2: Duration/frequency context (English)")
-    breed_context_ko: str = Field(description="Step 3: 견종 특성 기반 분석 (한국어)")
-    breed_context_en: str = Field(description="Step 3: Breed-specific analysis (English)")
-    conclusion_ko: str = Field(description="Step 4: 최종 결론 (한국어)")
-    conclusion_en: str = Field(description="Step 4: Final conclusion (English)")
+    symptom_analysis_ko: str = Field(description="Step 1: 증상 분석 요약 — 보호자가 이해할 수 있는 핵심 소견 1~2문장 (한국어)")
+    symptom_analysis_en: str = Field(description="Step 1: Symptom summary — key findings in 1-2 sentences for guardians (English)")
+    duration_context_ko: str = Field(description="Step 2: 기간/빈도 요약 — 관찰 기간과 패턴 1~2문장 (한국어)")
+    duration_context_en: str = Field(description="Step 2: Duration summary — observation period and patterns in 1-2 sentences (English)")
+    breed_context_ko: str = Field(description="Step 3: 견종 관련 요약 — 해당 견종의 관련 특성 1~2문장 (한국어)")
+    breed_context_en: str = Field(description="Step 3: Breed relevance summary — breed-specific traits in 1-2 sentences (English)")
+    conclusion_ko: str = Field(description="Step 4: 최종 결론 — 종합 판단과 위험도 근거 (한국어)")
+    conclusion_en: str = Field(description="Step 4: Final conclusion — overall assessment and risk rationale (English)")
     advice_ko: str = Field(description="보호자를 위한 구체적 행동 권장사항 (한국어)")
     advice_en: str = Field(description="Specific action recommendations for guardian (English)")
-    rag_sources: list[str] = Field(default_factory=list, description="참조된 RAG 데이터 출처")
+    disclaimer_ko: str = Field(default=MEDICAL_DISCLAIMER_KO, description="의료 고지 (한국어)")
+    disclaimer_en: str = Field(default=MEDICAL_DISCLAIMER_EN, description="Medical disclaimer (English)")
+    emergency_guidance_ko: str = Field(default="", description="위험도별 긴급 안내 (한국어)")
+    emergency_guidance_en: str = Field(default="", description="Risk-level emergency guidance (English)")
+    rag_sources: list[SourceItem] = Field(default_factory=list, description="참조된 RAG 데이터 출처 (표준화)")
 
     # Legacy fields for backward compatibility (deprecated)
     symptom_analysis: Optional[str] = None

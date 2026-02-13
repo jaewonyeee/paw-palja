@@ -134,27 +134,70 @@ def load_data():
     return documents
 
 
+# --- 컬렉션 전략 설정 ---
+# CHROMA_MULTI_COLLECTION=true 설정 시 소스별 컬렉션 분리 (확장성 향상)
+_USE_MULTI_COLLECTION = os.getenv("CHROMA_MULTI_COLLECTION", "false").lower() in ("true", "1", "yes")
+
+# 소스별 컬렉션 매핑 (다중 컬렉션 모드)
+_SOURCE_COLLECTION_MAP = {
+    "breeds": "pawpalja_breeds",
+    "memes": "pawpalja_memes",
+    "sns": "pawpalja_memes",         # memes와 같은 컬렉션
+    "personas": "pawpalja_memes",    # memes와 같은 컬렉션
+    "disease_qa": "pawpalja_disease",
+    "kisti_disease": "pawpalja_disease",
+}
+
+
+def _get_collection_name(source_filter: str | None = None) -> str:
+    """소스 필터에 따른 컬렉션 이름을 반환합니다."""
+    if not _USE_MULTI_COLLECTION or not source_filter:
+        return "pawpalja_collection"
+    return _SOURCE_COLLECTION_MAP.get(source_filter, "pawpalja_collection")
+
+
 def build_vector_db():
-    """데이터를 로드하고 ChromaDB 벡터 DB를 구축합니다."""
+    """데이터를 로드하고 ChromaDB 벡터 DB를 구축합니다.
+
+    CHROMA_MULTI_COLLECTION=true 설정 시 소스별 컬렉션으로 분리합니다.
+    """
     print("데이터 로드 중...")
     docs = load_data()
     if not docs:
         print("인덱싱할 데이터가 없습니다.")
         return None
 
-    print(f"{len(docs)}개 문서를 ChromaDB에 인덱싱 중...")
     embeddings = get_embeddings()
     persist_directory = os.getenv("CHROMA_PATH", os.path.join(BASE_DIR, "data", "chroma"))
 
-    vector_db = Chroma.from_documents(
-        documents=docs,
-        embedding=embeddings,
-        persist_directory=persist_directory,
-        collection_name="pawpalja_collection",
-    )
+    if _USE_MULTI_COLLECTION:
+        # 다중 컬렉션 모드: 소스별로 분리 인덱싱
+        from collections import defaultdict
+        docs_by_collection = defaultdict(list)
+        for doc in docs:
+            source = doc.metadata.get("source", "")
+            collection = _SOURCE_COLLECTION_MAP.get(source, "pawpalja_collection")
+            docs_by_collection[collection].append(doc)
 
-    print(f"벡터 DB 구축 완료: {persist_directory} ({len(docs)}개 문서)")
-    return vector_db
+        for collection_name, collection_docs in docs_by_collection.items():
+            print(f"  {collection_name}: {len(collection_docs)}개 문서 인덱싱 중...")
+            Chroma.from_documents(
+                documents=collection_docs,
+                embedding=embeddings,
+                persist_directory=persist_directory,
+                collection_name=collection_name,
+            )
+        print(f"다중 컬렉션 벡터 DB 구축 완료: {len(docs_by_collection)}개 컬렉션, 총 {len(docs)}개 문서")
+    else:
+        # 단일 컬렉션 모드 (기본)
+        print(f"{len(docs)}개 문서를 ChromaDB에 인덱싱 중...")
+        Chroma.from_documents(
+            documents=docs,
+            embedding=embeddings,
+            persist_directory=persist_directory,
+            collection_name="pawpalja_collection",
+        )
+        print(f"벡터 DB 구축 완료: {persist_directory} ({len(docs)}개 문서)")
 
 
 def query_rag(query, k=2):
@@ -172,18 +215,27 @@ def query_rag(query, k=2):
 
 
 def query_rag_with_filter(query, source_filter=None, k=2):
-    """메타데이터 필터를 적용한 검색을 수행합니다."""
+    """메타데이터 필터를 적용한 검색을 수행합니다.
+
+    다중 컬렉션 모드에서는 소스별 전용 컬렉션에서 검색합니다.
+    단일 컬렉션 모드에서는 metadata 필터로 검색합니다.
+    """
     embeddings = get_embeddings()
     persist_directory = os.getenv("CHROMA_PATH", os.path.join(BASE_DIR, "data", "chroma"))
+    collection_name = _get_collection_name(source_filter)
 
     vector_db = Chroma(
         persist_directory=persist_directory,
         embedding_function=embeddings,
-        collection_name="pawpalja_collection",
+        collection_name=collection_name,
     )
 
-    where_filter = {"source": source_filter} if source_filter else None
-    results = vector_db.similarity_search(query, k=k, filter=where_filter)
+    # 다중 컬렉션 모드에서는 이미 소스별 분리되므로 필터 불필요
+    if _USE_MULTI_COLLECTION and source_filter:
+        results = vector_db.similarity_search(query, k=k)
+    else:
+        where_filter = {"source": source_filter} if source_filter else None
+        results = vector_db.similarity_search(query, k=k, filter=where_filter)
     return results
 
 

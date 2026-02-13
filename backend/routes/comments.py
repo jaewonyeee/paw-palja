@@ -1,12 +1,14 @@
 """
 댓글 관련 API 라우터 (생성, SSE 스트리밍)
+SSE 안정성: Last-Event-ID 재연결, 중복 방지 키(comment_id), 타임아웃 처리
 """
 import json
 import time
 import random
 import asyncio
 import logging
-from fastapi import APIRouter, HTTPException, Depends, Query, Request
+import uuid
+from fastapi import APIRouter, HTTPException, Depends, Query, Request, Header
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.schemas import CommentRequest
@@ -24,6 +26,9 @@ logger = logging.getLogger("pawpalja.comments")
 router = APIRouter()
 
 from backend.rate_limit import limiter
+
+# SSE 타임아웃 설정 (초)
+_SSE_TIMEOUT = 120
 
 
 @router.post("/comments/generate")
@@ -69,10 +74,17 @@ async def stream_comments(
     entry_id: str,
     mode: str = "new",
     token: str = Query(...),
+    last_event_id: str = Header(None, alias="Last-Event-ID"),
     db: AsyncSession = Depends(get_db),
 ):
     """SSE로 댓글을 실시간 스트리밍합니다. mode=edit이면 수정 반응만 생성.
-    EventSource는 헤더를 지원하지 않으므로 token을 query param으로 전달합니다."""
+    EventSource는 헤더를 지원하지 않으므로 token을 query param으로 전달합니다.
+
+    SSE 안정성:
+    - Last-Event-ID: 클라이언트 재연결 시 이미 전송된 댓글 이후부터 재개
+    - comment_id: 각 댓글에 고유 ID 부여하여 중복 방지
+    - 타임아웃: _SSE_TIMEOUT 초 후 자동 종료
+    """
     lang = get_lang(request)
     payload = decode_token(token, lang)
     if payload.get("type") != "access":
@@ -97,6 +109,16 @@ async def stream_comments(
 
     async def event_stream():
         loop = asyncio.get_running_loop()
+        start_time = time.time()
+        event_index = 0
+        # Last-Event-ID를 기반으로 이미 전송된 댓글 수를 추적
+        skip_count = 0
+        if last_event_id:
+            try:
+                skip_count = int(last_event_id.split("-")[-1]) + 1
+            except (ValueError, IndexError):
+                skip_count = 0
+
         try:
             if mode == "edit":
                 # edit 반응도 executor에서 실행 (blocking LLM 호출)
@@ -104,6 +126,16 @@ async def stream_comments(
                     None, lambda: generate_edit_reactions("", diary_text, dog_name, dog_breed)
                 )
                 for reaction in reactions:
+                    # 타임아웃 체크
+                    if time.time() - start_time > _SSE_TIMEOUT:
+                        logger.warning("SSE timeout reached for entry %s", entry_id)
+                        break
+
+                    # 재연결 시 이미 전송된 댓글 건너뛰기
+                    if event_index < skip_count:
+                        event_index += 1
+                        continue
+
                     await asyncio.sleep(2)
                     has_text = (
                         (reaction.get("text_ko") and reaction["text_ko"].strip()) or
@@ -111,17 +143,31 @@ async def stream_comments(
                         (reaction.get("text") and reaction["text"].strip())
                     )
                     if reaction and has_text:
+                        # 중복 방지 키 추가
+                        comment_id = f"{entry_id}-{event_index}"
+                        reaction["comment_id"] = comment_id
                         async with AsyncSessionLocal() as session:
                             await user_store.add_comments_to_diary(session, user_id, entry_id, [reaction])
                         data = json.dumps(reaction, ensure_ascii=False)
-                        yield f"data: {data}\n\n"
+                        yield f"id: {comment_id}\ndata: {data}\n\n"
                     else:
                         logger.warning("Empty comment skipped for entry %s: %s", entry_id, reaction)
+                    event_index += 1
             else:
                 # 진짜 순차 스트리밍: 댓글 1개 생성 → 즉시 전송 → 다음 생성
                 count = 3
                 selected = random.sample(COMMENT_PERSONAS, min(count, len(COMMENT_PERSONAS)))
                 for i, persona in enumerate(selected):
+                    # 타임아웃 체크
+                    if time.time() - start_time > _SSE_TIMEOUT:
+                        logger.warning("SSE timeout reached for entry %s", entry_id)
+                        break
+
+                    # 재연결 시 이미 전송된 댓글 건너뛰기
+                    if event_index < skip_count:
+                        event_index += 1
+                        continue
+
                     if i > 0:
                         await asyncio.sleep(random.uniform(3, 7))
                     comment = await loop.run_in_executor(
@@ -135,12 +181,16 @@ async def stream_comments(
                         (comment.get("text") and comment["text"].strip())
                     )
                     if comment and has_text:
+                        # 중복 방지 키 추가
+                        comment_id = f"{entry_id}-{event_index}"
+                        comment["comment_id"] = comment_id
                         async with AsyncSessionLocal() as session:
                             await user_store.add_comments_to_diary(session, user_id, entry_id, [comment])
                         data = json.dumps(comment, ensure_ascii=False)
-                        yield f"data: {data}\n\n"
+                        yield f"id: {comment_id}\ndata: {data}\n\n"
                     else:
                         logger.warning("Empty comment skipped for entry %s: %s", entry_id, comment)
+                    event_index += 1
         except Exception:
             logger.exception("SSE 스트리밍 중 오류")
             yield f'data: {json.dumps({"error": get_message("comment_create_error", lang)}, ensure_ascii=False)}\n\n'
@@ -149,5 +199,9 @@ async def stream_comments(
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
     )

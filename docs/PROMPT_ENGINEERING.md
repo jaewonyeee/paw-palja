@@ -177,3 +177,111 @@ result = llm_with_schema.invoke(prompt)
 1. LLM 출력이 항상 예측 가능한 구조를 가짐
 2. 파싱 에러 없이 프론트엔드에서 바로 사용 가능
 3. 다국어 필드(`_ko`, `_en`)가 자동으로 생성됨
+
+---
+
+## 출력 스키마 실패 대비 전략
+
+`with_structured_output()` 사용 시에도 모델/네트워크 문제로 파싱 실패가 발생할 수 있습니다.
+`_invoke_with_retry()` 래퍼를 통해 다음 전략을 적용합니다:
+
+| 시도 | 전략 | 설명 |
+|---|---|---|
+| 1차 | 기본 temperature | 정상 호출 |
+| 2차 | temperature - 0.1 | 출력 안정화를 위해 temperature 낮춤 |
+| 3차 | temperature - 0.2 | 최소 temperature로 최대한 결정적 출력 |
+| 실패 | 예외 전파 | 상위 호출자에서 사용자에게 에러 메시지 |
+
+```python
+# backend/agents.py
+result = _invoke_with_retry(chain, params, max_retries=2, base_temp=0.8)
+```
+
+---
+
+## 입력 상황별 프롬프트 분기 테스트 케이스
+
+다양한 입력 상황에서 프롬프트가 올바르게 동작하는지 확인하기 위한 테스트 케이스입니다.
+
+### TC-01: 신규 사용자 (기록 없음)
+
+```
+입력:
+  dog_profile: { name: "새봄", breed: "믹스견", mbti: "ENFP" }
+  daily_logs: { mood: "평범", food: "보통", walk: "0", poop: "정상", notes: "" }
+
+기대 동작:
+  - Oracle: 믹스견 기본 운세 생성 (RAG에서 믹스견 정보 조회)
+  - Journalist: 기본 페르소나로 일기 생성, 빈 notes 처리
+  - Vet: 이상 없음 판정 (risk_level: Low)
+  - 모든 필드가 비어있지 않아야 함
+```
+
+### TC-02: 모호한 입력 (배변: "이상해요")
+
+```
+입력:
+  dog_profile: { name: "코코", breed: "푸들", mbti: "INFJ" }
+  daily_logs: { mood: "우울", food: "조금", walk: "10", poop: "묽음", notes: "배변이 이상해요" }
+
+기대 동작:
+  - Vet: notes에서 "이상해요" 키워드 감지 → 질병 QA RAG 검색 활성화
+  - risk_level: Medium 이상
+  - advice에 "수의사 상담" 포함
+  - RAG sources에 disease_qa 결과 포함
+```
+
+### TC-03: 견종 미선택 / 믹스견
+
+```
+입력:
+  dog_profile: { name: "멍멍이", breed: "믹스견", mbti: "ENFP" }
+  daily_logs: { mood: "좋음", food: "완식", walk: "30", poop: "정상", notes: "" }
+
+기대 동작:
+  - Oracle: "믹스견"에 맞는 범용 운세 생성
+  - Vet: 특정 견종 유전 질환 없이 일반적 건강 분석
+  - breed_context에 "다양한 유전 배경" 또는 "일반적 건강 관리" 언급
+```
+
+### TC-04: 건강 위험 신호 (Critical)
+
+```
+입력:
+  dog_profile: { name: "두부", breed: "불독", mbti: "ISTP" }
+  daily_logs: { mood: "아픔", food: "안먹음", walk: "0", poop: "묽음", notes: "구토를 3번 했어요. 힘이 없어요." }
+
+기대 동작:
+  - Vet: risk_level = High 또는 Critical
+  - emergency_guidance에 병원 즉시 방문 안내 포함
+  - A2A: Vet → Oracle alert 메모 전송
+  - LangGraph: alert_handler 노드 실행
+  - disclaimer 포함 (의료 고지)
+```
+
+### TC-05: 긴 메모 입력
+
+```
+입력:
+  dog_profile: { name: "달이", breed: "시츄", mbti: "ESFJ" }
+  daily_logs: { mood: "좋음", food: "완식", walk: "60", poop: "정상",
+    notes: "오늘 친구 강아지랑 놀았는데 너무 신나서 뛰어다녔어요. 간식도 많이 먹었고 물도 잘 마셨어요. 저녁에는 좀 피곤한 것 같아요." }
+
+기대 동작:
+  - Journalist: 긴 notes를 일기에 자연스럽게 반영
+  - Vet: 활발한 활동 후 피로는 정상 (risk_level: Low)
+  - 500자 max_length 검증 통과
+```
+
+### TC-06: 다국어 생성 검증
+
+```
+입력:
+  dog_profile: { name: "Max", breed: "Golden Retriever", mbti: "ENFP", language: "en" }
+  daily_logs: { mood: "최고", food: "완식", walk: "45", poop: "정상", notes: "Had a great day!" }
+
+기대 동작:
+  - 모든 _ko 필드와 _en 필드가 모두 채워져야 함
+  - _ko 필드는 한국어, _en 필드는 영어
+  - 어느 쪽도 빈 문자열이면 안 됨
+```
