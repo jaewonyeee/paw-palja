@@ -97,9 +97,10 @@ export default function Home() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           {t('home.tabHome', 'Home')}
         </button>
-        <button className="tab-item" onClick={() => navigate('/diary/new')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-          {t('home.tabNew', 'New')}
+        <button className="tab-item tab-fab" onClick={() => navigate('/diary/new')}>
+          <div className="tab-fab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          </div>
         </button>
         <button className="tab-item" onClick={() => navigate('/social')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -149,7 +150,38 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
         </div>
       </motion.div>
 
-      {/* Today's diary or CTA */}
+      {/* Quick mood selector */}
+      {!loading && !todayDiary && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+          style={styles.quickMoodCard}
+        >
+          <p style={styles.quickMoodLabel}>{t('home.howIsToday', '오늘 기분은 어때요?')}</p>
+          <div style={styles.quickMoodRow}>
+            {[
+              { icon: '🤩', label: t('diary.moodGreat', '최고') },
+              { icon: '😊', label: t('diary.moodGood', '좋음') },
+              { icon: '😐', label: t('diary.moodNeutral', '평범') },
+              { icon: '😢', label: t('diary.moodSad', '우울') },
+              { icon: '🤒', label: t('diary.moodSick', '아픔') },
+            ].map((m, i) => (
+              <motion.button
+                key={i}
+                whileTap={{ scale: 0.88 }}
+                onClick={() => navigate('/diary/new', { state: { presetMood: i } })}
+                style={styles.quickMoodBtn}
+              >
+                <span style={{ fontSize: '1.5rem' }}>{m.icon}</span>
+                <span style={styles.quickMoodText}>{m.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Today's diary or feature cards */}
       {loading ? (
         <div style={styles.loadingWrap}><div className="spinner" /></div>
       ) : todayDiary ? (
@@ -164,26 +196,28 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.5 }}
-          style={styles.ctaCard}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          style={styles.featureGrid}
         >
-          <motion.span
-            animate={{ y: [0, -6, 0] }}
-            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-            style={{ fontSize: '3rem' }}
-          >
-            📝
-          </motion.span>
-          <h3 style={styles.ctaTitle}>{t('home.noDiaryYet', '오늘의 일기가 아직 없어요')}</h3>
-          <p style={styles.ctaDesc}>{t('home.recordToday', '{{name}}의 오늘 하루를 기록해볼까요?', { name: user.dog?.name || t('home.defaultDogName', '멍멍이') })}</p>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="btn btn-primary"
-            onClick={() => navigate('/diary/new')}
-          >
-            {t('home.createTodayDiary', '오늘의 일기 만들기')}
-          </motion.button>
+          {[
+            { icon: '🔮', title: t('home.featureHoroscope', 'AI 운세'), desc: t('home.featureHoroscopeDesc', '매일 달라지는 맞춤 운세') },
+            { icon: '🩺', title: t('home.featureHealth', '건강 분석'), desc: t('home.featureHealthDesc', '식사·산책·배변 AI 분석') },
+            { icon: '💬', title: t('home.featureComments', 'AI 댓글'), desc: t('home.featureCommentsDesc', '개성 넘치는 AI 코멘트') },
+          ].map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + i * 0.1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/diary/new')}
+              style={styles.featureCard}
+            >
+              <span style={{ fontSize: '1.5rem' }}>{f.icon}</span>
+              <h4 style={styles.featureTitle}>{f.title}</h4>
+              <p style={styles.featureDesc}>{f.desc}</p>
+            </motion.div>
+          ))}
         </motion.div>
       )}
 
@@ -250,17 +284,17 @@ const styles = {
     gap: 12,
   },
   avatarWrap: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     background: 'var(--bg-card)',
-    borderRadius: 10,
+    borderRadius: 12,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     border: '1.5px solid var(--border-card)',
     overflow: 'hidden',
   },
-  avatar: { fontSize: '1.1rem' },
+  avatar: { fontSize: '1.2rem' },
   avatarImg: {
     width: '100%',
     height: '100%',
@@ -332,25 +366,72 @@ const styles = {
     fontWeight: 600,
     color: 'rgba(255,255,255,0.8)',
   },
-  ctaCard: {
+  /* Quick mood selector */
+  quickMoodCard: {
     background: 'white',
     borderRadius: 'var(--radius-lg)',
-    padding: '32px 24px',
+    padding: '16px 18px',
+    border: '1.5px solid var(--border-light)',
+    boxShadow: 'var(--shadow-sm)',
+  },
+  quickMoodLabel: {
+    fontSize: '0.82rem',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    marginBottom: 12,
+  },
+  quickMoodRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  quickMoodBtn: {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 12,
-    boxShadow: 'var(--shadow-card)',
-    border: '1.5px solid var(--border-card)',
+    gap: 4,
+    padding: '10px 4px',
+    background: 'var(--bg-card)',
+    border: '1.5px solid var(--border-light)',
+    borderRadius: 14,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    transition: 'all 0.2s ease',
   },
-  ctaTitle: {
-    fontSize: '1.05rem',
+  quickMoodText: {
+    fontSize: '0.62rem',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+  },
+  /* Feature grid (empty state) */
+  featureGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 10,
+  },
+  featureCard: {
+    background: 'white',
+    borderRadius: 'var(--radius-md)',
+    padding: '16px 12px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 6,
+    textAlign: 'center',
+    border: '1.5px solid var(--border-light)',
+    boxShadow: 'var(--shadow-sm)',
+    cursor: 'pointer',
+  },
+  featureTitle: {
+    fontSize: '0.78rem',
     fontWeight: 700,
     color: 'var(--text-primary)',
   },
-  ctaDesc: {
-    fontSize: '0.82rem',
-    color: 'var(--text-secondary)',
+  featureDesc: {
+    fontSize: '0.65rem',
+    lineHeight: 1.4,
+    color: 'var(--text-muted)',
   },
   sectionTitle: {
     fontSize: '0.88rem',

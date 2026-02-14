@@ -375,17 +375,20 @@ export default function DiaryDetail() {
       </div>
 
       <div className="page-content" style={styles.content}>
-        {/* Section tabs */}
+        {/* Section pills — scroll to section */}
         <div style={styles.sectionTabs}>
           {[
-            { id: 'diary', label: `📖 ${t('diary.title')}`, icon: '📖' },
-            { id: 'fortune', label: `🔮 ${t('diary.horoscope')}`, icon: '🔮' },
-            { id: 'health', label: `🩺 ${t('diary.health')}`, icon: '🩺' },
+            { id: 'diary', label: `📖 ${t('diary.title')}` },
+            { id: 'fortune', label: `🔮 ${t('diary.horoscope')}` },
+            { id: 'health', label: `🩺 ${t('diary.health')}` },
           ].map((s) => (
             <motion.button
               key={s.id}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveSection(s.id)}
+              onClick={() => {
+                setActiveSection(s.id)
+                document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
               style={{ ...styles.sectionTab, ...(activeSection === s.id ? styles.sectionTabActive : {}) }}
             >
               {s.label}
@@ -658,198 +661,191 @@ export default function DiaryDetail() {
               >
                 {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
               </motion.button>
-            </motion.div>
-          )}
 
-          {/* FORTUNE Section */}
-          {activeSection === 'fortune' && (
-            <motion.div
-              key="fortune"
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div ref={captureRef}>
-              <div style={styles.fortuneCard}>
-                <div style={styles.fortuneHeader}>
-                  <span style={{ fontSize: '2rem' }}>🔮</span>
-                  <h3 style={styles.fortuneTitle}>{t('diary.horoscope')}</h3>
-                </div>
-                <p style={styles.fortuneSummary}>{getLangText(horoscope, 'summary')}</p>
-                <p style={styles.fortuneContent}>{getLangText(horoscope, 'content')}</p>
-
-                <div style={styles.fortuneTags}>
-                  {getLangText(horoscope, 'lucky_item') && (
-                    <div style={styles.fTag}>
-                      <span>🍀</span>
-                      <span style={styles.fTagLabel}>{t('diary.luckyItem')}</span>
-                      <span style={styles.fTagValue}>{getLangText(horoscope, 'lucky_item')}</span>
+              {/* FORTUNE Section — inline accordion */}
+              {getLangText(horoscope, 'summary') && (
+                <div id="section-fortune" style={styles.accordionSection}>
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveSection(activeSection === 'fortune' ? 'diary' : 'fortune')}
+                    style={styles.accordionHeader}
+                  >
+                    <div style={styles.accordionHeaderLeft}>
+                      <span style={{ fontSize: '1.3rem' }}>🔮</span>
+                      <h4 style={styles.accordionTitle}>{t('diary.horoscope')}</h4>
                     </div>
-                  )}
-                  {getLangText(horoscope, 'weather_context') && (
-                    <div style={styles.fTag}>
-                      <span>🌤️</span>
-                      <span style={styles.fTagLabel}>{t('diary.weatherContext')}</span>
-                      <span style={styles.fTagValue}>{getLangText(horoscope, 'weather_context')}</span>
+                    <div style={styles.accordionRight}>
+                      <span style={styles.accordionSummary}>{getLangText(horoscope, 'summary').slice(0, 30)}...</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', transform: activeSection === 'fortune' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                     </div>
-                  )}
-                  {getLangText(horoscope, 'trend_reference') && (
-                    <div style={styles.fTag}>
-                      <span>📈</span>
-                      <span style={styles.fTagLabel}>{t('diary.trendReference')}</span>
-                      <span style={styles.fTagValue}>{getLangText(horoscope, 'trend_reference')}</span>
-                    </div>
-                  )}
-                  {getLangText(horoscope, 'interaction_hint') && (
-                    <div style={styles.fTag}>
-                      <span>💡</span>
-                      <span style={styles.fTagLabel}>{t('diary.interactionHint')}</span>
-                      <span style={styles.fTagValue}>{getLangText(horoscope, 'interaction_hint')}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              </div>{/* end captureRef */}
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCapture}
-                disabled={capturing}
-                style={styles.captureBtn}
-              >
-                {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
-              </motion.button>
-            </motion.div>
-          )}
-
-          {/* HEALTH Section */}
-          {activeSection === 'health' && (
-            <motion.div
-              key="health"
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div ref={captureRef}>
-              <div style={styles.healthCard}>
-                <div style={styles.healthHeader}>
-                  <span style={{ fontSize: '2rem' }}>🩺</span>
-                  <h3 style={styles.healthTitle}>{t('diary.health')}</h3>
-                  {health.risk_level && (
-                    <span style={{
-                      ...styles.riskBadge,
-                      background: (RISK_COLORS[health.risk_level] || RISK_COLORS.Low).bg,
-                      color: (RISK_COLORS[health.risk_level] || RISK_COLORS.Low).color,
-                    }}>
-                      <span style={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        background: (RISK_COLORS[health.risk_level] || RISK_COLORS.Low).dot,
-                        display: 'inline-block',
-                      }} />
-                      {t(`health.${health.risk_level.toLowerCase()}`, health.risk_level)}
-                    </span>
-                  )}
-                </div>
-
-                {[
-                  { label: t('health.symptomAnalysis'), field: 'symptom_analysis', color: '#6B8F5E' },
-                  { label: t('health.durationContext'), field: 'duration_context', color: '#F0A04B' },
-                  { label: t('health.breedContext'), field: 'breed_context', color: '#E8A690' },
-                  { label: t('health.conclusion'), field: 'conclusion', color: '#A8D5BA' },
-                ].map((step, i) => {
-                  const content = getLangText(health, step.field)
-                  return content && (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      style={{ ...styles.cotStep, borderLeftColor: step.color }}
-                    >
-                      <span style={styles.cotLabel}>{step.label}</span>
-                      <p style={styles.cotContent}>{content}</p>
-                    </motion.div>
-                  )
-                })}
-
-                {getLangText(health, 'advice') && (
-                  <div style={styles.adviceBox}>
-                    <span>💊</span>
-                    <p style={styles.adviceText}>{getLangText(health, 'advice')}</p>
-                  </div>
-                )}
-
-                {health.risk_level && health.risk_level !== 'Low' && (
-                  <div style={styles.hospitalSection}>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      className="btn btn-primary"
-                      onClick={() => {
-                        if (hospitals.length > 0) { setHospitals([]); return; }
-                        setHospitalLoading(true)
-                        navigator.geolocation.getCurrentPosition(
-                          async (pos) => {
-                            try {
-                              const res = await api.nearbyHospitals(pos.coords.latitude, pos.coords.longitude)
-                              setHospitals(res.hospitals || [])
-                            } catch { setHospitals([]) }
-                            setHospitalLoading(false)
-                          },
-                          () => {
-                            setHospitalLoading(false)
-                            setHospitals([{ name: '위치 권한이 필요합니다', address: '브라우저 설정에서 위치 권한을 허용해주세요', phone: '', distance: '', url: '' }])
-                          },
-                        )
-                      }}
-                      style={{ width: '100%', marginTop: 12 }}
-                      disabled={hospitalLoading}
-                    >
-                      {hospitalLoading ? (
-                        <div className="spinner" style={{ width: 18, height: 18 }} />
-                      ) : hospitals.length > 0 ? t('common.close') : `🏥 ${t('diary.findHospital')}`}
-                    </motion.button>
-
-                    <AnimatePresence>
-                      {hospitals.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          style={styles.hospitalList}
-                        >
-                          {hospitals.map((h, i) => (
-                            <div key={i} style={styles.hospitalItem}>
-                              <div style={styles.hospitalInfo}>
-                                <span style={styles.hospitalName}>{h.name}</span>
-                                <span style={styles.hospitalAddr}>{h.address}</span>
-                                {h.phone && <span style={styles.hospitalPhone}>📞 {h.phone}</span>}
-                                {h.distance && <span style={styles.hospitalDist}>📍 {h.distance}m</span>}
+                  </motion.button>
+                  <AnimatePresence>
+                    {activeSection === 'fortune' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div style={styles.accordionBody}>
+                          <p style={styles.fortuneContent}>{getLangText(horoscope, 'content')}</p>
+                          <div style={styles.fortuneTags}>
+                            {getLangText(horoscope, 'lucky_item') && (
+                              <div style={styles.fTag}>
+                                <span>🍀</span>
+                                <span style={styles.fTagLabel}>{t('diary.luckyItem')}</span>
+                                <span style={styles.fTagValue}>{getLangText(horoscope, 'lucky_item')}</span>
                               </div>
-                              {h.url && (
-                                <a href={h.url} target="_blank" rel="noopener noreferrer" style={styles.hospitalLink}>
-                                  지도
-                                </a>
-                              )}
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </div>
-              </div>{/* end captureRef */}
+                            )}
+                            {getLangText(horoscope, 'weather_context') && (
+                              <div style={styles.fTag}>
+                                <span>🌤️</span>
+                                <span style={styles.fTagLabel}>{t('diary.weatherContext')}</span>
+                                <span style={styles.fTagValue}>{getLangText(horoscope, 'weather_context')}</span>
+                              </div>
+                            )}
+                            {getLangText(horoscope, 'trend_reference') && (
+                              <div style={styles.fTag}>
+                                <span>📈</span>
+                                <span style={styles.fTagLabel}>{t('diary.trendReference')}</span>
+                                <span style={styles.fTagValue}>{getLangText(horoscope, 'trend_reference')}</span>
+                              </div>
+                            )}
+                            {getLangText(horoscope, 'interaction_hint') && (
+                              <div style={styles.fTag}>
+                                <span>💡</span>
+                                <span style={styles.fTagLabel}>{t('diary.interactionHint')}</span>
+                                <span style={styles.fTagValue}>{getLangText(horoscope, 'interaction_hint')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCapture}
-                disabled={capturing}
-                style={styles.captureBtn}
-              >
-                {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
-              </motion.button>
+              {/* HEALTH Section — inline accordion */}
+              {(getLangText(health, 'conclusion') || health.risk_level) && (
+                <div id="section-health" style={styles.accordionSection}>
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setActiveSection(activeSection === 'health' ? 'diary' : 'health')}
+                    style={styles.accordionHeader}
+                  >
+                    <div style={styles.accordionHeaderLeft}>
+                      <span style={{ fontSize: '1.3rem' }}>🩺</span>
+                      <h4 style={styles.accordionTitle}>{t('diary.health')}</h4>
+                    </div>
+                    <div style={styles.accordionRight}>
+                      {health.risk_level && (
+                        <span style={{
+                          ...styles.riskBadgeMini,
+                          background: (RISK_COLORS[health.risk_level] || RISK_COLORS.Low).bg,
+                          color: (RISK_COLORS[health.risk_level] || RISK_COLORS.Low).color,
+                        }}>
+                          {t(`health.${health.risk_level.toLowerCase()}`, health.risk_level)}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', transform: activeSection === 'health' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                    </div>
+                  </motion.button>
+                  <AnimatePresence>
+                    {activeSection === 'health' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div style={styles.accordionBody}>
+                          {[
+                            { label: t('health.symptomAnalysis'), field: 'symptom_analysis', color: '#6B8F5E' },
+                            { label: t('health.durationContext'), field: 'duration_context', color: '#F0A04B' },
+                            { label: t('health.breedContext'), field: 'breed_context', color: '#E8A690' },
+                            { label: t('health.conclusion'), field: 'conclusion', color: '#A8D5BA' },
+                          ].map((step, i) => {
+                            const stepContent = getLangText(health, step.field)
+                            return stepContent && (
+                              <div key={i} style={{ ...styles.cotStep, borderLeftColor: step.color }}>
+                                <span style={styles.cotLabel}>{step.label}</span>
+                                <p style={styles.cotContent}>{stepContent}</p>
+                              </div>
+                            )
+                          })}
+                          {getLangText(health, 'advice') && (
+                            <div style={styles.adviceBox}>
+                              <span>💊</span>
+                              <p style={styles.adviceText}>{getLangText(health, 'advice')}</p>
+                            </div>
+                          )}
+                          {health.risk_level && health.risk_level !== 'Low' && (
+                            <div style={styles.hospitalSection}>
+                              <motion.button
+                                whileTap={{ scale: 0.97 }}
+                                className="btn btn-primary"
+                                onClick={() => {
+                                  if (hospitals.length > 0) { setHospitals([]); return; }
+                                  setHospitalLoading(true)
+                                  navigator.geolocation.getCurrentPosition(
+                                    async (pos) => {
+                                      try {
+                                        const res = await api.nearbyHospitals(pos.coords.latitude, pos.coords.longitude)
+                                        setHospitals(res.hospitals || [])
+                                      } catch { setHospitals([]) }
+                                      setHospitalLoading(false)
+                                    },
+                                    () => {
+                                      setHospitalLoading(false)
+                                      setHospitals([{ name: '위치 권한이 필요합니다', address: '브라우저 설정에서 위치 권한을 허용해주세요', phone: '', distance: '', url: '' }])
+                                    },
+                                  )
+                                }}
+                                style={{ width: '100%', marginTop: 12 }}
+                                disabled={hospitalLoading}
+                              >
+                                {hospitalLoading ? (
+                                  <div className="spinner" style={{ width: 18, height: 18 }} />
+                                ) : hospitals.length > 0 ? t('common.close') : `🏥 ${t('diary.findHospital')}`}
+                              </motion.button>
+                              <AnimatePresence>
+                                {hospitals.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    style={styles.hospitalList}
+                                  >
+                                    {hospitals.map((h, i) => (
+                                      <div key={i} style={styles.hospitalItem}>
+                                        <div style={styles.hospitalInfo}>
+                                          <span style={styles.hospitalName}>{h.name}</span>
+                                          <span style={styles.hospitalAddr}>{h.address}</span>
+                                          {h.phone && <span style={styles.hospitalPhone}>📞 {h.phone}</span>}
+                                          {h.distance && <span style={styles.hospitalDist}>📍 {h.distance}m</span>}
+                                        </div>
+                                        {h.url && (
+                                          <a href={h.url} target="_blank" rel="noopener noreferrer" style={styles.hospitalLink}>
+                                            지도
+                                          </a>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
             </motion.div>
           )}
         </AnimatePresence>
@@ -1335,6 +1331,60 @@ const styles = {
     borderRadius: 100,
     fontSize: '0.78rem',
     fontWeight: 700,
+  },
+  riskBadgeMini: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '2px 8px',
+    borderRadius: 100,
+    fontSize: '0.68rem',
+    fontWeight: 700,
+  },
+  /* Accordion sections */
+  accordionSection: {
+    background: 'white',
+    borderRadius: 'var(--radius-md)',
+    border: '1.5px solid var(--border-light)',
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  accordionHeader: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 16px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
+  accordionHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  accordionTitle: {
+    fontSize: '0.88rem',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+  },
+  accordionRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  accordionSummary: {
+    fontSize: '0.7rem',
+    fontWeight: 500,
+    color: 'var(--text-muted)',
+    maxWidth: 120,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  accordionBody: {
+    padding: '0 16px 16px',
   },
   cotStep: {
     padding: '10px 14px',

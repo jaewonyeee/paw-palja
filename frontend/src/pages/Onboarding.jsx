@@ -157,6 +157,18 @@ export default function Onboarding() {
         >
           {t('onboarding.startButton')}
         </motion.button>
+
+        {/* Browse without signup */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate('/explore')}
+          style={styles.browseBtn}
+        >
+          {t('onboarding.browseButton', '먼저 둘러볼게요')}
+        </motion.button>
       </div>
     </motion.div>
   )
@@ -335,5 +347,21 @@ const styles = {
     cursor: 'pointer',
     letterSpacing: '-0.02em',
     boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+  },
+  browseBtn: {
+    width: '100%',
+    maxWidth: 360,
+    marginTop: 8,
+    padding: '12px',
+    background: 'transparent',
+    color: 'rgba(255,255,255,0.7)',
+    border: '1px solid rgba(255,255,255,0.25)',
+    borderRadius: 16,
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    letterSpacing: '-0.02em',
+    backdropFilter: 'blur(10px)',
   },
 }

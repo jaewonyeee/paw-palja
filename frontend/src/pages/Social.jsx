@@ -169,9 +169,10 @@ export default function Social() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           {t('home.tabHome', 'Home')}
         </button>
-        <button className="tab-item" onClick={() => navigate('/diary/new')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-          {t('home.tabNew', 'New')}
+        <button className="tab-item tab-fab" onClick={() => navigate('/diary/new')}>
+          <div className="tab-fab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          </div>
         </button>
         <button className="tab-item active" onClick={() => navigate('/social')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
@@ -189,6 +190,7 @@ export default function Social() {
 function FeedCard({ item, lang, t, navigate }) {
   const diary = item.diary || {}
   const user = item.user || {}
+  const horoscope = item.horoscope || {}
   const date = formatDate(item.date || new Date().toISOString())
   const moodIcon = MOOD_MAP[diary.mood_icon] || '✨'
   const title = safeText(diary, 'title', lang) || t('diary.todayDiary', '오늘의 일기')
@@ -244,17 +246,24 @@ function FeedCard({ item, lang, t, navigate }) {
         )}
       </div>
 
-      {/* Like + Comment counts */}
+      {/* Fortune preview */}
+      {horoscope && safeText(horoscope, 'summary', lang) && (
+        <div style={styles.fortuneTag}>
+          <span>🔮</span>
+          <span style={styles.fortuneText}>{safeText(horoscope, 'summary', lang).slice(0, 50)}{safeText(horoscope, 'summary', lang).length > 50 ? '...' : ''}</span>
+        </div>
+      )}
+
+      {/* Stats */}
       <div style={styles.feedStats}>
-        {(item.like_count > 0 || item.user_comments_count > 0) && (
-          <>
-            {item.like_count > 0 && (
-              <span style={styles.feedStat}>{'\u2764\uFE0F'} {item.like_count}</span>
-            )}
-            {item.user_comments_count > 0 && (
-              <span style={styles.feedStat}>💬 {item.user_comments_count}</span>
-            )}
-          </>
+        {item.like_count > 0 && (
+          <span style={styles.feedStat}>❤️ {item.like_count}</span>
+        )}
+        {item.comments_count > 0 && (
+          <span style={styles.feedStat}>🤖 {item.comments_count}</span>
+        )}
+        {item.user_comments_count > 0 && (
+          <span style={styles.feedStat}>💬 {item.user_comments_count}</span>
         )}
       </div>
     </motion.div>
@@ -352,14 +361,15 @@ const styles = {
     marginBottom: 12,
   },
   feedAvatar: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     background: 'var(--bg-card)',
-    borderRadius: 10,
+    borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    border: '1.5px solid var(--border-light)',
   },
   feedAvatarImg: {
     width: '100%',
@@ -405,6 +415,21 @@ const styles = {
     fontSize: '0.82rem',
     lineHeight: 1.6,
     color: 'var(--text-secondary)',
+  },
+  fortuneTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    padding: '5px 10px',
+    background: 'rgba(108,92,231,0.06)',
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  fortuneText: {
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    color: 'var(--bg-purple)',
   },
   feedStats: {
     display: 'flex',

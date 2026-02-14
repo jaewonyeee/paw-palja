@@ -94,6 +94,9 @@ export default function Login() {
           {t('auth.signup')}
         </button>
       </div>
+      <button onClick={() => navigate('/explore')} style={styles.browseLink}>
+        {t('onboarding.browseButton', '먼저 둘러볼게요')} →
+      </button>
     </motion.div>
   )
 }
@@ -157,5 +160,17 @@ const styles = {
   footerText: {
     fontSize: '0.85rem',
     color: 'var(--text-muted)',
+  },
+  browseLink: {
+    display: 'block',
+    textAlign: 'center',
+    background: 'none',
+    border: 'none',
+    color: 'var(--text-muted)',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    paddingBottom: 8,
   },
 }

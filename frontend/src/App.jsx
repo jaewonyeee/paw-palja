@@ -7,6 +7,7 @@ import './App.css'
 import './i18n'
 
 const Onboarding = lazy(() => import('./pages/Onboarding'))
+const Explore = lazy(() => import('./pages/Explore'))
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 const Home = lazy(() => import('./pages/Home'))
@@ -61,7 +62,7 @@ function PageLoader() {
 
 function RootRedirect() {
   const { user } = useAuth()
-  return <Navigate to={user ? '/home' : '/onboarding'} replace />
+  return <Navigate to={user ? '/home' : '/explore'} replace />
 }
 
 function AppRoutes() {
@@ -70,6 +71,7 @@ function AppRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<RootRedirect />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
