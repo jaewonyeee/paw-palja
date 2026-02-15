@@ -86,7 +86,7 @@ export default function Social() {
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.avatarWrap}>
-            <span style={styles.avatar}>🌍</span>
+            <img src="/mascot/burti/burti-mini.png" alt="Burti" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <h1 style={styles.headerTitle}>{t('social.feedTitle', '다른 댕댕이들의 하루')}</h1>
         </div>
@@ -129,7 +129,7 @@ export default function Social() {
             animate={{ opacity: 1, y: 0 }}
             style={styles.emptyState}
           >
-            <span style={{ fontSize: '3rem', opacity: 0.3 }}>🐾</span>
+            <img src="/mascot/burti/burti-sad.png" alt="Burti" style={{ width: 80, height: 80, objectFit: 'contain', opacity: 0.7 }} />
             <p style={styles.emptyText}>{t('social.emptyFeed', '아직 공개된 일기가 없어요')}</p>
           </motion.div>
         ) : (

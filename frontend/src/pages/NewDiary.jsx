@@ -185,7 +185,7 @@ export default function NewDiary() {
   if (showOverwriteConfirm && existingDiary) {
     return (
       <motion.div {...pageTransition} style={styles.loadingPage}>
-        <span style={{ fontSize: '3rem' }}>📝</span>
+        <img src="/mascot/burti/burti-thinking.png" alt="Burti" style={{ width: 80, height: 80, objectFit: 'contain' }} />
         <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
           {t('diary.todayDiary')}
         </h3>
@@ -217,13 +217,13 @@ export default function NewDiary() {
   if (loading) {
     return (
       <motion.div {...pageTransition} style={styles.loadingPage}>
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-          style={styles.loadingIcon}
-        >
-          🐾
-        </motion.div>
+        <motion.img
+          src="/mascot/burti/burti-thinking.png"
+          alt="Burti thinking"
+          style={styles.loadingMascot}
+          animate={{ y: [0, -10, 0], rotate: [0, 3, -3, 0] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+        />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -277,7 +277,7 @@ export default function NewDiary() {
             {/* Question bubble */}
             <div style={styles.questionBubble}>
               <div style={styles.questionAvatar}>
-                <span style={{ fontSize: '1.8rem' }}>{currentStep.icon}</span>
+                <img src="/mascot/burti/burti-mini.png" alt="Burti" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={styles.bubbleContent}>
                 <span style={styles.bubbleName}>{dogName}</span>
@@ -512,6 +512,8 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    overflow: 'hidden',
+    padding: 4,
   },
   bubbleContent: {
     background: 'white',
@@ -730,9 +732,11 @@ const styles = {
     background: 'var(--bg-primary)',
     padding: '0 32px',
   },
-  loadingIcon: {
-    fontSize: '3rem',
-    display: 'inline-block',
+  loadingMascot: {
+    width: 100,
+    height: 100,
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 4px 12px rgba(108,92,231,0.2))',
   },
   loadingText: {
     fontSize: '0.9rem',

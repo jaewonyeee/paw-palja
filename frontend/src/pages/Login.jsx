@@ -39,7 +39,7 @@ export default function Login() {
   return (
     <motion.div {...pageTransition} style={styles.container}>
       <div style={styles.header}>
-        <span style={styles.logo}>🐾</span>
+        <img src="/mascot/burti/burti-hello.png" alt="Burti" style={styles.mascotImg} />
         <h2 style={styles.title}>{t('auth.welcomeBack')}</h2>
         <p style={styles.subtitle}>{t('auth.loginSubtitle', '로그인하고 오늘의 일기를 확인하세요')}</p>
       </div>
@@ -113,7 +113,12 @@ const styles = {
     textAlign: 'center',
     marginBottom: 36,
   },
-  logo: { fontSize: '2.5rem' },
+  mascotImg: {
+    width: 80,
+    height: 80,
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.1))',
+  },
   title: {
     fontSize: '1.5rem',
     fontWeight: 800,

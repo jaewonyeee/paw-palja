@@ -81,14 +81,20 @@ export default function Onboarding() {
           transition={{ delay: 0.4, duration: 0.9, ease: [0.23, 1, 0.32, 1] }}
           style={styles.glassCard}
         >
-          {/* App Icon */}
+          {/* Mascot */}
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 0.5, type: 'spring', stiffness: 260, damping: 20 }}
-            style={styles.iconWrap}
+            style={styles.mascotWrap}
           >
-            <span style={styles.icon}>🐾</span>
+            <motion.img
+              src="/mascot/burti/burti-hello.png"
+              alt="Burti"
+              style={styles.mascotImg}
+              animate={{ y: [0, -6, 0] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+            />
           </motion.div>
 
           <motion.h1
@@ -266,22 +272,16 @@ const styles = {
     boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 0.5px 0 rgba(255,255,255,0.2)',
   },
 
-  /* Icon */
-  iconWrap: {
-    width: 56,
-    height: 56,
-    background: 'rgba(255,255,255,0.15)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderRadius: 18,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  /* Mascot */
+  mascotWrap: {
     marginBottom: 14,
-    border: '0.5px solid rgba(255,255,255,0.25)',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
   },
-  icon: { fontSize: '1.6rem' },
+  mascotImg: {
+    width: 90,
+    height: 90,
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))',
+  },
 
   /* Typography */
   title: {

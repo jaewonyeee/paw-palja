@@ -7,26 +7,26 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-192x192.svg', 'icons/icon-512x512.svg'],
+      includeAssets: ['mascot/burti/burti-favicon.png', 'mascot/burti/burti-app-icon.png'],
       manifest: {
         name: 'Paw-Palja',
         short_name: 'PawPalja',
         description: 'AI Pet Diary & Health Management',
-        theme_color: '#FF6B6B',
-        background_color: '#ffffff',
+        theme_color: '#6C5CE7',
+        background_color: '#FFF8F0',
         display: 'standalone',
         start_url: '/',
         icons: [
           {
-            src: '/icons/icon-192x192.svg',
+            src: '/mascot/burti/burti-app-icon.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable',
           },
           {
-            src: '/icons/icon-512x512.svg',
+            src: '/mascot/burti/burti-app-icon.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable',
           },
         ],

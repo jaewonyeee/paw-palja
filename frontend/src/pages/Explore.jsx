@@ -69,7 +69,7 @@ export default function Explore() {
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <span style={styles.logo}>🐾</span>
+          <img src="/mascot/burti/burti-mini.png" alt="Burti" style={styles.logoImg} />
           <h1 style={styles.headerTitle}>{t('common.appName', '포팔자')}</h1>
         </div>
         <div style={styles.headerRight}>
@@ -89,15 +89,25 @@ export default function Explore() {
 
       {/* Hero Banner */}
       <div style={styles.heroBanner}>
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          style={styles.heroContent}
-        >
-          <h2 style={styles.heroTitle}>{t('explore.heroTitle', '댕댕이들의 하루를 만나보세요')}</h2>
-          <p style={styles.heroSubtitle}>{t('explore.heroSubtitle', 'AI가 분석한 운세, 건강, 그리고 귀여운 댓글까지')}</p>
-        </motion.div>
+        <div style={styles.heroRow}>
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            style={styles.heroContent}
+          >
+            <h2 style={styles.heroTitle}>{t('explore.heroTitle', '댕댕이들의 하루를 만나보세요')}</h2>
+            <p style={styles.heroSubtitle}>{t('explore.heroSubtitle', 'AI가 분석한 운세, 건강, 그리고 귀여운 댓글까지')}</p>
+          </motion.div>
+          <motion.img
+            src="/mascot/burti/burti-happy.png"
+            alt="Burti"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+            style={styles.heroMascot}
+          />
+        </div>
         <div style={styles.heroChips}>
           {[
             { icon: '🔮', label: t('diary.horoscope', '운세') },
@@ -127,7 +137,7 @@ export default function Explore() {
             animate={{ opacity: 1, y: 0 }}
             style={styles.emptyState}
           >
-            <span style={{ fontSize: '3rem', opacity: 0.3 }}>🐾</span>
+            <img src="/mascot/burti/burti-sad.png" alt="Burti" style={{ width: 80, height: 80, objectFit: 'contain', opacity: 0.7 }} />
             <p style={styles.emptyText}>{t('social.emptyFeed', '아직 공개된 일기가 없어요')}</p>
           </motion.div>
         ) : (
@@ -155,7 +165,7 @@ export default function Explore() {
                     style={styles.ctaBanner}
                   >
                     <div style={styles.ctaBannerInner}>
-                      <span style={{ fontSize: '1.8rem' }}>✨</span>
+                      <img src="/mascot/burti/burti-celebrate.png" alt="Burti" style={{ width: 48, height: 48, objectFit: 'contain' }} />
                       <div>
                         <p style={styles.ctaBannerTitle}>{t('explore.ctaTitle', '내 반려견의 운세도 궁금하다면?')}</p>
                         <p style={styles.ctaBannerDesc}>{t('explore.ctaDesc', 'AI가 매일 분석해주는 맞춤 일기를 만나보세요')}</p>
@@ -313,7 +323,12 @@ const styles = {
     alignItems: 'center',
     gap: 8,
   },
-  logo: { fontSize: '1.3rem' },
+  logoImg: {
+    width: 32,
+    height: 32,
+    objectFit: 'contain',
+    borderRadius: 8,
+  },
   headerTitle: {
     fontSize: '1.05rem',
     fontWeight: 800,
@@ -345,10 +360,23 @@ const styles = {
   /* Hero */
   heroBanner: {
     background: 'linear-gradient(135deg, var(--bg-purple) 0%, var(--bg-purple-light) 100%)',
-    padding: '20px 20px 16px',
+    padding: '16px 20px 16px',
+  },
+  heroRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
   },
   heroContent: {
+    flex: 1,
     marginBottom: 12,
+  },
+  heroMascot: {
+    width: 72,
+    height: 72,
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',
+    flexShrink: 0,
   },
   heroTitle: {
     fontSize: '1.2rem',

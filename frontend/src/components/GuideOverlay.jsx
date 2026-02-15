@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
 const slides = [
-  { emoji: '🐾', titleKey: 'guide.slide1Title', descKey: 'guide.slide1Desc' },
-  { emoji: '📖', titleKey: 'guide.slide2Title', descKey: 'guide.slide2Desc' },
-  { emoji: '💬', titleKey: 'guide.slide3Title', descKey: 'guide.slide3Desc' },
-  { emoji: '🌐', titleKey: 'guide.slide4Title', descKey: 'guide.slide4Desc' },
-  { emoji: '🚀', titleKey: 'guide.slide5Title', descKey: 'guide.slide5Desc' },
+  { mascot: '/mascot/burti/burti-hello.png', titleKey: 'guide.slide1Title', descKey: 'guide.slide1Desc' },
+  { mascot: '/mascot/burti/burti-happy.png', titleKey: 'guide.slide2Title', descKey: 'guide.slide2Desc' },
+  { mascot: '/mascot/burti/burti-thinking.png', titleKey: 'guide.slide3Title', descKey: 'guide.slide3Desc' },
+  { mascot: '/mascot/burti/burti-celebrate.png', titleKey: 'guide.slide4Title', descKey: 'guide.slide4Desc' },
+  { mascot: '/mascot/burti/burti-happy.png', titleKey: 'guide.slide5Title', descKey: 'guide.slide5Desc' },
 ]
 
 export default function GuideOverlay({ onClose }) {
@@ -70,13 +70,13 @@ export default function GuideOverlay({ onClose }) {
               transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
               style={styles.slide}
             >
-              <motion.span
+              <motion.img
+                src={slides[current].mascot}
+                alt="Burti"
                 animate={{ y: [0, -8, 0] }}
                 transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-                style={styles.emoji}
-              >
-                {slides[current].emoji}
-              </motion.span>
+                style={styles.mascotImg}
+              />
               <h2 style={styles.title}>{t(slides[current].titleKey)}</h2>
               <p style={styles.desc}>{t(slides[current].descKey)}</p>
             </motion.div>
@@ -159,9 +159,12 @@ const styles = {
     textAlign: 'center',
     padding: '0 8px',
   },
-  emoji: {
-    fontSize: '3.5rem',
+  mascotImg: {
+    width: 100,
+    height: 100,
+    objectFit: 'contain',
     display: 'block',
+    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.1))',
   },
   title: {
     fontSize: '1.3rem',

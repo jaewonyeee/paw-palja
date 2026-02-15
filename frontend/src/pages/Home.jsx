@@ -58,9 +58,9 @@ export default function Home() {
         <div style={styles.headerLeft}>
           <div style={styles.avatarWrap}>
             {user.dog?.image ? (
-              <img src={user.dog.image} alt="" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<span style="font-size:1.1rem">🐾</span>' }} />
+              <img src={user.dog.image} alt="" style={styles.avatarImg} onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<img src="/mascot/burti/burti-mini.png" alt="Burti" style="width:100%;height:100%;object-fit:cover" />' }} />
             ) : (
-              <span style={styles.avatar}>🐾</span>
+              <img src="/mascot/burti/burti-mini.png" alt="Burti" style={styles.avatarImg} />
             )}
           </div>
           <h1 style={styles.headerTitle}>{t('common.appName', '포팔자')}</h1>
@@ -139,14 +139,11 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
         style={styles.greetingCard}
       >
         <div style={styles.greetingTop}>
-          <div>
-            <p style={styles.greetingSmall}>{greeting} 🌤️</p>
+          <div style={{ flex: 1 }}>
+            <p style={styles.greetingSmall}>{greeting}</p>
             <h2 style={styles.greetingName}>{t('home.dailyTitle', '{{name}}의 하루', { name: user.dog?.name || t('home.defaultDogName', '멍멍이') })}</h2>
           </div>
-          <div style={styles.dateBadge}>
-            <span style={styles.dateBadgeDay}>{today.getDate()}</span>
-            <span style={styles.dateBadgeMonth}>{t('home.monthSuffix', '{{month}}월', { month: today.getMonth() + 1 })}</span>
-          </div>
+          <img src="/mascot/burti/burti-hello.png" alt="Burti" style={styles.greetingMascot} />
         </div>
       </motion.div>
 
@@ -183,7 +180,15 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
 
       {/* Today's diary or feature cards */}
       {loading ? (
-        <div style={styles.loadingWrap}><div className="spinner" /></div>
+        <div style={styles.loadingWrap}>
+          <motion.img
+            src="/mascot/burti/burti-thinking.png"
+            alt="Loading"
+            style={{ width: 60, height: 60, objectFit: 'contain' }}
+            animate={{ y: [0, -6, 0] }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+          />
+        </div>
       ) : todayDiary ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -347,24 +352,12 @@ const styles = {
     color: 'white',
     marginTop: 2,
   },
-  dateBadge: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    background: 'rgba(255,255,255,0.2)',
-    borderRadius: 14,
-    padding: '8px 14px',
-  },
-  dateBadgeDay: {
-    fontSize: '1.4rem',
-    fontWeight: 800,
-    color: 'white',
-    lineHeight: 1,
-  },
-  dateBadgeMonth: {
-    fontSize: '0.65rem',
-    fontWeight: 600,
-    color: 'rgba(255,255,255,0.8)',
+  greetingMascot: {
+    width: 56,
+    height: 56,
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',
+    flexShrink: 0,
   },
   /* Quick mood selector */
   quickMoodCard: {

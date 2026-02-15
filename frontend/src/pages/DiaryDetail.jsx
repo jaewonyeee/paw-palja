@@ -360,7 +360,13 @@ export default function DiaryDetail() {
   if (loadingEntry || !entry) {
     return (
       <motion.div {...pageTransition} style={{ ...styles.container, alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner" style={{ width: 32, height: 32 }} />
+        <motion.img
+          src="/mascot/burti/burti-thinking.png"
+          alt="Loading"
+          style={{ width: 80, height: 80, objectFit: 'contain' }}
+          animate={{ y: [0, -8, 0], rotate: [0, 3, -3, 0] }}
+          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+        />
       </motion.div>
     )
   }
@@ -640,10 +646,17 @@ export default function DiaryDetail() {
                   </AnimatePresence>
                   {streaming && (
                     <motion.div
-                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ repeat: Infinity, duration: 1.5 }}
                       style={styles.typingIndicator}
                     >
+                      <motion.img
+                        src="/mascot/burti/burti-thinking.png"
+                        alt="Burti thinking"
+                        style={{ width: 28, height: 28, objectFit: 'contain' }}
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                      />
                       <span>{t('diary.loadingComments')}</span>
                       <span style={styles.dots}>...</span>
                     </motion.div>
