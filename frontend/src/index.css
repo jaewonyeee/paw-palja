@@ -1,4 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+/* A2Z (에이투지체) Web Font */
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-3Light.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-4Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-5Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-6SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-7Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-8ExtraBold.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Age2g'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-6@1.0/에이투지체-9Black.woff2') format('woff2'); font-weight: 900; font-display: swap; }
 
 :root {
   --bg-primary: #FFF8F0;
@@ -38,7 +45,7 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Age2g', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
