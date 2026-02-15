@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Paw-Palja",
+    "appName": "Burti",
     "loading": "読み込み中...",
     "error": "エラー",
     "success": "成功",
@@ -153,7 +153,7 @@
     "removePhoto": "写真を削除"
   },
   "home": {
-    "welcome": "Paw-Paljaへようこそ！",
+    "welcome": "Burtiへようこそ！",
     "greeting": "こんにちは、{{name}}さん！",
     "todayStatus": "今日の状態",
     "recentDiaries": "最近の日記",
@@ -173,7 +173,7 @@
     "viewAllDiaries": "すべての日記を見る"
   },
   "onboarding": {
-    "title": "Paw-Palja",
+    "title": "Burti",
     "subtitle": "AI犬日記",
     "description": "AIと一緒にわんちゃんの毎日を記録しましょう",
     "startButton": "始める"
@@ -368,7 +368,7 @@
     "unshare": "共有を解除",
     "sharedNotFound": "共有された日記が見つからないか、公開されていません。",
     "profileNotFound": "プロフィールが見つからないか、公開されていません。",
-    "goHome": "Paw-Paljaへ",
+    "goHome": "Burtiへ",
     "views": "{{count}}回閲覧",
     "ctaText": "自分だけのAIペット日記を作ろう！",
     "ctaButton": "始める",

@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['mascot/burti/burti-favicon.png', 'mascot/burti/burti-app-icon.png'],
       manifest: {
-        name: 'Paw-Palja',
-        short_name: 'PawPalja',
-        description: 'AI Pet Diary & Health Management',
+        name: 'Burti',
+        short_name: 'Burti',
+        description: 'Burti - AI Pet Diary & Health Management',
         theme_color: '#6C5CE7',
         background_color: '#FFF8F0',
         display: 'standalone',

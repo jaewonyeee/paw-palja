@@ -63,7 +63,7 @@ export default function Home() {
               <img src="/mascot/burti/burti-mini.png" alt="Burti" style={styles.avatarImg} />
             )}
           </div>
-          <h1 style={styles.headerTitle}>{t('common.appName', '포팔자')}</h1>
+          <h1 style={styles.headerTitle}>{t('common.appName', '버티')}</h1>
         </div>
         <button onClick={() => navigate('/profile')} style={styles.settingsBtn}>⚙️</button>
       </div>

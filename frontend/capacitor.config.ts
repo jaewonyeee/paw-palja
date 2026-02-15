@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.pawpalja.app',
-  appName: 'Paw-Palja',
+  appId: 'com.burti.app',
+  appName: 'Burti',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
@@ -17,11 +17,11 @@ const config: CapacitorConfig = {
       launchAutoHide: true,
       launchShowDuration: 2000,
       showSpinner: false,
-      backgroundColor: '#FF6B6B',
+      backgroundColor: '#6C5CE7',
     },
     StatusBar: {
       style: 'LIGHT',
-      backgroundColor: '#FF6B6B',
+      backgroundColor: '#6C5CE7',
     },
   },
 };

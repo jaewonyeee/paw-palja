@@ -90,13 +90,13 @@ export default function DiaryDetail() {
       if (isMobile && navigator.share && navigator.canShare) {
         try {
           const blob = await (await fetch(dataUrl)).blob()
-          const file = new File([blob], `pawpalja-${activeSection}.png`, { type: 'image/png' })
+          const file = new File([blob], `burti-${activeSection}.png`, { type: 'image/png' })
           if (navigator.canShare({ files: [file] })) {
             const shareTimeout = new Promise((_, reject) =>
               setTimeout(() => reject(new Error('share_timeout')), 8000)
             )
             await Promise.race([
-              navigator.share({ files: [file], title: 'Paw-Palja' }),
+              navigator.share({ files: [file], title: 'Burti' }),
               shareTimeout,
             ])
             setCapturing(false)
@@ -113,7 +113,7 @@ export default function DiaryDetail() {
 
       // Fallback: download (append to body for Firefox compatibility)
       const link = document.createElement('a')
-      link.download = `pawpalja-${activeSection}-${entry.date || 'today'}.png`
+      link.download = `burti-${activeSection}-${entry.date || 'today'}.png`
       link.href = dataUrl
       document.body.appendChild(link)
       link.click()

@@ -70,7 +70,7 @@ export default function Explore() {
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <img src="/mascot/burti/burti-mini.png" alt="Burti" style={styles.logoImg} />
-          <h1 style={styles.headerTitle}>{t('common.appName', '포팔자')}</h1>
+          <h1 style={styles.headerTitle}>{t('common.appName', '버티')}</h1>
         </div>
         <div style={styles.headerRight}>
           <div style={styles.langPill}>

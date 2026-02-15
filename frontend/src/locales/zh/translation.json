@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Paw-Palja",
+    "appName": "Burti",
     "loading": "加载中...",
     "error": "错误",
     "success": "成功",
@@ -153,7 +153,7 @@
     "removePhoto": "删除照片"
   },
   "home": {
-    "welcome": "欢迎来到Paw-Palja！",
+    "welcome": "欢迎来到Burti！",
     "greeting": "你好，{{name}}！",
     "todayStatus": "今日状态",
     "recentDiaries": "最近的日记",
@@ -173,7 +173,7 @@
     "viewAllDiaries": "查看所有日记"
   },
   "onboarding": {
-    "title": "Paw-Palja",
+    "title": "Burti",
     "subtitle": "AI狗狗日记",
     "description": "用AI记录狗狗的每一天",
     "startButton": "开始"
@@ -368,7 +368,7 @@
     "unshare": "取消分享",
     "sharedNotFound": "未找到共享日记或该日记已不再公开。",
     "profileNotFound": "未找到该个人资料或该资料未公开。",
-    "goHome": "前往Paw-Palja",
+    "goHome": "前往Burti",
     "views": "{{count}}次浏览",
     "ctaText": "创建属于你的AI宠物日记！",
     "ctaButton": "开始",

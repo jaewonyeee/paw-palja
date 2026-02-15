@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Paw-Palja",
+    "appName": "Burti",
     "loading": "Cargando...",
     "error": "Error",
     "success": "Éxito",
@@ -153,7 +153,7 @@
     "removePhoto": "Eliminar foto"
   },
   "home": {
-    "welcome": "¡Bienvenido a Paw-Palja!",
+    "welcome": "¡Bienvenido a Burti!",
     "greeting": "¡Hola, {{name}}!",
     "todayStatus": "Estado de hoy",
     "recentDiaries": "Diarios recientes",
@@ -173,7 +173,7 @@
     "viewAllDiaries": "Ver todos los diarios"
   },
   "onboarding": {
-    "title": "Paw-Palja",
+    "title": "Burti",
     "subtitle": "Diario canino con IA",
     "description": "Registra la vida diaria de tu perro con IA",
     "startButton": "Comenzar"
@@ -368,7 +368,7 @@
     "unshare": "Dejar de compartir",
     "sharedNotFound": "No se encontró el diario compartido o ya no es público.",
     "profileNotFound": "No se encontró el perfil o no es público.",
-    "goHome": "Ir a Paw-Palja",
+    "goHome": "Ir a Burti",
     "views": "{{count}} vistas",
     "ctaText": "Crea tu propio diario de mascotas con IA!",
     "ctaButton": "Comenzar",
