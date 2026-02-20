@@ -402,14 +402,12 @@ export default function DiaryDetail() {
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          {/* DIARY Section */}
-          {activeSection === 'diary' && (
+        <div>
+          {/* All sections render together — tabs scroll & expand accordions */}
             <motion.div
               key="diary"
               initial={{ opacity: 0, x: -15 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
               transition={{ duration: 0.3 }}
             >
               <div ref={captureRef}>
@@ -860,8 +858,7 @@ export default function DiaryDetail() {
               )}
 
             </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
       </div>
 
       {/* Click outside to close menu */}
