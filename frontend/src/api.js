@@ -66,7 +66,14 @@ async function request(path, options = {}, _retry = true) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, { ...options, headers });
+  } catch (fetchErr) {
+    // Network error (offline, DNS failure, CORS, connection refused)
+    console.error('[API] Network error:', path, fetchErr);
+    throw new Error('네트워크 연결을 확인해주세요.');
+  }
 
   if (res.status === 401 && _retry) {
     // Try refresh once
@@ -81,13 +88,17 @@ async function request(path, options = {}, _retry = true) {
       _refreshPromise = null;
       clearTokens();
       window.dispatchEvent(new Event('auth:logout'));
-      throw new Error('Session expired');
+      throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
     }
+  }
+
+  if (res.status === 413) {
+    throw new Error('파일 크기가 너무 큽니다. 더 작은 이미지를 사용해주세요.');
   }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || 'Request failed');
+    throw new Error(err.detail || '요청에 실패했습니다.');
   }
   return res.json();
 }
