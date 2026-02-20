@@ -331,7 +331,10 @@ function PromptsPanel({ t }) {
   const [collapsed, setCollapsed] = useState({})
 
   const fetchPrompts = async () => {
-    try { setPrompts(await api.adminPrompts()) } catch {}
+    try {
+      const res = await api.adminPrompts()
+      setPrompts(Array.isArray(res) ? res : res.prompts || [])
+    } catch {}
     setLoading(false)
   }
   useEffect(() => { fetchPrompts() }, [])
