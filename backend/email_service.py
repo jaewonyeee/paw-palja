@@ -32,12 +32,12 @@ def _build_html(dog_name: str, nickname: str, recent_diary_data: dict | None, la
         greeting = f"{safe_dog}가 오늘 하루를 기다리고 있어요!"
         sub_greeting = f"안녕하세요, {safe_nick}님!"
         cta_text = "지금 일기 쓰러 가기"
-        footer_text = "포팔자에서 보낸 알림이에요"
+        footer_text = "버티에서 보낸 알림이에요"
     else:
         greeting = f"{safe_dog} is waiting for today's story!"
         sub_greeting = f"Hello, {safe_nick}!"
         cta_text = "Write today's diary"
-        footer_text = "Sent from Paw-Palja"
+        footer_text = "Sent from Burti"
 
     recent_section = ""
     if recent_diary_data:
@@ -61,7 +61,7 @@ def _build_html(dog_name: str, nickname: str, recent_diary_data: dict | None, la
       <!-- Header -->
       <div style="text-align:center;margin-bottom:24px;">
         <div style="font-size:48px;margin-bottom:8px;">🐾</div>
-        <h1 style="margin:0;font-size:20px;color:#6C5CE7;font-weight:800;">Paw-Palja</h1>
+        <h1 style="margin:0;font-size:20px;color:#6C5CE7;font-weight:800;">Burti</h1>
       </div>
 
       <!-- Greeting -->
@@ -74,7 +74,7 @@ def _build_html(dog_name: str, nickname: str, recent_diary_data: dict | None, la
 
       <!-- CTA Button -->
       <div style="text-align:center;margin:28px 0 20px;">
-        <a href="https://pawpalja.com/home" style="display:inline-block;background:linear-gradient(135deg,#F0A04B,#f5b76c);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:700;box-shadow:0 4px 12px rgba(240,160,75,0.3);">
+        <a href="https://burti.pages.dev/home" style="display:inline-block;background:linear-gradient(135deg,#F0A04B,#f5b76c);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-size:16px;font-weight:700;box-shadow:0 4px 12px rgba(240,160,75,0.3);">
           {cta_text}
         </a>
       </div>
@@ -103,7 +103,7 @@ def send_diary_reminder_email(
 
     try:
         is_ko = lang == "ko"
-        subject = f"🐾 {dog_name}가 기다리고 있어요!" if is_ko else f"🐾 {dog_name} is waiting for you!"
+        subject = f"🐾 {dog_name}가 기다리고 있어요! — Burti" if is_ko else f"🐾 {dog_name} is waiting for you! — Burti"
 
         msg = MIMEMultipart("alternative")
         msg["From"] = SMTP_FROM

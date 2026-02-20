@@ -5,7 +5,8 @@ Apify SNS 데이터 자동 수집 스케줄러 + 일기 알림 Push 발송
 """
 import json
 import logging
-from datetime import datetime, timezone
+import os
+from datetime import datetime, timezone, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -61,7 +62,10 @@ def send_diary_reminders():
             engine = create_async_engine(db_url, **engine_kwargs)
             SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-            now = datetime.now(timezone.utc)
+            # Use configurable timezone (default: Asia/Seoul = UTC+9)
+            tz_offset_hours = int(os.getenv("SCHEDULER_TZ_OFFSET", "9"))
+            tz = timezone(timedelta(hours=tz_offset_hours))
+            now = datetime.now(tz)
             current_time = now.strftime("%H:%M")
 
             try:
@@ -93,8 +97,8 @@ def send_diary_reminders():
 
                         if subscriptions:
                             payload = json.dumps({
-                                "title": "Paw-Palja",
-                                "body": f"{dog_name or 'Your pup'}의 오늘 일기를 작성할 시간이에요!",
+                                "title": "Burti 🐾",
+                                "body": f"{dog_name or '우리 강아지'}의 오늘 일기를 작성할 시간이에요!",
                                 "url": "/home",
                             })
 
