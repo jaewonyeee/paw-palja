@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Component } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,45 @@ import {
   Search, ChevronLeft, ChevronRight, X, Trash2, Eye, RefreshCw,
   Brain, FileText, Image, Activity, DollarSign, Zap, AlertTriangle
 } from 'lucide-react'
+
+// Panel-level error boundary to isolate crashes
+class PanelErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('[PanelError]', error, errorInfo)
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps.panelKey !== this.props.panelKey) {
+      this.setState({ hasError: false, error: null })
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, textAlign: 'center' }}>
+          <AlertTriangle size={32} style={{ color: '#e74c3c', marginBottom: 12 }} />
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 8 }}>패널 로드 오류</h3>
+          <pre style={{ fontSize: '0.72rem', background: '#f5f5f5', padding: 12, borderRadius: 8, textAlign: 'left', overflow: 'auto', maxHeight: 150 }}>
+            {this.state.error?.toString()}
+          </pre>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            style={{ marginTop: 12, padding: '6px 16px', borderRadius: 8, border: 'none', background: 'var(--bg-purple)', color: '#fff', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+          >
+            다시 시도
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -27,8 +66,8 @@ function useDebounce(value, delay) {
 
 // Pagination component
 function Pagination({ page, pages, onPageChange }) {
-  if (pages <= 1) return null
   const { t } = useTranslation()
+  if (pages <= 1) return null
   return (
     <div style={s.pagination}>
       <button
@@ -122,12 +161,12 @@ function KpiBar({ t }) {
 
   return (
     <div style={s.kpiBar}>
-      <KpiItem icon={<DollarSign size={14}/>} label={t('admin.costToday')} value={`$${(kpi.cost_today || 0).toFixed(2)}`} />
-      <KpiItem icon={<DollarSign size={14}/>} label={t('admin.costMonth')} value={`$${(kpi.cost_month || 0).toFixed(2)}`} />
-      <KpiItem icon={<Zap size={14}/>} label={t('admin.tokensToday')} value={(kpi.tokens_today || 0).toLocaleString()} />
+      <KpiItem icon={<DollarSign size={14}/>} label={t('admin.costToday')} value={`$${Number(kpi.cost_today || 0).toFixed(2)}`} />
+      <KpiItem icon={<DollarSign size={14}/>} label={t('admin.costMonth')} value={`$${Number(kpi.cost_month || 0).toFixed(2)}`} />
+      <KpiItem icon={<Zap size={14}/>} label={t('admin.tokensToday')} value={Number(kpi.tokens_today || 0).toLocaleString()} />
       <KpiItem icon={<Users size={14}/>} label={t('admin.activeUsers')} value={kpi.active_users || 0} />
-      <KpiItem icon={<Activity size={14}/>} label={t('admin.avgLatency')} value={`${kpi.avg_latency_ms || 0}ms`} />
-      <KpiItem icon={<AlertTriangle size={14}/>} label={t('admin.errorRate')} value={`${(kpi.error_rate || 0).toFixed(1)}%`} color={kpi.error_rate > 5 ? '#e74c3c' : undefined} />
+      <KpiItem icon={<Activity size={14}/>} label={t('admin.avgLatency')} value={`${Math.round(Number(kpi.avg_latency_ms || 0))}ms`} />
+      <KpiItem icon={<AlertTriangle size={14}/>} label={t('admin.errorRate')} value={`${Number(kpi.error_rate || 0).toFixed(1)}%`} color={Number(kpi.error_rate) > 5 ? '#e74c3c' : undefined} />
     </div>
   )
 }
@@ -333,8 +372,20 @@ function PromptsPanel({ t }) {
   const fetchPrompts = async () => {
     try {
       const res = await api.adminPrompts()
-      setPrompts(Array.isArray(res) ? res : res.prompts || [])
-    } catch {}
+      const list = Array.isArray(res) ? res : (res && res.prompts) ? res.prompts : []
+      // Ensure each prompt has required fields
+      setPrompts(list.map(p => ({
+        key: p.key || '',
+        value: p.value ?? '',
+        type: p.type || 'text',
+        description: p.description || p.key || '',
+        is_overridden: !!p.is_overridden,
+        default_value: p.default_value ?? '',
+      })))
+    } catch (err) {
+      console.error('[PromptsPanel] fetchPrompts failed:', err)
+      setPrompts([])
+    }
     setLoading(false)
   }
   useEffect(() => { fetchPrompts() }, [])
@@ -1158,14 +1209,16 @@ export default function Admin() {
       {/* Main content */}
       <main style={s.main}>
         <KpiBar t={t} />
-        {activePanel === 'dashboard' && <DashboardPanel stats={stats} system={system} t={t} />}
-        {activePanel === 'llm' && <LlmAgentsPanel t={t} />}
-        {activePanel === 'prompts' && <PromptsPanel t={t} />}
-        {activePanel === 'users' && <UsersPanel t={t} />}
-        {activePanel === 'diaries' && <DiariesPanel t={t} />}
-        {activePanel === 'rag' && <RagDataPanel t={t} />}
-        {activePanel === 'images' && <ImagesPanel t={t} />}
-        {activePanel === 'system' && <SystemPanel system={system} t={t} />}
+        <PanelErrorBoundary panelKey={activePanel}>
+          {activePanel === 'dashboard' && <DashboardPanel stats={stats} system={system} t={t} />}
+          {activePanel === 'llm' && <LlmAgentsPanel t={t} />}
+          {activePanel === 'prompts' && <PromptsPanel t={t} />}
+          {activePanel === 'users' && <UsersPanel t={t} />}
+          {activePanel === 'diaries' && <DiariesPanel t={t} />}
+          {activePanel === 'rag' && <RagDataPanel t={t} />}
+          {activePanel === 'images' && <ImagesPanel t={t} />}
+          {activePanel === 'system' && <SystemPanel system={system} t={t} />}
+        </PanelErrorBoundary>
       </main>
     </motion.div>
   )

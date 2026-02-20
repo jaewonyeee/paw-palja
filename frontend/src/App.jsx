@@ -36,9 +36,11 @@ class ErrorBoundary extends Component {
         <div style={{ padding: 40, textAlign: 'center' }}>
           <h2>오류가 발생했습니다</h2>
           <p>페이지를 새로고침 해주세요.</p>
-          {import.meta.env.DEV && this.state.error && (
+          {this.state.error && (
             <pre style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 8, fontSize: '0.75rem', textAlign: 'left', overflow: 'auto', maxHeight: 200 }}>
               {this.state.error.toString()}
+              {'\n'}
+              {this.state.error.stack?.split('\n').slice(0, 5).join('\n')}
             </pre>
           )}
           <button onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload() }}
