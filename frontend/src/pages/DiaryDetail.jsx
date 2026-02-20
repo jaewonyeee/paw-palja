@@ -32,6 +32,7 @@ export default function DiaryDetail() {
   const [entry, setEntry] = useState(initialEntry)
   const [loadingEntry, setLoadingEntry] = useState(!initialEntry)
   const [activeSection, setActiveSection] = useState('diary')
+  const [openAccordion, setOpenAccordion] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState('')
   const [visibleComments, setVisibleComments] = useState([])
@@ -393,7 +394,15 @@ export default function DiaryDetail() {
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 setActiveSection(s.id)
-                document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                if (s.id === 'fortune' || s.id === 'health') {
+                  setOpenAccordion((prev) => prev === s.id ? null : s.id)
+                  setTimeout(() => {
+                    document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }, 50)
+                } else {
+                  setOpenAccordion(null)
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }
               }}
               style={{ ...styles.sectionTab, ...(activeSection === s.id ? styles.sectionTabActive : {}) }}
             >
@@ -678,7 +687,10 @@ export default function DiaryDetail() {
                 <div id="section-fortune" style={styles.accordionSection}>
                   <motion.button
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveSection(activeSection === 'fortune' ? 'diary' : 'fortune')}
+                    onClick={() => {
+                      setOpenAccordion((prev) => prev === 'fortune' ? null : 'fortune')
+                      setActiveSection(openAccordion === 'fortune' ? 'diary' : 'fortune')
+                    }}
                     style={styles.accordionHeader}
                   >
                     <div style={styles.accordionHeaderLeft}>
@@ -687,11 +699,11 @@ export default function DiaryDetail() {
                     </div>
                     <div style={styles.accordionRight}>
                       <span style={styles.accordionSummary}>{getLangText(horoscope, 'summary').slice(0, 30)}...</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', transform: activeSection === 'fortune' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', transform: openAccordion === 'fortune' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                     </div>
                   </motion.button>
                   <AnimatePresence>
-                    {activeSection === 'fortune' && (
+                    {openAccordion === 'fortune' && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -743,7 +755,10 @@ export default function DiaryDetail() {
                 <div id="section-health" style={styles.accordionSection}>
                   <motion.button
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setActiveSection(activeSection === 'health' ? 'diary' : 'health')}
+                    onClick={() => {
+                      setOpenAccordion((prev) => prev === 'health' ? null : 'health')
+                      setActiveSection(openAccordion === 'health' ? 'diary' : 'health')
+                    }}
                     style={styles.accordionHeader}
                   >
                     <div style={styles.accordionHeaderLeft}>
@@ -760,11 +775,11 @@ export default function DiaryDetail() {
                           {t(`health.${health.risk_level.toLowerCase()}`, health.risk_level)}
                         </span>
                       )}
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', transform: activeSection === 'health' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', transform: openAccordion === 'health' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                     </div>
                   </motion.button>
                   <AnimatePresence>
-                    {activeSection === 'health' && (
+                    {openAccordion === 'health' && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
