@@ -4,6 +4,7 @@ langchain
 langchain-core
 langchain-google-genai
 langchain-openai
+openai>=1.0
 google-generativeai
 pydantic>=2.0
 pydantic-settings
@@ -12,6 +13,7 @@ python-dotenv
 # Backend
 fastapi
 uvicorn
+python-multipart
 httpx
 bcrypt
 PyJWT>=2.8.0

@@ -96,4 +96,41 @@ async def init_db():
                     sqlalchemy.text("ALTER TABLE diary_entries ADD COLUMN user_comments JSON DEFAULT '[]'")
                 )
 
+    # Auto-migrate: illustration_url and subscription fields
+    async with engine.begin() as conn:
+        if DATABASE_URL.startswith("postgresql"):
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS illustration_url TEXT"
+                )
+            )
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(20) DEFAULT 'free'"
+                )
+            )
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expires TIMESTAMP WITH TIME ZONE"
+                )
+            )
+        else:
+            result = await conn.execute(sqlalchemy.text("PRAGMA table_info(diary_entries)"))
+            diary_cols = [row[1] for row in result.fetchall()]
+            if "illustration_url" not in diary_cols:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE diary_entries ADD COLUMN illustration_url TEXT")
+                )
+
+            result = await conn.execute(sqlalchemy.text("PRAGMA table_info(users)"))
+            user_cols = [row[1] for row in result.fetchall()]
+            if "subscription_tier" not in user_cols:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE users ADD COLUMN subscription_tier VARCHAR(20) DEFAULT 'free'")
+                )
+            if "subscription_expires" not in user_cols:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE users ADD COLUMN subscription_expires TIMESTAMP")
+                )
+
     logger.info("Database tables initialized")

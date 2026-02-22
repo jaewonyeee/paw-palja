@@ -50,6 +50,9 @@ export default function DiaryDetail() {
   const [capturing, setCapturing] = useState(false)
   const [sharing, setSharing] = useState(false)
   const [shareModal, setShareModal] = useState(false)
+  const [ttsPlaying, setTtsPlaying] = useState(false)
+  const [ttsLoading, setTtsLoading] = useState(false)
+  const ttsAudioRef = useRef(null)
   const [shareToken, setShareToken] = useState(entry?.share_token || null)
   const [isPublic, setIsPublic] = useState(entry?.is_public || false)
 
@@ -172,6 +175,41 @@ export default function DiaryDetail() {
         await navigator.share({ title: t('common.appName'), url })
       } catch { /* user cancelled */ }
     }
+  }
+
+  const handleTTS = async () => {
+    if (ttsPlaying && ttsAudioRef.current) {
+      ttsAudioRef.current.pause()
+      ttsAudioRef.current.currentTime = 0
+      setTtsPlaying(false)
+      return
+    }
+    const text = getLangText(diary, 'content')
+    if (!text) return
+    setTtsLoading(true)
+    try {
+      const blob = await api.generateTTS(text, 'nova')
+      const url = URL.createObjectURL(blob)
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause()
+        URL.revokeObjectURL(ttsAudioRef.current.src)
+      }
+      const audio = new Audio(url)
+      ttsAudioRef.current = audio
+      audio.onended = () => {
+        setTtsPlaying(false)
+        URL.revokeObjectURL(url)
+      }
+      audio.onerror = () => {
+        setTtsPlaying(false)
+        URL.revokeObjectURL(url)
+      }
+      await audio.play()
+      setTtsPlaying(true)
+    } catch (err) {
+      addToast(t('diary.ttsError', 'TTS 재생에 실패했어요: ') + err.message, 'error')
+    }
+    setTtsLoading(false)
   }
 
   // Sync share state when entry updates
@@ -420,17 +458,77 @@ export default function DiaryDetail() {
               transition={{ duration: 0.3 }}
             >
               <div ref={captureRef}>
+              {/* DALL-E Illustration */}
+              {entry.illustration_url && (
+                <div style={styles.illustrationWrap}>
+                  <img
+                    src={entry.illustration_url}
+                    alt="AI illustration"
+                    style={styles.illustrationImg}
+                    onError={(e) => { e.target.style.display = 'none' }}
+                  />
+                  <span style={styles.illustrationBadge}>DALL-E 3</span>
+                </div>
+              )}
+
               {/* Diary card */}
               <div style={styles.diaryCard}>
                 <div style={styles.diaryHeader}>
                   <span style={styles.diaryMoodIcon}>{diary.mood_icon === 'sparkles' ? '✨' : diary.mood_icon === 'heart' ? '❤️' : '✨'}</span>
                   <h3 style={styles.diaryTitle}>{getLangText(diary, 'title') || t('diary.todayDiary')}</h3>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleTTS}
+                    disabled={ttsLoading}
+                    style={styles.ttsBtn}
+                    title={ttsPlaying ? t('diary.ttsStop', '정지') : t('diary.ttsPlay', '일기 읽어주기')}
+                  >
+                    {ttsLoading ? (
+                      <div className="spinner" style={{ width: 16, height: 16 }} />
+                    ) : ttsPlaying ? '⏹' : '🔊'}
+                  </motion.button>
                 </div>
 
                 {/* Photo */}
                 {entry.photo && !isEditing && (
                   <div style={styles.diaryPhoto}>
                     <img src={entry.photo} alt="diary" style={styles.diaryPhotoImg} onError={(e) => { e.target.style.display = 'none' }} />
+                  </div>
+                )}
+
+                {/* AI Photo Analysis */}
+                {entry.logs?.photo_analysis && !isEditing && (
+                  <div style={styles.photoAnalysisCard}>
+                    <div style={styles.photoAnalysisHeader}>
+                      <span style={{ fontSize: '0.9rem' }}>🔍</span>
+                      <span style={styles.photoAnalysisTitle}>{t('diary.photoAnalysis', 'AI 사진 분석')}</span>
+                    </div>
+                    <div style={styles.photoAnalysisTags}>
+                      {(getLangText(entry.logs.photo_analysis, 'emotion') || entry.logs.photo_analysis.emotion_ko) && (
+                        <div style={styles.photoTag}>
+                          <span>😊</span>
+                          <span>{getLangText(entry.logs.photo_analysis, 'emotion')}</span>
+                        </div>
+                      )}
+                      {(getLangText(entry.logs.photo_analysis, 'activity') || entry.logs.photo_analysis.activity_ko) && (
+                        <div style={styles.photoTag}>
+                          <span>🐾</span>
+                          <span>{getLangText(entry.logs.photo_analysis, 'activity')}</span>
+                        </div>
+                      )}
+                      {(getLangText(entry.logs.photo_analysis, 'health_observation') || entry.logs.photo_analysis.health_observation_ko) && (
+                        <div style={styles.photoTag}>
+                          <span>🩺</span>
+                          <span>{getLangText(entry.logs.photo_analysis, 'health_observation')}</span>
+                        </div>
+                      )}
+                      {(getLangText(entry.logs.photo_analysis, 'fun_point') || entry.logs.photo_analysis.fun_point_ko) && (
+                        <div style={styles.photoTag}>
+                          <span>✨</span>
+                          <span>{getLangText(entry.logs.photo_analysis, 'fun_point')}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -934,6 +1032,33 @@ const styles = {
     color: 'var(--text-primary)',
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   },
+  // Illustration
+  illustrationWrap: {
+    position: 'relative',
+    borderRadius: 'var(--radius-lg)',
+    overflow: 'hidden',
+    marginBottom: 16,
+    boxShadow: 'var(--shadow-card)',
+  },
+  illustrationImg: {
+    width: '100%',
+    aspectRatio: '1/1',
+    objectFit: 'cover',
+    display: 'block',
+    borderRadius: 'var(--radius-lg)',
+  },
+  illustrationBadge: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    fontSize: '0.6rem',
+    fontWeight: 700,
+    color: 'white',
+    background: 'rgba(108,92,231,0.8)',
+    padding: '3px 8px',
+    borderRadius: 6,
+    backdropFilter: 'blur(4px)',
+  },
   // Diary
   diaryCard: {
     background: 'white',
@@ -951,6 +1076,19 @@ const styles = {
     marginBottom: 14,
   },
   diaryMoodIcon: { fontSize: '1.5rem' },
+  ttsBtn: {
+    border: 'none',
+    background: 'rgba(108,92,231,0.08)',
+    borderRadius: 10,
+    padding: '6px 10px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    marginLeft: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   diaryTitle: {
     fontSize: '1.1rem',
     fontWeight: 800,
@@ -973,6 +1111,38 @@ const styles = {
     maxHeight: 280,
     objectFit: 'cover',
     display: 'block',
+  },
+  // Photo Analysis
+  photoAnalysisCard: {
+    background: 'linear-gradient(135deg, rgba(108,92,231,0.04), rgba(240,160,75,0.06))',
+    borderRadius: 14,
+    padding: '14px 16px',
+    marginBottom: 14,
+    border: '1px solid rgba(108,92,231,0.1)',
+  },
+  photoAnalysisHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  photoAnalysisTitle: {
+    fontSize: '0.78rem',
+    fontWeight: 700,
+    color: 'var(--bg-purple)',
+  },
+  photoAnalysisTags: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  photoTag: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 8,
+    fontSize: '0.78rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.4,
   },
   memeRef: {
     display: 'flex',

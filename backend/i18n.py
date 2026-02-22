@@ -209,6 +209,20 @@ MESSAGES = {
         "zh": "该个人资料未公开。",
         "es": "Este perfil no es público.",
     },
+    "voice_transcription_error": {
+        "ko": "음성 변환 중 오류가 발생했습니다.",
+        "en": "An error occurred during voice transcription.",
+        "ja": "音声変換中にエラーが発生しました。",
+        "zh": "语音转录时发生错误。",
+        "es": "Ocurrió un error durante la transcripción de voz.",
+    },
+    "tts_generation_error": {
+        "ko": "음성 생성 중 오류가 발생했습니다.",
+        "en": "An error occurred during TTS generation.",
+        "ja": "音声生成中にエラーが発生しました。",
+        "zh": "语音生成时发生错误。",
+        "es": "Ocurrió un error durante la generación TTS.",
+    },
 }
 
 

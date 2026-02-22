@@ -18,6 +18,7 @@ const Profile = lazy(() => import('./pages/Profile'))
 const Admin = lazy(() => import('./pages/Admin'))
 const SharedDiary = lazy(() => import('./pages/SharedDiary'))
 const PublicProfile = lazy(() => import('./pages/PublicProfile'))
+const Pricing = lazy(() => import('./pages/Pricing'))
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -87,6 +88,7 @@ function AppRoutes() {
             <Route path="/social" element={<Social />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/pricing" element={<Pricing />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

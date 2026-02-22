@@ -252,6 +252,50 @@ export const api = {
   addSocialComment: (entryId, text) =>
     request(`/social/comment/${entryId}`, { method: 'POST', body: JSON.stringify({ text }) }),
 
+  // --- Voice (Whisper) ---
+  transcribeVoice: async (audioBlob) => {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'audio.webm');
+    const token = getAccessToken();
+    const res = await fetch(`${BASE}/voice/transcribe`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Voice transcription failed');
+    }
+    return res.json();
+  },
+
+  // --- TTS ---
+  generateTTS: async (text, voice = 'nova') => {
+    const token = getAccessToken();
+    const res = await fetch(`${BASE}/tts/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ text, voice }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'TTS generation failed');
+    }
+    return res.blob();
+  },
+
+  // --- Subscription ---
+  getSubscriptionTiers: () => request('/subscription/tiers'),
+  getMySubscription: () => request('/subscription/me'),
+  adminUpdateSubscription: (userId, tier, durationDays = 30) =>
+    request('/subscription/admin/update', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, tier, duration_days: durationDays }),
+    }),
+
   // --- Push Notifications ---
   getVapidPublicKey: () => request('/push/vapid-public-key'),
   pushSubscribe: (data) =>

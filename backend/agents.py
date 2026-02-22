@@ -375,10 +375,14 @@ ENGLISH VERSION:
 === Persona Context (RAG) ===
 {persona_context}
 
+=== Photo Analysis (Vision) ===
+{{photo_analysis}}
+
 === Other Agent Memos (A2A) ===
 {oracle_context}
 
-🎯 TASK: Write diary entries in BOTH languages with culturally appropriate meme references."""
+🎯 TASK: Write diary entries in BOTH languages with culturally appropriate meme references.
+If photo analysis is provided, incorporate the observed emotion and activity naturally into the diary."""
 
     human_prompt = """Dog Name: {name}, Breed: {breed}
 Today's Activities: Mood={mood}, Food={food}, Walk={walk}min, Poop={poop}
@@ -391,10 +395,21 @@ Generate diary content in BOTH Korean and English!"""
         ("human", human_prompt),
     ])
 
+    # Photo analysis context
+    photo_analysis_str = "없음"
+    photo_analysis = logs.get("photo_analysis")
+    if photo_analysis:
+        photo_analysis_str = (
+            f"감정: {photo_analysis.get('emotion_ko', '')} / {photo_analysis.get('emotion_en', '')}\n"
+            f"활동: {photo_analysis.get('activity_ko', '')} / {photo_analysis.get('activity_en', '')}\n"
+            f"재미포인트: {photo_analysis.get('fun_point_ko', '')} / {photo_analysis.get('fun_point_en', '')}"
+        )
+
     chain = prompt | llm.with_structured_output(DiaryResult)
     result = chain.invoke({
         "meme_context": meme_context,
         "oracle_context": oracle_context or "없음",
+        "photo_analysis": photo_analysis_str,
         "name": profile.get("name", "멍멍이"),
         "breed": profile.get("breed", "믹스견"),
         "mood": logs.get("mood", "평범"),
@@ -482,8 +497,10 @@ def vet_agent(state: AgentState):
          "=== Breed Health Data (RAG) ===\n{breed_health}\n"
          "=== Disease Q&A Data (RAG) ===\n{disease_qa}\n"
          "=== KISTI Disease Classification (RAG) ===\n{kisti_disease}\n"
+         "=== Photo Health Observation (Vision) ===\n{photo_health}\n"
          "=== Other Agent Memos (A2A) ===\n{a2a_context}\n\n"
-         "🎯 TASK: Generate complete 4-step CoT analysis in BOTH Korean and English with medically accurate terminology."),
+         "🎯 TASK: Generate complete 4-step CoT analysis in BOTH Korean and English with medically accurate terminology.\n"
+         "If photo health observation is provided, incorporate it into your symptom analysis."),
         ("human",
          "Breed: {breed}, Name: {name}\n"
          "Today's Record: Mood={mood}, Food={food}, Walk={walk}min, Poop={poop}\n"
@@ -491,11 +508,21 @@ def vet_agent(state: AgentState):
          "Analyze with 4-step CoT in BOTH Korean and English!"),
     ])
 
+    # Photo health observation
+    photo_health_str = "없음"
+    photo_analysis = logs.get("photo_analysis")
+    if photo_analysis:
+        photo_health_str = (
+            f"건강 관찰: {photo_analysis.get('health_observation_ko', '')} / "
+            f"{photo_analysis.get('health_observation_en', '')}"
+        )
+
     chain = prompt | llm.with_structured_output(HealthAnalysis)
     result = chain.invoke({
         "breed_health": breed_health_context or "데이터 없음",
         "disease_qa": disease_qa_context or "데이터 없음",
         "kisti_disease": kisti_disease_context or "데이터 없음",
+        "photo_health": photo_health_str,
         "a2a_context": a2a_context or "없음",
         "breed": profile.get("breed", "믹스견"),
         "name": profile.get("name", "멍멍이"),

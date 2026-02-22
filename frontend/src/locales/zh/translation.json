@@ -128,7 +128,19 @@
     "captureError": "截图失败了。",
     "overwriteWarning": "今天已经有日记了。重新创建将替换现有日记。",
     "viewExisting": "查看现有日记",
-    "overwriteConfirm": "重新创建"
+    "overwriteConfirm": "重新创建",
+    "photoAnalysis": "照片分析",
+    "voiceInput": "语音输入",
+    "voiceSuccess": "语音输入成功",
+    "voiceError": "语音错误",
+    "micPermission": "麦克风权限",
+    "stopRecording": "停止录制",
+    "transcribing": "正在转录",
+    "ttsPlay": "播放",
+    "ttsStop": "停止",
+    "ttsError": "文本转语音错误",
+    "premiumFeature": "高级功能",
+    "upgradeToPremium": "升级到高级"
   },
   "profile": {
     "title": "个人资料",
@@ -436,5 +448,27 @@
     "chinese": "中文",
     "spanish": "Español",
     "switchTo": "切换到{{language}}"
+  },
+  "pricing": {
+    "title": "定价计划",
+    "free": "免费版",
+    "premium": "高级版",
+    "monthly": "月度订阅",
+    "currentPlan": "当前计划",
+    "currentPremium": "高级会员中",
+    "upgrade": "升级",
+    "comingSoon": "敬请期待",
+    "diaryGeneration": "日记生成",
+    "threePerDay": "每天3次",
+    "unlimited": "无限制",
+    "aiComments": "AI评论",
+    "photoAnalysis": "照片分析",
+    "illustration": "插图生成",
+    "voiceInput": "语音输入",
+    "ttsReading": "文本转语音",
+    "healthAnalysis": "健康分析",
+    "basic": "基础",
+    "detailed": "详细",
+    "footnote": "高级会员享有更多功能"
   }
 }

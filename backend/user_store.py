@@ -58,6 +58,12 @@ def _user_to_dict(user: User) -> dict:
         "email": user.email,
         "is_profile_public": user.is_profile_public,
         "auto_share_social": user.auto_share_social,
+        "subscription_tier": getattr(user, "subscription_tier", "free") or "free",
+        "subscription_expires": (
+            user.subscription_expires.isoformat()
+            if getattr(user, "subscription_expires", None)
+            else None
+        ),
     }
 
 
@@ -73,6 +79,7 @@ def _entry_to_dict(entry: DiaryEntry) -> dict:
         "agent_memos": entry.agent_memos or [],
         "logs": entry.logs,
         "photo": entry.photo,
+        "illustration_url": getattr(entry, "illustration_url", None),
         "is_edited": entry.is_edited,
         "is_public": entry.is_public,
         "share_token": entry.share_token,

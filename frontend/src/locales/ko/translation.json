@@ -128,7 +128,19 @@
     "captureError": "이미지 캡처에 실패했어요.",
     "overwriteWarning": "오늘 이미 일기가 있어요. 새로 작성하면 기존 일기가 대체됩니다.",
     "viewExisting": "기존 일기 보기",
-    "overwriteConfirm": "새로 작성하기"
+    "overwriteConfirm": "새로 작성하기",
+    "photoAnalysis": "AI 사진 분석",
+    "voiceInput": "음성으로 입력",
+    "voiceSuccess": "음성이 텍스트로 변환되었어요!",
+    "voiceError": "음성 변환에 실패했어요: ",
+    "micPermission": "마이크 권한이 필요합니다",
+    "stopRecording": "녹음 중지",
+    "transcribing": "음성 변환 중...",
+    "ttsPlay": "일기 읽어주기",
+    "ttsStop": "정지",
+    "ttsError": "TTS 재생에 실패했어요: ",
+    "premiumFeature": "프리미엄 기능",
+    "upgradeToPremium": "프리미엄으로 업그레이드하면 이용할 수 있어요!"
   },
   "profile": {
     "title": "프로필",
@@ -436,5 +448,27 @@
     "chinese": "中文",
     "spanish": "Español",
     "switchTo": "{{language}}로 변경"
+  },
+  "pricing": {
+    "title": "구독 플랜",
+    "free": "Free",
+    "premium": "Premium",
+    "monthly": "월",
+    "currentPlan": "현재 플랜",
+    "currentPremium": "현재 프리미엄 이용 중",
+    "upgrade": "프리미엄 시작하기",
+    "comingSoon": "결제 시스템 준비 중입니다!",
+    "diaryGeneration": "일기 생성",
+    "threePerDay": "3회/일",
+    "unlimited": "무제한",
+    "aiComments": "AI 코멘트",
+    "photoAnalysis": "AI 사진 분석",
+    "illustration": "AI 일러스트",
+    "voiceInput": "음성 입력",
+    "ttsReading": "일기 낭독",
+    "healthAnalysis": "건강 분석",
+    "basic": "기본",
+    "detailed": "상세 + 사진 기반",
+    "footnote": "Powered by OpenAI — 5개 멀티모달 API 활용"
   }
 }

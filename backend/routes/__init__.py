@@ -10,6 +10,9 @@ from backend.routes.hospitals import router as hospitals_router
 from backend.routes.social import router as social_router
 from backend.routes.push import router as push_router
 from backend.routes.analytics import router as analytics_router
+from backend.routes.voice import router as voice_router
+from backend.routes.tts import router as tts_router
+from backend.routes.subscription import router as subscription_router
 
 __all__ = [
     "auth_router",
@@ -21,4 +24,7 @@ __all__ = [
     "social_router",
     "push_router",
     "analytics_router",
+    "voice_router",
+    "tts_router",
+    "subscription_router",
 ]

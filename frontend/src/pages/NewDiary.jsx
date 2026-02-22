@@ -71,7 +71,11 @@ export default function NewDiary() {
   const [progress, setProgress] = useState('')
   const [existingDiary, setExistingDiary] = useState(null)
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const photoRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
 
   // Check if today's diary already exists
   useEffect(() => {
@@ -152,6 +156,49 @@ export default function NewDiary() {
       }
     }, 2000)
   }, [navigate, t])
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        if (audioBlob.size < 1000) return // too short
+
+        setIsTranscribing(true)
+        try {
+          const result = await api.transcribeVoice(audioBlob)
+          if (result.text) {
+            setNotes((prev) => prev ? `${prev}\n${result.text}` : result.text)
+            addToast(t('diary.voiceSuccess', '음성이 텍스트로 변환되었어요!'), 'success')
+          }
+        } catch (err) {
+          addToast(t('diary.voiceError', '음성 변환에 실패했어요: ') + err.message, 'error')
+        }
+        setIsTranscribing(false)
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (err) {
+      addToast(t('diary.micPermission', '마이크 권한이 필요합니다'), 'error')
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
 
   const handleGenerate = async () => {
     setLoading(true)
@@ -360,6 +407,35 @@ export default function NewDiary() {
                     rows={4}
                     style={{ resize: 'none' }}
                   />
+                  {/* Voice input button */}
+                  <div style={styles.voiceSection}>
+                    {isTranscribing ? (
+                      <div style={styles.voiceTranscribing}>
+                        <div className="spinner" style={{ width: 18, height: 18 }} />
+                        <span>{t('diary.transcribing', '음성 변환 중...')}</span>
+                      </div>
+                    ) : isRecording ? (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={stopRecording}
+                        style={styles.voiceStopBtn}
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ repeat: Infinity, duration: 1 }}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>&#9209;</span>
+                        <span>{t('diary.stopRecording', '녹음 중지')}</span>
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={startRecording}
+                        style={styles.voiceBtn}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>&#127908;</span>
+                        <span>{t('diary.voiceInput', '음성으로 입력')}</span>
+                      </motion.button>
+                    )}
+                  </div>
                   {/* Photo attachment */}
                   <div style={styles.photoSection}>
                     {photo ? (
@@ -598,6 +674,56 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 14,
+  },
+  voiceSection: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  voiceBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 20px',
+    border: '1.5px solid rgba(108,92,231,0.2)',
+    borderRadius: 14,
+    background: 'white',
+    fontFamily: 'inherit',
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    color: 'var(--bg-purple)',
+    cursor: 'pointer',
+    width: '100%',
+    justifyContent: 'center',
+    outline: 'none',
+    WebkitAppearance: 'none',
+  },
+  voiceStopBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 20px',
+    border: '1.5px solid #E74C3C',
+    borderRadius: 14,
+    background: 'rgba(231,76,60,0.05)',
+    fontFamily: 'inherit',
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    color: '#E74C3C',
+    cursor: 'pointer',
+    width: '100%',
+    justifyContent: 'center',
+    outline: 'none',
+  },
+  voiceTranscribing: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 20px',
+    fontSize: '0.82rem',
+    color: 'var(--text-muted)',
+    fontStyle: 'italic',
+    justifyContent: 'center',
+    width: '100%',
   },
   photoSection: {
     display: 'flex',

@@ -128,7 +128,19 @@
     "captureError": "Error al capturar la imagen.",
     "overwriteWarning": "Ya tienes un diario de hoy. Crear uno nuevo reemplazará el existente.",
     "viewExisting": "Ver diario existente",
-    "overwriteConfirm": "Crear nuevo"
+    "overwriteConfirm": "Crear nuevo",
+    "photoAnalysis": "Análisis de fotos",
+    "voiceInput": "Entrada de voz",
+    "voiceSuccess": "Voz capturada con éxito",
+    "voiceError": "Error de voz",
+    "micPermission": "Permiso de micrófono",
+    "stopRecording": "Detener grabación",
+    "transcribing": "Transcribiendo",
+    "ttsPlay": "Reproducir",
+    "ttsStop": "Detener",
+    "ttsError": "Error de texto a voz",
+    "premiumFeature": "Característica Premium",
+    "upgradeToPremium": "Actualizar a Premium"
   },
   "profile": {
     "title": "Perfil",
@@ -436,5 +448,27 @@
     "chinese": "中文",
     "spanish": "Español",
     "switchTo": "Cambiar a {{language}}"
+  },
+  "pricing": {
+    "title": "Planes de precios",
+    "free": "Gratis",
+    "premium": "Premium",
+    "monthly": "Mensual",
+    "currentPlan": "Plan actual",
+    "currentPremium": "Premium activo",
+    "upgrade": "Actualizar",
+    "comingSoon": "Próximamente",
+    "diaryGeneration": "Generación de diarios",
+    "threePerDay": "3 por día",
+    "unlimited": "Ilimitado",
+    "aiComments": "Comentarios de IA",
+    "photoAnalysis": "Análisis de fotos",
+    "illustration": "Generación de ilustraciones",
+    "voiceInput": "Entrada de voz",
+    "ttsReading": "Lectura de texto a voz",
+    "healthAnalysis": "Análisis de salud",
+    "basic": "Básico",
+    "detailed": "Detallado",
+    "footnote": "Los miembros premium tienen acceso a más características"
   }
 }

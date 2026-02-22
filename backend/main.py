@@ -57,6 +57,9 @@ from backend.routes import (
     social_router,
     push_router,
     analytics_router,
+    voice_router,
+    tts_router,
+    subscription_router,
 )
 from backend import user_store
 from backend.database import init_db, AsyncSessionLocal
@@ -222,6 +225,9 @@ app.include_router(hospitals_router, prefix=_V1)
 app.include_router(social_router, prefix=_V1)
 app.include_router(push_router, prefix=_V1)
 app.include_router(analytics_router, prefix=_V1)
+app.include_router(voice_router, prefix=_V1)
+app.include_router(tts_router, prefix=_V1)
+app.include_router(subscription_router, prefix=_V1)
 
 
 @app.get("/")

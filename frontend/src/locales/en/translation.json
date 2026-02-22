@@ -128,7 +128,19 @@
     "captureError": "Failed to capture image.",
     "overwriteWarning": "You already have a diary for today. Creating a new one will replace it.",
     "viewExisting": "View existing diary",
-    "overwriteConfirm": "Write new diary"
+    "overwriteConfirm": "Write new diary",
+    "photoAnalysis": "AI Photo Analysis",
+    "voiceInput": "Voice Input",
+    "voiceSuccess": "Voice converted to text!",
+    "voiceError": "Voice conversion failed: ",
+    "micPermission": "Microphone permission required",
+    "stopRecording": "Stop Recording",
+    "transcribing": "Converting voice...",
+    "ttsPlay": "Read Aloud",
+    "ttsStop": "Stop",
+    "ttsError": "TTS playback failed: ",
+    "premiumFeature": "Premium Feature",
+    "upgradeToPremium": "Upgrade to Premium to use this feature!"
   },
   "profile": {
     "title": "Profile",
@@ -436,5 +448,27 @@
     "chinese": "Chinese",
     "spanish": "Spanish",
     "switchTo": "Switch to {{language}}"
+  },
+  "pricing": {
+    "title": "Subscription Plans",
+    "free": "Free",
+    "premium": "Premium",
+    "monthly": "mo",
+    "currentPlan": "Current Plan",
+    "currentPremium": "Currently on Premium",
+    "upgrade": "Start Premium",
+    "comingSoon": "Payment system coming soon!",
+    "diaryGeneration": "Diary Generation",
+    "threePerDay": "3/day",
+    "unlimited": "Unlimited",
+    "aiComments": "AI Comments",
+    "photoAnalysis": "AI Photo Analysis",
+    "illustration": "AI Illustration",
+    "voiceInput": "Voice Input",
+    "ttsReading": "Read Aloud",
+    "healthAnalysis": "Health Analysis",
+    "basic": "Basic",
+    "detailed": "Detailed + Photo-based",
+    "footnote": "Powered by OpenAI — 5 Multimodal APIs"
   }
 }

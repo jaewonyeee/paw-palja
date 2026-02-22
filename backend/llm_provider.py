@@ -23,6 +23,13 @@ def get_llm(temperature: float = 0.7):
             api_version=os.getenv("AOAI_API_VERSION", "2024-06-01"),
             temperature=temperature,
         )
+    elif provider == "openai":
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"),
+            temperature=temperature,
+            api_key=os.getenv("OPENAI_API_KEY"),
+        )
     else:
         from langchain_google_genai import ChatGoogleGenerativeAI
         model_name = os.getenv("GOOGLE_MODEL_NAME", "gemini-2.0-flash")
@@ -46,6 +53,12 @@ def get_embeddings():
             api_key=os.getenv("AOAI_API_KEY"),
             azure_deployment=embed_deployment,
             api_version=os.getenv("AOAI_API_VERSION", "2024-06-01"),
+        )
+    elif provider == "openai":
+        from langchain_openai import OpenAIEmbeddings
+        return OpenAIEmbeddings(
+            model="text-embedding-3-small",
+            api_key=os.getenv("OPENAI_API_KEY"),
         )
     else:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings

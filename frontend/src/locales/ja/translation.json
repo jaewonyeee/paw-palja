@@ -128,7 +128,19 @@
     "captureError": "画像のキャプチャに失敗しました。",
     "overwriteWarning": "今日の日記はすでにあります。新しく作成すると既存の日記が上書きされます。",
     "viewExisting": "既存の日記を見る",
-    "overwriteConfirm": "新しく作成する"
+    "overwriteConfirm": "新しく作成する",
+    "photoAnalysis": "写真分析",
+    "voiceInput": "音声入力",
+    "voiceSuccess": "音声入力成功",
+    "voiceError": "音声エラー",
+    "micPermission": "マイク許可",
+    "stopRecording": "録音停止",
+    "transcribing": "文字起こし中",
+    "ttsPlay": "再生",
+    "ttsStop": "停止",
+    "ttsError": "テキスト音声エラー",
+    "premiumFeature": "プレミアム機能",
+    "upgradeToPremium": "プレミアムに登録"
   },
   "profile": {
     "title": "プロフィール",
@@ -436,5 +448,27 @@
     "chinese": "中文",
     "spanish": "Español",
     "switchTo": "{{language}}に切り替え"
+  },
+  "pricing": {
+    "title": "プラン",
+    "free": "Free",
+    "premium": "Premium",
+    "monthly": "月額",
+    "currentPlan": "現在のプラン",
+    "currentPremium": "プレミアム中",
+    "upgrade": "登録",
+    "comingSoon": "近日公開",
+    "diaryGeneration": "日記生成",
+    "threePerDay": "1日3回まで",
+    "unlimited": "無制限",
+    "aiComments": "AIコメント",
+    "photoAnalysis": "写真分析",
+    "illustration": "イラスト生成",
+    "voiceInput": "音声入力",
+    "ttsReading": "テキスト音声読み上げ",
+    "healthAnalysis": "健康分析",
+    "basic": "基本",
+    "detailed": "詳細",
+    "footnote": "プレミアム会員向けのさらに多くの機能"
   }
 }

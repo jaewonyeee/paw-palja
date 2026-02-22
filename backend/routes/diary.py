@@ -90,6 +90,22 @@ async def generate_diary(
     try:
         profile = DogProfile(**current_user["dog"])
         initial_state = _prepare_state(profile, logs)
+
+        # GPT-4o Vision photo analysis (premium feature)
+        if logs.photo:
+            try:
+                from backend.photo_analysis import analyze_pet_photo
+                import asyncio
+                photo_result = await analyze_pet_photo(
+                    logs.photo,
+                    current_user["dog"].get("name", "멍멍이"),
+                    current_user["dog"].get("breed", "믹스견"),
+                )
+                if photo_result:
+                    initial_state["daily_logs"]["photo_analysis"] = photo_result
+            except Exception:
+                logger.warning("Photo analysis failed, continuing without it")
+
         thread_id = str(uuid.uuid4())
         config = {"configurable": {"thread_id": thread_id}}
 
@@ -102,13 +118,19 @@ async def generate_diary(
         if share is None:
             share = current_user.get("auto_share_social", False)
 
+        # Include photo analysis in logs for storage
+        logs_data = logs.model_dump()
+        photo_analysis = initial_state["daily_logs"].get("photo_analysis")
+        if photo_analysis:
+            logs_data["photo_analysis"] = photo_analysis
+
         entry = {
             "user_id": user_id,
             "diary": final_state["diary"],
             "horoscope": final_state["horoscope"],
             "health": final_state["health"],
             "agent_memos": final_state.get("agent_memos", []),
-            "logs": logs.model_dump(),
+            "logs": logs_data,
             "comments": [],
             "is_edited": False,
         }
@@ -119,6 +141,27 @@ async def generate_diary(
             entry["photo"] = logs.photo
 
         saved = await user_store.save_diary_entry(db, user_id, entry)
+
+        # Generate DALL-E 3 illustration (async, non-blocking)
+        try:
+            from backend.illustration import generate_diary_illustration
+            diary_content = ""
+            if final_state.get("diary"):
+                diary_content = final_state["diary"].get("content_ko", "") or final_state["diary"].get("content", "")
+            if diary_content:
+                illustration = await generate_diary_illustration(
+                    diary_content,
+                    current_user["dog"].get("name", "멍멍이"),
+                    current_user["dog"].get("breed", "믹스견"),
+                )
+                if illustration and saved.get("entry_id"):
+                    await user_store.update_diary_entry(
+                        db, user_id, saved["entry_id"],
+                        {"illustration_url": illustration}
+                    )
+                    saved["illustration_url"] = illustration
+        except Exception:
+            logger.warning("Illustration generation failed, continuing without it")
 
         # Track diary_created event
         await user_store.track_event(db, user_id, "diary_created")
