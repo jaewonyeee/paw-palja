@@ -286,6 +286,17 @@ export default function NewDiary() {
             style={styles.progressFill}
           />
         </div>
+        {/* Premium hint during generation */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 3 }}
+          onClick={() => navigate('/pricing')}
+          style={styles.premiumHint}
+        >
+          <span style={styles.premiumHintIcon}>✨</span>
+          <span style={styles.premiumHintText}>{t('premium.loadingHint', '프리미엄이면 AI 일러스트도 함께 생성돼요!')}</span>
+        </motion.div>
       </motion.div>
     )
   }
@@ -433,6 +444,7 @@ export default function NewDiary() {
                       >
                         <span style={{ fontSize: '1.2rem' }}>&#127908;</span>
                         <span>{t('diary.voiceInput', '음성으로 입력')}</span>
+                        <span style={styles.aiBadge}>Whisper AI</span>
                       </motion.button>
                     )}
                   </div>
@@ -455,6 +467,7 @@ export default function NewDiary() {
                         style={styles.photoAddBtn}
                       >
                         📷 {t('diary.addPhoto')}
+                        <span style={styles.aiBadge}>AI Vision</span>
                       </motion.button>
                     )}
                     <input
@@ -679,6 +692,16 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
   },
+  aiBadge: {
+    fontSize: '0.55rem',
+    fontWeight: 700,
+    color: 'white',
+    background: 'rgba(108,92,231,0.8)',
+    padding: '2px 6px',
+    borderRadius: 4,
+    marginLeft: 4,
+    flexShrink: 0,
+  },
   voiceBtn: {
     display: 'flex',
     alignItems: 'center',
@@ -882,5 +905,25 @@ const styles = {
     height: '100%',
     background: 'linear-gradient(90deg, var(--bg-purple), var(--bg-purple-light))',
     borderRadius: 2,
+  },
+  premiumHint: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 20,
+    padding: '10px 16px',
+    background: 'linear-gradient(135deg, rgba(108,92,231,0.06), rgba(240,160,75,0.06))',
+    borderRadius: 12,
+    border: '1px solid rgba(108,92,231,0.1)',
+    cursor: 'pointer',
+  },
+  premiumHintIcon: {
+    fontSize: '0.9rem',
+  },
+  premiumHintText: {
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    color: 'var(--bg-purple)',
+    lineHeight: 1.4,
   },
 }

@@ -44,3 +44,6 @@ arq>=0.25
 
 # Push Notifications
 pywebpush
+
+# Payments
+stripe>=7.0

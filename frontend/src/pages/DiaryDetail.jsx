@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { api } from '../api'
 import { dateLabel } from '../utils/date'
+import PremiumUpsellCard from '../components/PremiumUpsellCard'
 
 const pageTransition = {
   initial: { opacity: 0, y: 30 },
@@ -486,6 +487,7 @@ export default function DiaryDetail() {
                     {ttsLoading ? (
                       <div className="spinner" style={{ width: 16, height: 16 }} />
                     ) : ttsPlaying ? '⏹' : '🔊'}
+                    <span style={styles.ttsBadge}>TTS</span>
                   </motion.button>
                 </div>
 
@@ -502,6 +504,7 @@ export default function DiaryDetail() {
                     <div style={styles.photoAnalysisHeader}>
                       <span style={{ fontSize: '0.9rem' }}>🔍</span>
                       <span style={styles.photoAnalysisTitle}>{t('diary.photoAnalysis', 'AI 사진 분석')}</span>
+                      <span style={styles.visionBadge}>GPT-4o Vision</span>
                     </div>
                     <div style={styles.photoAnalysisTags}>
                       {(getLangText(entry.logs.photo_analysis, 'emotion') || entry.logs.photo_analysis.emotion_ko) && (
@@ -780,6 +783,13 @@ export default function DiaryDetail() {
                 {capturing ? t('common.loading') : `📸 ${t('diary.capture')} / ${t('diary.share')}`}
               </motion.button>
 
+              {/* Premium upsell — show when no illustration (natural desire moment) */}
+              {!entry.illustration_url && (
+                <div style={{ marginTop: 16 }}>
+                  <PremiumUpsellCard variant="illustration" delay={0.3} />
+                </div>
+              )}
+
               {/* FORTUNE Section — inline accordion */}
               {getLangText(horoscope, 'summary') && (
                 <div id="section-fortune" style={styles.accordionSection}>
@@ -971,6 +981,12 @@ export default function DiaryDetail() {
               )}
 
             </motion.div>
+
+            {/* Powered by OpenAI footer */}
+            <div style={styles.poweredByFooter}>
+              <span style={styles.poweredByText}>Powered by OpenAI</span>
+              <span style={styles.poweredBySubtext}>GPT-4o · DALL-E 3 · Whisper · TTS · Vision</span>
+            </div>
         </div>
       </div>
 
@@ -1088,6 +1104,44 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    gap: 4,
+  },
+  ttsBadge: {
+    fontSize: '0.55rem',
+    fontWeight: 700,
+    color: 'white',
+    background: 'rgba(108,92,231,0.8)',
+    padding: '1px 5px',
+    borderRadius: 4,
+  },
+  visionBadge: {
+    fontSize: '0.58rem',
+    fontWeight: 700,
+    color: 'white',
+    background: 'rgba(108,92,231,0.8)',
+    padding: '2px 6px',
+    borderRadius: 4,
+    marginLeft: 'auto',
+  },
+  poweredByFooter: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 24,
+    paddingTop: 16,
+    borderTop: '1px solid var(--border-light)',
+  },
+  poweredByText: {
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    color: 'var(--text-muted)',
+  },
+  poweredBySubtext: {
+    fontSize: '0.6rem',
+    fontWeight: 500,
+    color: 'var(--text-muted)',
+    opacity: 0.7,
   },
   diaryTitle: {
     fontSize: '1.1rem',

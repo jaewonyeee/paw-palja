@@ -7,6 +7,7 @@ import { api } from '../api'
 import { todayString } from '../utils/date'
 import DiaryCard from '../components/DiaryCard'
 import GuideOverlay from '../components/GuideOverlay'
+import PremiumUpsellCard from '../components/PremiumUpsellCard'
 
 const pageTransition = {
   initial: { opacity: 0 },
@@ -65,7 +66,10 @@ export default function Home() {
           </div>
           <h1 style={styles.headerTitle}>{t('common.appName', '버티')}</h1>
         </div>
-        <button onClick={() => navigate('/profile')} style={styles.settingsBtn}>⚙️</button>
+        <div style={styles.headerRight}>
+          <button onClick={() => navigate('/pricing')} style={styles.crownBtn} title={t('premium.crownTooltip', '프리미엄')}>👑</button>
+          <button onClick={() => navigate('/profile')} style={styles.settingsBtn}>⚙️</button>
+        </div>
       </div>
 
       {/* Content */}
@@ -221,6 +225,7 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
               <span style={{ fontSize: '1.5rem' }}>{f.icon}</span>
               <h4 style={styles.featureTitle}>{f.title}</h4>
               <p style={styles.featureDesc}>{f.desc}</p>
+              <span style={styles.gpt4oBadge}>GPT-4o</span>
             </motion.div>
           ))}
         </motion.div>
@@ -261,7 +266,19 @@ function HomeTab({ user, diaries, loading, hasTodayDiary }) {
               </motion.button>
             </motion.div>
           )}
+
+          {/* Premium upsell — after diary list (natural position) */}
+          <div style={{ marginTop: 16 }}>
+            <PremiumUpsellCard variant="full" delay={0.5} />
+          </div>
         </motion.div>
+      )}
+
+      {/* Premium upsell for empty state — compact, after feature cards */}
+      {!loading && diaries.length === 0 && (
+        <div style={{ marginTop: 8 }}>
+          <PremiumUpsellCard variant="compact" delay={0.5} />
+        </div>
       )}
     </div>
   )
@@ -309,6 +326,23 @@ const styles = {
     fontSize: '1rem',
     fontWeight: 700,
     color: 'var(--text-primary)',
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  crownBtn: {
+    width: 36,
+    height: 36,
+    border: '1.5px solid rgba(108,92,231,0.15)',
+    background: 'linear-gradient(135deg, rgba(108,92,231,0.06), rgba(240,160,75,0.06))',
+    borderRadius: 10,
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   settingsBtn: {
     width: 36,
@@ -425,6 +459,15 @@ const styles = {
     fontSize: '0.65rem',
     lineHeight: 1.4,
     color: 'var(--text-muted)',
+  },
+  gpt4oBadge: {
+    fontSize: '0.55rem',
+    fontWeight: 700,
+    color: 'white',
+    background: 'rgba(108,92,231,0.8)',
+    padding: '2px 6px',
+    borderRadius: 4,
+    marginTop: 2,
   },
   sectionTitle: {
     fontSize: '0.88rem',

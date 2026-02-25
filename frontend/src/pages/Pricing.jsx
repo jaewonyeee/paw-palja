@@ -19,6 +19,7 @@ export default function Pricing() {
   const { addToast } = useToast()
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [upgrading, setUpgrading] = useState(false)
 
   useEffect(() => {
     api.getMySubscription()
@@ -26,6 +27,31 @@ export default function Pricing() {
       .catch(() => setSubscription({ tier: 'free', is_premium: false }))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const paymentStatus = params.get('payment')
+    if (paymentStatus === 'success') {
+      addToast(t('pricing.paymentSuccess', '프리미엄 결제가 완료되었습니다! 잠시 후 반영됩니다.'), 'success')
+      window.history.replaceState({}, '', '/pricing')
+      api.getMySubscription().then(setSubscription).catch(() => {})
+    } else if (paymentStatus === 'cancelled') {
+      addToast(t('pricing.paymentCancelled', '결제가 취소되었습니다.'), 'info')
+      window.history.replaceState({}, '', '/pricing')
+    }
+  }, [])
+
+  const handleUpgrade = async () => {
+    setUpgrading(true)
+    try {
+      const { checkout_url } = await api.createCheckoutSession()
+      window.location.href = checkout_url
+    } catch (err) {
+      addToast(err.message || t('pricing.paymentError', '결제 처리 중 오류가 발생했습니다.'), 'error')
+    } finally {
+      setUpgrading(false)
+    }
+  }
 
   const features = [
     {
@@ -149,10 +175,13 @@ export default function Pricing() {
             ) : (
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                onClick={() => addToast(t('pricing.comingSoon', '결제 시스템 준비 중입니다!'), 'info')}
-                style={styles.upgradeBtn}
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                style={{ ...styles.upgradeBtn, opacity: upgrading ? 0.6 : 1 }}
               >
-                {t('pricing.upgrade', '프리미엄 시작하기')}
+                {upgrading
+                  ? t('pricing.processing', '처리 중...')
+                  : t('pricing.upgrade', '프리미엄 시작하기')}
               </motion.button>
             )}
           </div>

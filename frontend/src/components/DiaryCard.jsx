@@ -53,6 +53,17 @@ export default function DiaryCard({ entry, onClick, isToday }) {
           <span style={{ fontSize: '1.2rem' }}>{moodIcon}</span>
           <h4 style={styles.cardTitle}>{title}</h4>
         </div>
+        {entry.illustration_url && (
+          <div style={styles.illustrationThumbWrap}>
+            <img
+              src={entry.illustration_url}
+              alt="illustration"
+              style={styles.illustrationThumb}
+              onError={(e) => { e.target.parentNode.style.display = 'none' }}
+            />
+            <span style={styles.dalleBadge}>DALL-E 3</span>
+          </div>
+        )}
         {content ? (
           <p style={styles.cardContent}>
             {content.slice(0, 100)}{content.length > 100 ? '...' : ''}
@@ -153,6 +164,31 @@ const styles = {
     fontSize: '0.95rem',
     fontWeight: 700,
     color: 'var(--text-primary)',
+  },
+  illustrationThumbWrap: {
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  illustrationThumb: {
+    width: '100%',
+    height: 120,
+    objectFit: 'cover',
+    display: 'block',
+    borderRadius: 12,
+  },
+  dalleBadge: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    fontSize: '0.55rem',
+    fontWeight: 700,
+    color: 'white',
+    background: 'rgba(108,92,231,0.8)',
+    padding: '2px 6px',
+    borderRadius: 4,
+    backdropFilter: 'blur(4px)',
   },
   cardContent: {
     fontSize: '0.82rem',

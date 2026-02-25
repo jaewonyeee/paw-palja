@@ -162,7 +162,13 @@
     "emailPlaceholder": "Email for diary reminders",
     "emailDesc": "Cute reminder emails arrive at your set time!",
     "changeDogPhoto": "Change Photo",
-    "removePhoto": "Remove Photo"
+    "removePhoto": "Remove Photo",
+    "subscription": "Subscription Plan",
+    "subscriptionDesc": "Upgrade to Premium for AI illustrations, voice input, TTS, and photo analysis.",
+    "viewPlans": "View Plans",
+    "premiumExpires": "Premium expires: {{date}}",
+    "premiumActive": "Premium active",
+    "manageSubscription": "Manage Subscription"
   },
   "home": {
     "welcome": "Welcome to Burti!",
@@ -182,7 +188,8 @@
     "recordToday": "Let's record {{name}}'s day today?",
     "createTodayDiary": "Create Today's Diary",
     "allDiaries": "All Diaries",
-    "viewAllDiaries": "View all diaries"
+    "viewAllDiaries": "View all diaries",
+    "premiumFeatures": "AI Premium Features"
   },
   "onboarding": {
     "title": "Burti",
@@ -469,6 +476,19 @@
     "healthAnalysis": "Health Analysis",
     "basic": "Basic",
     "detailed": "Detailed + Photo-based",
-    "footnote": "Powered by OpenAI — 5 Multimodal APIs"
+    "footnote": "Powered by OpenAI — 5 Multimodal APIs",
+    "paymentSuccess": "Premium payment completed! It will be reflected shortly.",
+    "paymentCancelled": "Payment was cancelled.",
+    "paymentError": "An error occurred during payment processing.",
+    "processing": "Processing..."
+  },
+  "premium": {
+    "upsellTitle": "Make your diary even more special",
+    "upsellDesc": "Upgrade for AI illustrations, voice input, and TTS reading",
+    "illustrationUpsell": "Add an AI illustration to this diary",
+    "illustrationDesc": "DALL-E 3 creates a beautiful picture based on your diary",
+    "learnMore": "Learn about Premium",
+    "loadingHint": "With Premium, AI illustrations are generated too!",
+    "crownTooltip": "Premium"
   }
 }

@@ -162,7 +162,13 @@
     "emailPlaceholder": "Email para recordatorios del diario",
     "emailDesc": "¡Recibirás lindos emails de recordatorio a tu hora configurada!",
     "changeDogPhoto": "Cambiar foto",
-    "removePhoto": "Eliminar foto"
+    "removePhoto": "Eliminar foto",
+    "subscription": "Plan de suscripción",
+    "subscriptionDesc": "Actualiza a Premium para ilustraciones AI, entrada de voz, TTS y análisis de fotos.",
+    "viewPlans": "Ver planes",
+    "premiumExpires": "Premium expira: {{date}}",
+    "premiumActive": "Premium activo",
+    "manageSubscription": "Gestionar suscripcion"
   },
   "home": {
     "welcome": "¡Bienvenido a Burti!",
@@ -182,7 +188,8 @@
     "recordToday": "¿Registramos el día de {{name}}?",
     "createTodayDiary": "Crear diario de hoy",
     "allDiaries": "Todos los diarios",
-    "viewAllDiaries": "Ver todos los diarios"
+    "viewAllDiaries": "Ver todos los diarios",
+    "premiumFeatures": "AI Premium Features"
   },
   "onboarding": {
     "title": "Burti",
@@ -469,6 +476,19 @@
     "healthAnalysis": "Análisis de salud",
     "basic": "Básico",
     "detailed": "Detallado",
-    "footnote": "Los miembros premium tienen acceso a más características"
+    "footnote": "Los miembros premium tienen acceso a más características",
+    "paymentSuccess": "Pago Premium completado. Se reflejara en breve.",
+    "paymentCancelled": "El pago fue cancelado.",
+    "paymentError": "Ocurrio un error durante el procesamiento del pago.",
+    "processing": "Procesando..."
+  },
+  "premium": {
+    "upsellTitle": "Haz tu diario más especial",
+    "upsellDesc": "Mejora con ilustraciones AI, entrada de voz y lectura TTS",
+    "illustrationUpsell": "Agrega una ilustración AI a este diario",
+    "illustrationDesc": "DALL-E 3 crea una imagen hermosa basada en tu diario",
+    "learnMore": "Conoce Premium",
+    "loadingHint": "¡Con Premium, también se generan ilustraciones AI!",
+    "crownTooltip": "Premium"
   }
 }

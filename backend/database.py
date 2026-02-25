@@ -133,4 +133,20 @@ async def init_db():
                     sqlalchemy.text("ALTER TABLE users ADD COLUMN subscription_expires TIMESTAMP")
                 )
 
+    # Auto-migrate: stripe_customer_id for payment integration
+    async with engine.begin() as conn:
+        if DATABASE_URL.startswith("postgresql"):
+            await conn.execute(
+                sqlalchemy.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255)"
+                )
+            )
+        else:
+            result = await conn.execute(sqlalchemy.text("PRAGMA table_info(users)"))
+            user_cols = [row[1] for row in result.fetchall()]
+            if "stripe_customer_id" not in user_cols:
+                await conn.execute(
+                    sqlalchemy.text("ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(255)")
+                )
+
     logger.info("Database tables initialized")

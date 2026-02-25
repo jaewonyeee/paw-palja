@@ -162,7 +162,13 @@
     "emailPlaceholder": "일기 알림을 받을 이메일",
     "emailDesc": "매일 설정한 시간에 귀여운 알림 이메일이 도착해요!",
     "changeDogPhoto": "사진 변경",
-    "removePhoto": "사진 삭제"
+    "removePhoto": "사진 삭제",
+    "subscription": "구독 플랜",
+    "subscriptionDesc": "프리미엄으로 업그레이드하면 AI 일러스트, 음성 입력, TTS, 사진 분석을 이용할 수 있어요.",
+    "viewPlans": "플랜 보기",
+    "premiumExpires": "프리미엄 만료: {{date}}",
+    "premiumActive": "프리미엄 이용 중",
+    "manageSubscription": "구독 관리"
   },
   "home": {
     "welcome": "버티에 오신 것을 환영합니다!",
@@ -182,7 +188,8 @@
     "recordToday": "{{name}}의 오늘 하루를 기록해볼까요?",
     "createTodayDiary": "오늘의 일기 만들기",
     "allDiaries": "모든 일기",
-    "viewAllDiaries": "모든 일기 보기"
+    "viewAllDiaries": "모든 일기 보기",
+    "premiumFeatures": "AI Premium Features"
   },
   "onboarding": {
     "title": "버티",
@@ -469,6 +476,19 @@
     "healthAnalysis": "건강 분석",
     "basic": "기본",
     "detailed": "상세 + 사진 기반",
-    "footnote": "Powered by OpenAI — 5개 멀티모달 API 활용"
+    "footnote": "Powered by OpenAI — 5개 멀티모달 API 활용",
+    "paymentSuccess": "프리미엄 결제가 완료되었습니다! 잠시 후 반영됩니다.",
+    "paymentCancelled": "결제가 취소되었습니다.",
+    "paymentError": "결제 처리 중 오류가 발생했습니다.",
+    "processing": "처리 중..."
+  },
+  "premium": {
+    "upsellTitle": "일기를 더 특별하게",
+    "upsellDesc": "AI 일러스트, 음성 입력, TTS로 일기 경험을 업그레이드하세요",
+    "illustrationUpsell": "이 일기에 AI 일러스트를 추가해보세요",
+    "illustrationDesc": "DALL-E 3가 일기 내용을 바탕으로 예쁜 그림을 그려줘요",
+    "learnMore": "프리미엄 알아보기",
+    "loadingHint": "프리미엄이면 AI 일러스트도 함께 생성돼요!",
+    "crownTooltip": "프리미엄"
   }
 }

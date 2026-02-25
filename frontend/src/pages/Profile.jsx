@@ -68,6 +68,14 @@ export default function Profile() {
   const easterTimeout = useRef(null)
   const dogImageRef = useRef(null)
   const [uploadingDog, setUploadingDog] = useState(false)
+  const [subscription, setSubscription] = useState(null)
+  const [managingSubscription, setManagingSubscription] = useState(false)
+
+  useEffect(() => {
+    api.getMySubscription()
+      .then(setSubscription)
+      .catch(() => setSubscription({ tier: 'free', is_premium: false }))
+  }, [])
 
   useEffect(() => {
     if (pushSupported) {
@@ -155,6 +163,18 @@ export default function Profile() {
     }
   }
 
+  const handleManageSubscription = async () => {
+    setManagingSubscription(true)
+    try {
+      const { portal_url } = await api.createPortalSession()
+      window.location.href = portal_url
+    } catch (err) {
+      addToast(err.message || t('pricing.paymentError', '결제 처리 중 오류가 발생했습니다.'), 'error')
+    } finally {
+      setManagingSubscription(false)
+    }
+  }
+
   const handleSaveVisibility = async () => {
     setSavingVisibility(true)
     try {
@@ -217,6 +237,55 @@ export default function Profile() {
           </motion.div>
           <h2 style={styles.nickname}>{user.nickname}</h2>
           <p style={styles.userId}>@{user.user_id}</p>
+        </motion.div>
+
+        {/* Subscription Plan */}
+        <motion.div initial={{opacity:0,y:15}} animate={{opacity:1,y:0}} transition={{delay:0.15}} style={styles.card}>
+          <div style={styles.cardHeader}>
+            <h4 style={styles.cardTitle}>{t('profile.subscription', '구독 플랜')}</h4>
+            <span style={{
+              ...styles.planBadge,
+              ...(subscription?.is_premium ? {
+                background: 'linear-gradient(135deg, #6C5CE7, #A29BFE)',
+                color: 'white',
+              } : {})
+            }}>
+              {subscription?.is_premium ? 'Premium' : 'Free'}
+            </span>
+          </div>
+
+          {subscription?.is_premium ? (
+            <>
+              <p style={{fontSize:'0.78rem',color:'var(--text-muted)',marginBottom:8,lineHeight:1.5}}>
+                {subscription?.expires
+                  ? t('profile.premiumExpires', '프리미엄 만료: {{date}}', {
+                      date: new Date(subscription.expires).toLocaleDateString()
+                    })
+                  : t('profile.premiumActive', '프리미엄 이용 중')}
+              </p>
+              {subscription?.has_stripe_customer && (
+                <motion.button
+                  whileTap={{scale:0.97}}
+                  onClick={handleManageSubscription}
+                  disabled={managingSubscription}
+                  style={styles.viewPlansBtn}
+                >
+                  {managingSubscription
+                    ? t('common.loading', '로딩 중...')
+                    : t('profile.manageSubscription', '구독 관리')}
+                </motion.button>
+              )}
+            </>
+          ) : (
+            <>
+              <p style={{fontSize:'0.78rem',color:'var(--text-muted)',marginBottom:12,lineHeight:1.5}}>
+                {t('profile.subscriptionDesc', '프리미엄으로 업그레이드하면 AI 일러스트, 음성 입력, TTS, 사진 분석을 이용할 수 있어요.')}
+              </p>
+              <motion.button whileTap={{scale:0.97}} onClick={()=>navigate('/pricing')} style={styles.viewPlansBtn}>
+                {t('profile.viewPlans', '플랜 보기')} →
+              </motion.button>
+            </>
+          )}
         </motion.div>
 
         {/* Dog info */}
@@ -747,6 +816,26 @@ const styles = {
     color: 'var(--text-primary)',
     margin: 0,
   },
+  planBadge: {
+    fontSize: '0.68rem',
+    fontWeight: 700,
+    color: 'var(--bg-purple)',
+    background: 'rgba(108,92,231,0.1)',
+    padding: '3px 10px',
+    borderRadius: 6,
+  },
+  viewPlansBtn: {
+    width: '100%',
+    padding: '10px',
+    border: '1.5px solid var(--bg-purple)',
+    borderRadius: 'var(--radius-full)',
+    background: 'transparent',
+    color: 'var(--bg-purple)',
+    fontSize: '0.82rem',
+    fontWeight: 700,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  },
   editBtn: {
     fontSize: '0.7rem',
     fontWeight: 600,
@@ -873,6 +962,8 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s',
     textAlign: 'center',
+    outline: 'none',
+    WebkitTapHighlightColor: 'transparent',
   },
   languageBtnActive: {
     background: 'var(--bg-purple)',

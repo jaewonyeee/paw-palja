@@ -296,6 +296,12 @@ export const api = {
       body: JSON.stringify({ user_id: userId, tier, duration_days: durationDays }),
     }),
 
+  // --- Stripe Payment ---
+  createCheckoutSession: () =>
+    request('/subscription/create-checkout-session', { method: 'POST' }),
+  createPortalSession: () =>
+    request('/subscription/create-portal-session', { method: 'POST' }),
+
   // --- Push Notifications ---
   getVapidPublicKey: () => request('/push/vapid-public-key'),
   pushSubscribe: (data) =>

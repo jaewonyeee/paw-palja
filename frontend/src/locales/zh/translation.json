@@ -162,7 +162,13 @@
     "emailPlaceholder": "用于日记提醒的邮箱",
     "emailDesc": "每天在设定时间收到可爱的提醒邮件！",
     "changeDogPhoto": "更换照片",
-    "removePhoto": "删除照片"
+    "removePhoto": "删除照片",
+    "subscription": "订阅计划",
+    "subscriptionDesc": "升级到高级版即可使用AI插图、语音输入、TTS和照片分析。",
+    "viewPlans": "查看计划",
+    "premiumExpires": "高级会员到期: {{date}}",
+    "premiumActive": "高级会员使用中",
+    "manageSubscription": "管理订阅"
   },
   "home": {
     "welcome": "欢迎来到Burti！",
@@ -182,7 +188,8 @@
     "recordToday": "记录一下{{name}}的今天吧？",
     "createTodayDiary": "写今天的日记",
     "allDiaries": "所有日记",
-    "viewAllDiaries": "查看所有日记"
+    "viewAllDiaries": "查看所有日记",
+    "premiumFeatures": "AI Premium Features"
   },
   "onboarding": {
     "title": "Burti",
@@ -469,6 +476,19 @@
     "healthAnalysis": "健康分析",
     "basic": "基础",
     "detailed": "详细",
-    "footnote": "高级会员享有更多功能"
+    "footnote": "高级会员享有更多功能",
+    "paymentSuccess": "高级会员支付成功！稍后生效。",
+    "paymentCancelled": "支付已取消。",
+    "paymentError": "支付处理时发生错误。",
+    "processing": "处理中..."
+  },
+  "premium": {
+    "upsellTitle": "让日记更特别",
+    "upsellDesc": "升级享受AI插图、语音输入和TTS朗读功能",
+    "illustrationUpsell": "为这篇日记添加AI插图",
+    "illustrationDesc": "DALL-E 3根据日记内容创作精美插图",
+    "learnMore": "了解高级版",
+    "loadingHint": "高级版还能同时生成AI插图哦！",
+    "crownTooltip": "高级版"
   }
 }

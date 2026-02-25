@@ -162,7 +162,13 @@
     "emailPlaceholder": "日記リマインダー用メール",
     "emailDesc": "設定した時間にかわいいリマインダーメールが届きます！",
     "changeDogPhoto": "写真を変更",
-    "removePhoto": "写真を削除"
+    "removePhoto": "写真を削除",
+    "subscription": "サブスクリプション",
+    "subscriptionDesc": "プレミアムにアップグレードすると、AIイラスト、音声入力、TTS、写真分析が利用できます。",
+    "viewPlans": "プランを見る",
+    "premiumExpires": "プレミアム期限: {{date}}",
+    "premiumActive": "プレミアム利用中",
+    "manageSubscription": "サブスク管理"
   },
   "home": {
     "welcome": "Burtiへようこそ！",
@@ -182,7 +188,8 @@
     "recordToday": "{{name}}の今日を記録しませんか？",
     "createTodayDiary": "今日の日記を作成",
     "allDiaries": "すべての日記",
-    "viewAllDiaries": "すべての日記を見る"
+    "viewAllDiaries": "すべての日記を見る",
+    "premiumFeatures": "AI Premium Features"
   },
   "onboarding": {
     "title": "Burti",
@@ -469,6 +476,19 @@
     "healthAnalysis": "健康分析",
     "basic": "基本",
     "detailed": "詳細",
-    "footnote": "プレミアム会員向けのさらに多くの機能"
+    "footnote": "プレミアム会員向けのさらに多くの機能",
+    "paymentSuccess": "プレミアム決済が完了しました！まもなく反映されます。",
+    "paymentCancelled": "決済がキャンセルされました。",
+    "paymentError": "決済処理中にエラーが発生しました。",
+    "processing": "処理中..."
+  },
+  "premium": {
+    "upsellTitle": "日記をもっと特別に",
+    "upsellDesc": "AIイラスト、音声入力、TTSで日記体験をアップグレード",
+    "illustrationUpsell": "この日記にAIイラストを追加しませんか",
+    "illustrationDesc": "DALL-E 3が日記の内容に基づいて素敵な絵を描きます",
+    "learnMore": "プレミアムについて",
+    "loadingHint": "プレミアムならAIイラストも一緒に生成されます！",
+    "crownTooltip": "プレミアム"
   }
 }
