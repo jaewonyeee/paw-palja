@@ -489,6 +489,10 @@
     "illustrationDesc": "DALL-E 3が日記の内容に基づいて素敵な絵を描きます",
     "learnMore": "プレミアムについて",
     "loadingHint": "プレミアムならAIイラストも一緒に生成されます！",
-    "crownTooltip": "プレミアム"
+    "crownTooltip": "プレミアム",
+    "ttsRequiresPremium": "TTS日記朗読はプレミアム機能です。",
+    "voiceRequiresPremium": "音声入力はプレミアム機能です。",
+    "photoRequiresPremium": "AI写真分析はプレミアム機能です。",
+    "featureRequiresPremium": "この機能はプレミアムサブスクリプションが必要です。"
   }
 }

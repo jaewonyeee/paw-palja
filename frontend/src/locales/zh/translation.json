@@ -489,6 +489,10 @@
     "illustrationDesc": "DALL-E 3根据日记内容创作精美插图",
     "learnMore": "了解高级版",
     "loadingHint": "高级版还能同时生成AI插图哦！",
-    "crownTooltip": "高级版"
+    "crownTooltip": "高级版",
+    "ttsRequiresPremium": "TTS日记朗读是高级版功能。",
+    "voiceRequiresPremium": "语音输入是高级版功能。",
+    "photoRequiresPremium": "AI照片分析是高级版功能。",
+    "featureRequiresPremium": "此功能需要高级版订阅。"
   }
 }

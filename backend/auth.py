@@ -152,3 +152,18 @@ async def require_admin(request: Request, current_user: dict = Depends(get_curre
     if not current_user.get("is_admin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=get_message("admin_access_required", lang))
     return current_user
+
+
+def check_premium(current_user: dict) -> bool:
+    """Check if the user has an active premium subscription."""
+    return (current_user.get("subscription_tier") or "free") == "premium"
+
+
+async def require_premium(request: Request, current_user: dict = Depends(get_current_user)) -> dict:
+    """FastAPI dependency: require premium subscription."""
+    if not check_premium(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 기능은 프리미엄 구독이 필요합니다. / This feature requires a premium subscription.",
+        )
+    return current_user

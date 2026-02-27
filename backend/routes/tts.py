@@ -7,7 +7,7 @@ import logging
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from backend.auth import get_current_user
+from backend.auth import get_current_user, require_premium
 from backend.i18n import get_message, get_lang
 
 logger = logging.getLogger("pawpalja.tts")
@@ -24,7 +24,7 @@ class TTSRequest(BaseModel):
 async def generate_tts(
     request: Request,
     data: TTSRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_premium),
 ):
     """OpenAI TTS를 사용하여 텍스트를 음성으로 변환합니다."""
     api_key = os.getenv("OPENAI_API_KEY")

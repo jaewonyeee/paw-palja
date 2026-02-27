@@ -489,6 +489,10 @@
     "illustrationDesc": "DALL-E 3가 일기 내용을 바탕으로 예쁜 그림을 그려줘요",
     "learnMore": "프리미엄 알아보기",
     "loadingHint": "프리미엄이면 AI 일러스트도 함께 생성돼요!",
-    "crownTooltip": "프리미엄"
+    "crownTooltip": "프리미엄",
+    "ttsRequiresPremium": "TTS 일기 낭독은 프리미엄 기능입니다.",
+    "voiceRequiresPremium": "음성 입력은 프리미엄 기능입니다.",
+    "photoRequiresPremium": "AI 사진 분석은 프리미엄 기능입니다.",
+    "featureRequiresPremium": "이 기능은 프리미엄 구독이 필요합니다."
   }
 }

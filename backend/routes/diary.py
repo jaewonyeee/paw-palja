@@ -16,7 +16,7 @@ from backend.schemas import DogProfile, DailyLog, DiaryEditRequest
 from backend.agents import build_agent_graph
 from backend import user_store
 from backend.database import get_db
-from backend.auth import get_current_user
+from backend.auth import get_current_user, check_premium
 from backend.i18n import get_message, get_lang
 
 logger = logging.getLogger("pawpalja.diary")
@@ -91,11 +91,11 @@ async def generate_diary(
         profile = DogProfile(**current_user["dog"])
         initial_state = _prepare_state(profile, logs)
 
-        # GPT-4o Vision photo analysis (premium feature)
-        if logs.photo:
+        # GPT-4o Vision photo analysis (premium only)
+        is_premium = check_premium(current_user)
+        if logs.photo and is_premium:
             try:
                 from backend.photo_analysis import analyze_pet_photo
-                import asyncio
                 photo_result = await analyze_pet_photo(
                     logs.photo,
                     current_user["dog"].get("name", "멍멍이"),
@@ -105,6 +105,8 @@ async def generate_diary(
                     initial_state["daily_logs"]["photo_analysis"] = photo_result
             except Exception:
                 logger.warning("Photo analysis failed, continuing without it")
+        elif logs.photo and not is_premium:
+            logger.info("Photo analysis skipped for free tier user %s", user_id)
 
         thread_id = str(uuid.uuid4())
         config = {"configurable": {"thread_id": thread_id}}
@@ -142,26 +144,29 @@ async def generate_diary(
 
         saved = await user_store.save_diary_entry(db, user_id, entry)
 
-        # Generate DALL-E 3 illustration (async, non-blocking)
-        try:
-            from backend.illustration import generate_diary_illustration
-            diary_content = ""
-            if final_state.get("diary"):
-                diary_content = final_state["diary"].get("content_ko", "") or final_state["diary"].get("content", "")
-            if diary_content:
-                illustration = await generate_diary_illustration(
-                    diary_content,
-                    current_user["dog"].get("name", "멍멍이"),
-                    current_user["dog"].get("breed", "믹스견"),
-                )
-                if illustration and saved.get("entry_id"):
-                    await user_store.update_diary_entry(
-                        db, user_id, saved["entry_id"],
-                        {"illustration_url": illustration}
+        # Generate DALL-E 3 illustration (premium only)
+        if is_premium:
+            try:
+                from backend.illustration import generate_diary_illustration
+                diary_content = ""
+                if final_state.get("diary"):
+                    diary_content = final_state["diary"].get("content_ko", "") or final_state["diary"].get("content", "")
+                if diary_content:
+                    illustration = await generate_diary_illustration(
+                        diary_content,
+                        current_user["dog"].get("name", "멍멍이"),
+                        current_user["dog"].get("breed", "믹스견"),
                     )
-                    saved["illustration_url"] = illustration
-        except Exception:
-            logger.warning("Illustration generation failed, continuing without it")
+                    if illustration and saved.get("entry_id"):
+                        await user_store.update_diary_entry(
+                            db, user_id, saved["entry_id"],
+                            {"illustration_url": illustration}
+                        )
+                        saved["illustration_url"] = illustration
+            except Exception:
+                logger.warning("Illustration generation failed, continuing without it")
+        else:
+            logger.info("Illustration skipped for free tier user %s", user_id)
 
         # Track diary_created event
         await user_store.track_event(db, user_id, "diary_created")

@@ -29,6 +29,7 @@ export default function DiaryDetail() {
   const { entryId } = useParams()
   const { user } = useAuth()
   const { addToast } = useToast()
+  const isPremium = (user?.subscription_tier || 'free') === 'premium'
   const initialEntry = location.state?.entry || null
   const [entry, setEntry] = useState(initialEntry)
   const [loadingEntry, setLoadingEntry] = useState(!initialEntry)
@@ -208,6 +209,11 @@ export default function DiaryDetail() {
       await audio.play()
       setTtsPlaying(true)
     } catch (err) {
+      if (err.message?.includes('프리미엄') || err.message?.includes('premium')) {
+        addToast(t('premium.ttsRequiresPremium', 'TTS는 프리미엄 기능입니다.'), 'info')
+        navigate('/pricing')
+        return
+      }
       addToast(t('diary.ttsError', 'TTS 재생에 실패했어요: ') + err.message, 'error')
     }
     setTtsLoading(false)
@@ -487,7 +493,7 @@ export default function DiaryDetail() {
                     {ttsLoading ? (
                       <div className="spinner" style={{ width: 16, height: 16 }} />
                     ) : ttsPlaying ? '⏹' : '🔊'}
-                    <span style={styles.ttsBadge}>TTS</span>
+                    <span style={styles.ttsBadge}>{isPremium ? 'TTS' : 'Premium'}</span>
                   </motion.button>
                 </div>
 

@@ -89,6 +89,7 @@ export default function NewDiary() {
     }).catch(() => {})
   }, [])
 
+  const isPremium = (user.subscription_tier || 'free') === 'premium'
   const dogName = user.dog?.name || t('home.defaultDogName', '멍멍이')
 
   const currentStep = STEPS[step]
@@ -181,6 +182,11 @@ export default function NewDiary() {
             addToast(t('diary.voiceSuccess', '음성이 텍스트로 변환되었어요!'), 'success')
           }
         } catch (err) {
+          if (err.message?.includes('프리미엄') || err.message?.includes('premium') || err.message?.includes('Premium')) {
+            addToast(t('premium.voiceRequiresPremium', '음성 입력은 프리미엄 기능입니다.'), 'info')
+            navigate('/pricing')
+            return
+          }
           addToast(t('diary.voiceError', '음성 변환에 실패했어요: ') + err.message, 'error')
         }
         setIsTranscribing(false)
@@ -444,7 +450,7 @@ export default function NewDiary() {
                       >
                         <span style={{ fontSize: '1.2rem' }}>&#127908;</span>
                         <span>{t('diary.voiceInput', '음성으로 입력')}</span>
-                        <span style={styles.aiBadge}>Whisper AI</span>
+                        <span style={styles.aiBadge}>{isPremium ? 'Whisper AI' : 'Premium'}</span>
                       </motion.button>
                     )}
                   </div>
@@ -467,7 +473,7 @@ export default function NewDiary() {
                         style={styles.photoAddBtn}
                       >
                         📷 {t('diary.addPhoto')}
-                        <span style={styles.aiBadge}>AI Vision</span>
+                        <span style={styles.aiBadge}>{isPremium ? 'AI Vision' : 'Premium'}</span>
                       </motion.button>
                     )}
                     <input

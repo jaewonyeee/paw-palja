@@ -4,7 +4,7 @@ Whisper 음성→텍스트 변환 API 엔드포인트
 import os
 import logging
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Request
-from backend.auth import get_current_user
+from backend.auth import get_current_user, require_premium
 from backend.i18n import get_message, get_lang
 
 logger = logging.getLogger("pawpalja.voice")
@@ -16,7 +16,7 @@ router = APIRouter()
 async def transcribe_voice(
     request: Request,
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_premium),
 ):
     """Whisper를 사용하여 음성을 텍스트로 변환합니다."""
     api_key = os.getenv("OPENAI_API_KEY")

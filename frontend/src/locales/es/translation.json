@@ -489,6 +489,10 @@
     "illustrationDesc": "DALL-E 3 crea una imagen hermosa basada en tu diario",
     "learnMore": "Conoce Premium",
     "loadingHint": "¡Con Premium, también se generan ilustraciones AI!",
-    "crownTooltip": "Premium"
+    "crownTooltip": "Premium",
+    "ttsRequiresPremium": "La lectura TTS del diario es una función premium.",
+    "voiceRequiresPremium": "La entrada de voz es una función premium.",
+    "photoRequiresPremium": "El análisis de fotos con IA es una función premium.",
+    "featureRequiresPremium": "Esta función requiere una suscripción premium."
   }
 }

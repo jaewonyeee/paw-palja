@@ -16,7 +16,7 @@ from backend.comment_agents import (
 )
 from backend import user_store
 from backend.database import get_db, AsyncSessionLocal
-from backend.auth import get_current_user, decode_token
+from backend.auth import get_current_user, decode_token, check_premium
 from backend.i18n import get_message, get_lang
 
 logger = logging.getLogger("pawpalja.comments")
@@ -37,7 +37,8 @@ async def api_generate_comments(
     """일기에 대한 댓글을 생성합니다."""
     try:
         start_time = time.time()
-        comments = generate_comments(req.diary_content, req.dog_name, req.dog_breed, count=3)
+        comment_count = 5 if check_premium(current_user) else 3
+        comments = generate_comments(req.diary_content, req.dog_name, req.dog_breed, count=comment_count)
         duration_ms = int((time.time() - start_time) * 1000)
         try:
             from backend import user_store as _us
@@ -86,6 +87,7 @@ async def stream_comments(
         raise HTTPException(status_code=404, detail=get_message("diary_not_found", lang))
 
     user = await user_store.get_user(db, user_id)
+    is_premium = check_premium(user) if user else False
     diary_data = entry.get("diary", {})
     diary_text = diary_data.get("content_ko") or diary_data.get("content_en") or diary_data.get("content") or ""
     dog = user.get("dog") if user else None
@@ -119,7 +121,7 @@ async def stream_comments(
                         logger.warning("Empty comment skipped for entry %s: %s", entry_id, reaction)
             else:
                 # 진짜 순차 스트리밍: 댓글 1개 생성 → 즉시 전송 → 다음 생성
-                count = 3
+                count = 5 if is_premium else 3
                 selected = random.sample(COMMENT_PERSONAS, min(count, len(COMMENT_PERSONAS)))
                 for i, persona in enumerate(selected):
                     if i > 0:
